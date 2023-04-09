@@ -4,7 +4,7 @@ from cvxopt import matrix, solvers
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
-class Simulation:
+class Simulation_1D:
     def __init__(self, H, K, tau_zero, f, deg, nElem, random_seed, fix_interface, save):
         self.H = H  # Half-channel width
         self.K = K  # Viscosity
@@ -94,7 +94,7 @@ DPHI_P2 = [
 ]
 
 
-def solve_FE(sim, atol=1e-8, rtol=1e-6):
+def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     # nVert = 2 * sim.nElem + 1
     # nG = 2  # quad shape fcts -> two gauss point needed
     # nVar = nVert + 2 * nG * sim.nElem  # velocities --- bounds on viscosity term --- bounds on yield-stress term    
@@ -174,7 +174,7 @@ def solve_FE(sim, atol=1e-8, rtol=1e-6):
     return u_num, s_num, t_num
 
 
-def solve_interface_tracking(sim, atol=1e-8, rtol=1e-6):
+def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     def eval_u(xi, u_local):
         u = np.zeros_like(xi)
         for u_j, phi_j in zip(u_local, sim.PHI):
@@ -274,7 +274,7 @@ def solve_interface_tracking(sim, atol=1e-8, rtol=1e-6):
                 info = "root of du/dy (bot)"
                 print(f"iteration {sim.it:3d} : {info:>20s} = {y0_guess:6.3f}  y0 update = {this_y[i+1]:6.3f}")
 
-        plot_solution(sim, u_nodes, pts_per_elem=150)
+        plot_solution_1D(sim, u_nodes, pts_per_elem=150)
         print("")
 
         sim.set_y(this_y)
@@ -285,18 +285,20 @@ def solve_interface_tracking(sim, atol=1e-8, rtol=1e-6):
     return u_nodes
 
 
-def plot_solution(sim, u_nodes, pts_per_elem=50):
+def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
     H, K, tau_zero, f, V, y0, Bn, nElem, y = sim.H, sim.K, sim.tau_zero, sim.f, sim.V, sim.y0, sim.Bn, sim.nElem, sim.y
     def get_analytical_sol(y_eval):
-            e0, eta, u_ana = y0 / H, y_eval / H, np.zeros(len(y_eval))
-            m_bot, m_mid, m_top = (-1. <= eta) & (eta <= -e0), (-e0-1e-6 <= eta) & (eta <= e0), (e0-1e-6 <= eta) & (eta <= 1.)        
-            u_ana[m_top] = -Bn * (1. - eta[m_top])  + (1. - np.square(eta[m_top]))
-            u_ana[m_bot] = -Bn * (1. + eta[m_bot])  + (1. - np.square(eta[m_bot]))
-            u_ana[m_mid] = (1. - Bn / 2.) ** 2
-            return V * u_ana
+        e0, eta, u_ana = y0 / H, y_eval / H, np.zeros(len(y_eval))
+        m_bot, m_mid, m_top = (-1. <= eta) & (eta <= -e0), (-e0-1e-6 <= eta) & (eta <= e0), (e0-1e-6 <= eta) & (eta <= 1.)        
+        u_ana[m_top] = -Bn * (1. - eta[m_top])  + (1. - np.square(eta[m_top]))
+        u_ana[m_bot] = -Bn * (1. + eta[m_bot])  + (1. - np.square(eta[m_bot]))
+        u_ana[m_mid] = (1. - Bn / 2.) ** 2
+        return V * u_ana
 
     # Set coordinate arrays
     u_ext_nodes = u_nodes if sim.degree == 1 else u_nodes[::2]
+    u_mid_nodes = np.empty(0) if sim.degree == 1 else u_nodes[1::2]
+
     u_vertex = np.dstack((u_ext_nodes[:-1], u_ext_nodes[1:])).flatten()
     y_vertex = np.dstack((y[:-1], y[1:])).flatten()
     y_middle = (y[:-1] + y[1:]) / 2.
@@ -353,6 +355,7 @@ def plot_solution(sim, u_nodes, pts_per_elem=50):
     ax.set_ylabel(r"$y/H$", fontsize=ftSz2)
     ax.plot(u_ana, y_dense / H, ls='-', color='C0', alpha=alp, lw=lw, label="Analytical")
     ax.plot(u_ext_nodes, y / H, marker="o", ls="", color='C1')
+    ax.plot(u_mid_nodes, y_middle / H, marker=".", ls="", color='C1')
     ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
     ax.plot(u_num, y_dense / H, color='C1')
 
@@ -422,7 +425,7 @@ def plot_solution(sim, u_nodes, pts_per_elem=50):
 
 if __name__ == "__main__":
 
-    sim = Simulation(H=1., K=1., tau_zero=0.3, f=1., deg=2, nElem=10, random_seed=12, fix_interface=False, save=False)
+    sim = Simulation_1D(H=1., K=1., tau_zero=0.3, f=1., deg=2, nElem=10, random_seed=12, fix_interface=False, save=False)
     
     # Solve the problem ITERATE
     u_nodes = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
@@ -430,4 +433,4 @@ if __name__ == "__main__":
     # Solve problem ONE SHOT
     # u_nodes, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
     
-    plot_solution(sim, u_nodes, pts_per_elem=150)
+    plot_solution_1D(sim, u_nodes, pts_per_elem=150)
