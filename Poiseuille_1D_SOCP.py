@@ -35,7 +35,7 @@ class Simulation_1D:
             self.PHI = PHI_P2
             self.DPHI = DPHI_P2
         else:
-            raise ValueError
+            raise ValueError("Element order should be 1 or 2")
         self.nVar = self.nVert + 2 * self.nG * nElem
         # velocities --- bounds on viscosity term --- bounds on yield-stress term
         
@@ -297,7 +297,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
 
     # Set coordinate arrays
     u_ext_nodes = u_nodes if sim.degree == 1 else u_nodes[::2]
-    u_mid_nodes = np.empty(0) if sim.degree == 1 else u_nodes[1::2]
+    u_mid_nodes = np.array([]) if sim.degree == 1 else u_nodes[1::2]
 
     u_vertex = np.dstack((u_ext_nodes[:-1], u_ext_nodes[1:])).flatten()
     y_vertex = np.dstack((y[:-1], y[1:])).flatten()
@@ -355,7 +355,8 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
     ax.set_ylabel(r"$y/H$", fontsize=ftSz2)
     ax.plot(u_ana, y_dense / H, ls='-', color='C0', alpha=alp, lw=lw, label="Analytical")
     ax.plot(u_ext_nodes, y / H, marker="o", ls="", color='C1')
-    ax.plot(u_mid_nodes, y_middle / H, marker=".", ls="", color='C1')
+    if len(u_mid_nodes) > 0:  # second order segment
+        ax.plot(u_mid_nodes, y_middle / H, marker=".", ls="", color='C1')
     ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
     ax.plot(u_num, y_dense / H, color='C1')
 

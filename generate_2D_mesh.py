@@ -112,16 +112,16 @@ def create_split_rectangle(filename, elemSizeRatio, y_zero=0., cut=True):
     # Physical groups for boundary conditions
     ln_others = np.setdiff1d(lines, ln_cut + ln_inflow + ln_outflow + ln_no_slip)
 
+    tag_pts_u_zero = gmsh.model.addPhysicalGroup(0, pts_no_slip, tag=1, name="u_zero")
+    tag_pts_v_zero = gmsh.model.addPhysicalGroup(0, pts_inflow + pts_outflow + pts_no_slip, tag=2, name="v_zero")
+    tag_pts_u_set = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
     tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_cut, tag=4, name="cut")
-    tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_outflow, tag=2, name="outflow")
-    tag_pts_no_slip = gmsh.model.addPhysicalGroup(0, pts_inflow, tag=1, name="inflow")
-    tag_pts_no_slip = gmsh.model.addPhysicalGroup(0, pts_no_slip, tag=3, name="no-slip")
     
-    tag_other = gmsh.model.addPhysicalGroup(1, ln_others, tag=5, name="others")
-    tag_inflow = gmsh.model.addPhysicalGroup(1, ln_inflow, tag=1, name="inflow")
-    tag_outflow = gmsh.model.addPhysicalGroup(1, ln_outflow, tag=2, name="outflow")
-    tag_noslip = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=3, name="no-slip")
+    tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
+    tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
+    tag_u_set = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")
     tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
+    tag_other = gmsh.model.addPhysicalGroup(1, ln_others, tag=5, name="others")
     
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
@@ -146,7 +146,7 @@ def create_hole(filename, elemSizeRatio):
     gmsh.model.add("hole")
 
     width, height = 3., 2.
-    radius = height / 5.
+    radius = height / 8.
     rect = gmsh.model.occ.add_rectangle(0., -height/2., 0., width, height, 0)
     disk1 = gmsh.model.occ.add_disk(width/2., 0., 0., radius, radius, 1000)
     res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1)])
@@ -155,13 +155,23 @@ def create_hole(filename, elemSizeRatio):
     
     gmsh.model.occ.synchronize()
 
-    tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=3, name="points")
-    tag = gmsh.model.addPhysicalGroup(1, [2], tag=1, name="inflow")
-    tag = gmsh.model.addPhysicalGroup(1, [3], tag=2, name="outflow")
-    tag = gmsh.model.addPhysicalGroup(1, [1, 4, 5], tag=3, name="no-slip")
+    tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
+
+    tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")
+    tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
+
     tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
 
-    gmsh.model.mesh.set_size_callback(lambda *args: elemSizeRatio * width)
+    # gmsh.model.mesh.set_size_callback(lambda *args: elemSizeRatio * width)
+    gmsh.model.mesh.setSize([(0, 1)], elemSizeRatio * width)
+    gmsh.model.mesh.setSize([(0, 2)], elemSizeRatio * width)
+    gmsh.model.mesh.setSize([(0, 3)], elemSizeRatio * width)
+    gmsh.model.mesh.setSize([(0, 4)], elemSizeRatio * width)
+    gmsh.model.mesh.setSize([(0, 5)], elemSizeRatio * width * 0.5)
 
     gmsh.model.occ.synchronize()
     gmsh.model.mesh.generate(2)
@@ -176,9 +186,105 @@ def create_hole(filename, elemSizeRatio):
     gmsh.finalize()
 
 
+def create_cavity(filename, elemSizeRatio, cut=True):
+    gmsh.initialize()
+    factory = gmsh.model.geo
+    meshFact = gmsh.model.mesh
+
+    width, height = 1., 1.
+    lc = elemSizeRatio * width
+
+    c = width / 2. if cut else width
+
+    p1 = factory.addPoint(0., 0., 0., lc/2.)
+    p2 = factory.addPoint(0., -height, 0., lc)
+    p3 = factory.addPoint(width, -height, 0., lc)
+    p4 = factory.addPoint(width, 0., 0., lc/2.)
+    pts_u_zero = [p2, p3, p1, p4]  # p1, p4 corners --> can be zero / one
+    pts_v_zero = [p1, p2, p3, p4]
+    pts_u_one = [p1, p4]
+    pts_cut = []
+    lines_u_zero, lines_v_zero, lines_u_one, lines_cut = [], [], [], []
+    lines, lengths = [], []
+    
+    if cut:
+        p5 = factory.addPoint(c, -height, 0., lc)
+        p6 = factory.addPoint(c, 0., 0., lc/2.)
+        pts_u_zero += [p5]
+        pts_v_zero += [p5, p6]
+        pts_u_one += [p6]
+        pts_cut += [p5, p6]
+
+        l1 = factory.addLine(p1, p2)
+        l2 = factory.addLine(p2, p5)
+        l3 = factory.addLine(p5, p3)
+        l4 = factory.addLine(p3, p4)
+        l5 = factory.addLine(p4, p6)
+        l6 = factory.addLine(p6, p1)
+        l7 = factory.addLine(p5, p6)
+        lines_u_zero += [l1, l2, l3, l4]
+        lines_v_zero += [l1, l2, l3, l4, l5, l6]
+        lines_u_one += [l5, l6]
+        lines_cut += [l7]
+        lines += [l1, l2, l3, l4, l5, l6, l7]
+        lengths += [height, width/2., width/2., height, width/2., width/2., height]
+
+        cl1 = factory.addCurveLoop([l1, l2, l7, l6])
+        cl2 = factory.addCurveLoop([l3, l4, l5, -l7])
+        s1 = factory.addPlaneSurface([cl1])
+        s2 = factory.addPlaneSurface([cl2])
+        srfs = [s1, s2]
+
+    else:
+        l1 = factory.addLine(p1, p2)
+        l2 = factory.addLine(p2, p3)
+        l3 = factory.addLine(p3, p4)
+        l4 = factory.addLine(p4, p1)
+        lines_u_zero += [l1, l2, l3]
+        lines_v_zero += [l1, l2, l3, l4]
+        lines_u_one += [l4]
+        lines += [l1, l2, l3, l4]
+        lengths += [height, width, height, width]
+
+        cl1 = factory.addCurveLoop([l1, l2, l3, l4])
+        s1 = factory.addPlaneSurface([cl1])
+        srfs = [s1]
+    
+    factory.synchronize()
+
+    # Physical groups for boundary conditions
+
+    tag_pts_u_zero = gmsh.model.addPhysicalGroup(0, pts_u_zero, tag=1, name="u_zero")
+    tag_pts_v_zero = gmsh.model.addPhysicalGroup(0, pts_v_zero, tag=2, name="v_zero")
+    tag_pts_u_set = gmsh.model.addPhysicalGroup(0, pts_u_one, tag=3, name="u_one")
+    tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_cut, tag=4, name="cut")
+    tag_pts_singular = gmsh.model.addPhysicalGroup(0, [p1, p4], tag=5, name="singular")
+    
+    tag_outflow = gmsh.model.addPhysicalGroup(1, lines_u_zero, tag=1, name="u_zero")
+    tag_inflow = gmsh.model.addPhysicalGroup(1, lines_v_zero, tag=2, name="v_zero")
+    tag_noslip = gmsh.model.addPhysicalGroup(1, lines_u_one, tag=3, name="u_one")
+    tag_cut = gmsh.model.addPhysicalGroup(1, lines_cut, tag=4, name="cut")
+    
+    tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
+
+    # Meshing
+    # for li, length in zip(lines[6:], lengths[6:]):
+    #     n_nodes = int(np.ceil(length / lc))
+    #     meshFact.setTransfiniteCurve(li, numNodes=n_nodes)
+    # for si in srfs:
+    #     meshFact.setTransfiniteSurface(si)
+
+    meshFact.generate(2)
+
+    gmsh.write(filename)
+    gmsh.fltk.run()
+    gmsh.finalize()
+    return
+
 
 if __name__ == "__main__":
     path_to_dir = "./mesh/"
 
-    create_split_rectangle(path_to_dir + "rect_coarse.msh", elemSizeRatio=1./10., y_zero=0.0, cut=False)
-    # create_hole(path_to_dir + "hole_fine.msh", elemSizeRatio=1./20.)
+    # create_split_rectangle(path_to_dir + "rect_cut_fit_coarse.msh", elemSizeRatio=1./10., y_zero=0.3, cut=True)
+    # create_hole(path_to_dir + "hole_normal.msh", elemSizeRatio=1./15.)
+    create_cavity(path_to_dir + "cavity_coarse.msh", elemSizeRatio=1./10., cut=True)

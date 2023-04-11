@@ -5,6 +5,7 @@ from time import perf_counter
 from cvxopt import matrix, solvers
 from Poiseuille_1D_SOCP import Simulation_1D, plot_solution_1D
 from matplotlib.tri.triangulation import Triangulation
+from tqdm import tqdm
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
@@ -14,15 +15,15 @@ DPHI_DETA = lambda xi, eta: -27. * xi * eta + 27. * xi * (1. - xi - eta)
 
 
 class Simulation_2D:
-    def __init__(self, K, tau_zero, f, element, meshFilename, save):
+    def __init__(self, K, tau_zero, f, element, mesh_filename):
         self.K = K  # Viscosity
         self.tau_zero = tau_zero  # yield stress
         self.f = f  # body force (pressure gradient)
-        self.save = save  # Boolean
 
-        self.meshFilename = "./mesh/" + meshFilename
-        gmsh.open(self.meshFilename)
+        self.mesh_filename = mesh_filename
+        gmsh.open("./mesh/" + mesh_filename + ".msh")
 
+        self.element = element
         if element == "taylor-hood":
             gmsh.model.mesh.setOrder(2)
             self.degree = 2
@@ -44,11 +45,13 @@ class Simulation_2D:
         self.ng_all = self.n_elem * self.ng_loc
 
         res = self.get_nodes_info()
-        self.node_tags, self.coords, self.nodes_no_slip, self.nodes_inflow, self.nodes_outflow = res
+        self.node_tags, self.coords = res[0:2]
+        self.nodes_zero_u, self.nodes_zero_v, self.nodes_with_u = res[2:5]
+        self.primary_nodes, = res[5:]
         self.n_node = len(self.node_tags)
 
         # variables :  (u, v) at every node --- bounds on |.|^2 and |.|^1 at every gauss_pt
-        self.n_var = (2 * self.n_node + 2 * self.ng_all)
+        self.n_var = 2 * self.n_node + 2 * self.ng_all if self.tau_zero > 0. else 2 * self.n_node + 1 * self.ng_all
         if element == "mini":  # extra dof at center of every element (for u, and for v)
             self.n_var += 2 * self.n_elem
         
@@ -133,40 +136,107 @@ class Simulation_2D:
         )
     
     def get_nodes_info(self):
-        nodeTags, coords, _ = gmsh.model.mesh.getNodes()
-        nodeTags = np.array(nodeTags) - 1
+        node_tags, coords, _ = gmsh.model.mesh.getNodes()
+        node_tags = np.array(node_tags) - 1
         coords = np.array(coords).reshape((-1, 3))[:, :-1]
 
-        bd_nodes_00, coords_00 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # no_slip
-        # bd_nodes_01, coords_01 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # inflow
-        # bd_nodes_02, coords_02 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # outflow
-        bd_nodes_10, coords_10 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=3)  # no-slip
-        bd_nodes_11, coords_11 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=1)  # inflow
-        bd_nodes_12, coords_12 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # outflow
+        # bd_nodes_01, coords_01 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
+        # bd_nodes_02, coords_02 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
+        # bd_nodes_03, coords_03 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # impose non-zero u
+        bd_nodes_05, coords_05 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=5)  # singular pressure
 
-        # setdiff1d to handle corners
-        nodes_no_slip = np.setdiff1d(bd_nodes_10, []).astype(int) - 1
-        nodes_inflow = np.setdiff1d(bd_nodes_11, bd_nodes_00).astype(int) - 1
-        nodes_outflow = np.setdiff1d(bd_nodes_12, bd_nodes_00).astype(int) - 1
+        bd_nodes_11, coords_11 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=1)  # zero u
+        bd_nodes_12, coords_12 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # zero v
+        bd_nodes_13, coords_13 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=3)  # impose non-zero u
+
+        nodes_zero_u = bd_nodes_11.astype(int) - 1
+        nodes_zero_v = bd_nodes_12.astype(int) - 1
+        nodes_with_u = bd_nodes_13.astype(int) - 1
+        nodes_dont_check = bd_nodes_05.astype(int) - 1
+        # nodes_dont_check = np.array([], dtype=int)
         
-        # print("NO SLIP")
-        # print(nodes_no_slip+1)
-        # print("\nINFLOW")
-        # print(nodes_inflow+1)
-        # print("\nOUTFLOW")
-        # print(nodes_outflow+1)
+        # print("Zero u")
+        # print(nodes_zero_u+1)
+        # print("\nZero v")
+        # print(nodes_zero_v+1)
+        # print("\nWith u")
+        # print(nodes_with_u+1)
         # gmsh.fltk.initialize()
         # gmsh.fltk.run()
         # exit(0)
+
+        node_is_vertex_list = np.zeros(len(node_tags))
+        for i in range(self.n_elem):
+            idx_local_nodes = self.elem_node_tags[i]
+            node_is_vertex_list[idx_local_nodes[:3]] = 1
         
-        return nodeTags, coords, nodes_no_slip, nodes_inflow, nodes_outflow, 
+        node_is_vertex_list[nodes_dont_check] = 0
+        primary_nodes = np.argwhere(node_is_vertex_list).flatten()
+        
+        return node_tags, coords, nodes_zero_u, nodes_zero_v, nodes_with_u, primary_nodes
+
+    def save_solution(self, u_num):
+        with open(f"./res/{self.mesh_filename:s}.txt", 'w') as file:
+            file.write(f"{self.K:.6e}\n")
+            file.write(f"{self.tau_zero:.6e}\n")
+            file.write(f"{self.f[0]:.6e} {self.f[1]:.6e}\n")
+            file.write(f"{self.element:s}\n")
+            file.write(f"{self.mesh_filename:s}\n")
+            np.savetxt(file, u_num, fmt="%.6e")
+        return
+    
+
+def load_solution(res_file_name):
+    with open(f"./res/{res_file_name:s}.txt", 'r') as file:
+        K, tau_zero = float(next(file).strip('\n')), float(next(file).strip('\n')),
+        f = [float(component) for component in next(file).strip('\n').split(' ')]
+        element, mesh_filename = next(file).strip('\n'), next(file).strip('\n')
+        u_num = np.loadtxt(file)
+    
+    return dict(K=K, tau_zero=tau_zero, f=f, element=element, mesh_filename=mesh_filename), u_num
+
+
+
+
+def set_boundary_conditions(sim: Simulation_2D, B, b):
+    idx_bd_condition = 0
+
+    for idx_node in sim.nodes_zero_u:
+        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
+        B[idx_bd_condition, u_idx] = 1.
+        b[idx_bd_condition] = 0.
+        idx_bd_condition += 1
+    #     print(f"node {idx_node + 1:3d} : u = 0")
+    # print("")
+
+    for idx_node in sim.nodes_zero_v:
+        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
+        B[idx_bd_condition, v_idx] = 1.
+        b[idx_bd_condition] = 0.
+        idx_bd_condition += 1
+    #     print(f"node {idx_node + 1:3d} : v = 0")
+    # print("")
+    
+    for idx_node in sim.nodes_with_u:
+        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
+        B[idx_bd_condition, u_idx] = 1.
+        b[idx_bd_condition] = 1.
+        # b[idx_bd_condition] = np.sin(np.pi * sim.coords[idx_node, 0] / 1.)**2
+        idx_bd_condition += 1
+    #     print(f"node {idx_node + 1:3d} : u = {b[idx_bd_condition-1]:.3f}")
+    # print("")
+    
+    # gmsh.fltk.initialize()
+    # gmsh.fltk.run()
+    # exit(0)
+    return
 
 
 def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
     
     ng_all = sim.ng_all
     IB = 2 * sim.n_node  # start of dofs related to bubble function
-    IS = IB + sim.n_elem if sim.degree == 3 else IB  # start of S variables
+    IS = IB + 2 * sim.n_elem if sim.degree == 3 else IB  # start of S variables
     IT = IS + ng_all  # start of T variables
     
     if sim.degree == 3:
@@ -176,9 +246,8 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
     cost = np.zeros(sim.n_var)
     
     # set constraints (1) div(u) = 0 at every gauss_pt, (2) u,v = U,V on boundary
-    nb_constraints_bd = 2 * len(sim.nodes_no_slip) + len(sim.nodes_inflow) + len(sim.nodes_outflow)
+    nb_constraints_bd = len(sim.nodes_zero_u) + len(sim.nodes_zero_v) + len(sim.nodes_with_u)
     A = np.zeros((sim.n_node, sim.n_var))
-    node_is_vertex_list = np.zeros(sim.n_node)
 
     # Old method, where div(u) = 0 at every gauss point
     # I_div = 0
@@ -188,11 +257,11 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
 
     # set SOCP constraints
     I_yield = 5 * ng_all
-    G = np.zeros((9 * ng_all, sim.n_var))
+    G = np.zeros((9 * ng_all, sim.n_var)) if sim.tau_zero > 0. else np.zeros((5 * ng_all, sim.n_var))
     h = np.zeros(G.shape[0])
     sqrt2 = np.sqrt(2.)
     
-    for i in range(sim.n_elem):
+    for i in tqdm(range(sim.n_elem)):
         
         idx_local_nodes = sim.elem_node_tags[i]
         det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
@@ -204,7 +273,6 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
 
             # pressure field is P1 --> multiply div(velocity) by the linear shape functions of the 3 VERTICES
             for j, idx_node in enumerate(idx_local_nodes[:3]):  
-                node_is_vertex_list[idx_node] = 1
                 A[idx_node, 2*idx_local_nodes+0] += wg * psi[j] * dphi[:, 0] * det
                 A[idx_node, 2*idx_local_nodes+1] += wg * psi[j] * dphi[:, 1] * det
 
@@ -216,7 +284,8 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
 
             i_g_idx = i * sim.ng_loc + g
             cost[IS + i_g_idx] += sim.K / 2. * wg * det
-            cost[IT + i_g_idx] += sim.tau_zero * wg * det
+            if sim.tau_zero > 0.:
+                cost[IT + i_g_idx] += sim.tau_zero * wg * det
 
             for j, idx_node in enumerate(idx_local_nodes):
 
@@ -236,10 +305,11 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
                 G[5 * i_g_idx + 4, v_idx] = -1. * dphi[j, 0]  #         + [dv_dx] = s5
 
                 # set |2D|^1 < Tig
-                G[I_yield + 4 * i_g_idx + 1, u_idx] = -sqrt2 * dphi[j, 0]  # sqrt(2) [du_dx] = s2
-                G[I_yield + 4 * i_g_idx + 2, v_idx] = -sqrt2 * dphi[j, 1]  # sqrt(2) [dv_dy] = s3
-                G[I_yield + 4 * i_g_idx + 3, u_idx] = -1. * dphi[j, 1]  # [du_dy] +
-                G[I_yield + 4 * i_g_idx + 3, v_idx] = -1. * dphi[j, 0]  #         + [dv_dx] = s4
+                if sim.tau_zero > 0.:
+                    G[I_yield + 4 * i_g_idx + 1, u_idx] = -sqrt2 * dphi[j, 0]  # sqrt(2) [du_dx] = s2
+                    G[I_yield + 4 * i_g_idx + 2, v_idx] = -sqrt2 * dphi[j, 1]  # sqrt(2) [dv_dy] = s3
+                    G[I_yield + 4 * i_g_idx + 3, u_idx] = -1. * dphi[j, 1]  # [du_dy] +
+                    G[I_yield + 4 * i_g_idx + 3, v_idx] = -1. * dphi[j, 0]  #         + [dv_dx] = s4
 
             # set |2D|^2 < Sig
             G[5 * i_g_idx + 0, IS + i_g_idx] = -1. / sqrt2  # (Sig + 0.5) / sqrt2 = s1
@@ -247,69 +317,46 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
             G[5 * i_g_idx + 1, IS + i_g_idx] = -1. / sqrt2  # (Sig - 0.5) / sqrt2 = s2
             h[5 * i_g_idx + 1] = -0.5 / sqrt2  # (Sig - 0.5) / sqrt2 = s2
 
-            # set |2D|^1 < Tig
-            G[I_yield + 4 * i_g_idx + 0, IT + i_g_idx] = -1.  # Tig = s1
-            # Could also copy paste the submatrix used for the viscous term, instead of filling it in the loop
-            # G[I_yield + 4 * i_g_idx + 1: I_yield + 4 * (i_g_idx + 1), u_idx: v_idx + 1] = \
-            #         G[5 * i_g_idx + 2: 5 * (i_g_idx + 1), u_idx: v_idx + 1]
-
-    
-    A = A[np.argwhere(node_is_vertex_list).flatten()]  # take only the non-zero lines of the matrix A
+            if sim.tau_zero > 0.:  # set |2D|^1 < Tig
+                G[I_yield + 4 * i_g_idx + 0, IT + i_g_idx] = -1.  # Tig = s1
+                # Could also copy paste the submatrix used for the viscous term, instead of filling it in the loop
+                # G[I_yield + 4 * i_g_idx + 1: I_yield + 4 * (i_g_idx + 1), u_idx: v_idx + 1] = \
+                #         G[5 * i_g_idx + 2: 5 * (i_g_idx + 1), u_idx: v_idx + 1]
+        
+    # vertices_idx = np.argwhere(node_is_vertex_list).flatten()
+    A = A[sim.primary_nodes]  # take only the non-zero lines of the matrix A
     a = np.zeros(A.shape[0])  # A x = a
     B = np.zeros((nb_constraints_bd, sim.n_var))
     b = np.zeros(B.shape[0])  # B x = b
 
-    idx_bd_condition = 0
-    # set boundary conditions inflow
-    for idx_node in sim.nodes_inflow:
-        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
-        # B[idx_bd_condition, u_idx] = 1.
-        # b[idx_bd_condition] = U_in
-        # idx_bd_condition += 1
-        B[idx_bd_condition, v_idx] = 1.
-        b[idx_bd_condition] = 0.
-        idx_bd_condition += 1
-        # print(f"inflow {idx_node + 1:3d}")
+    set_boundary_conditions(sim, B, b)
 
-    # set boundary conditions outflow
-    for idx_node in sim.nodes_outflow:
-        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
-        # B[idx_bd_condition, u_idx] = 1.
-        # b[idx_bd_condition] = U_out
-        # idx_bd_condition += 1
-        B[idx_bd_condition, v_idx] = 1.
-        b[idx_bd_condition] = 0.
-        idx_bd_condition += 1
-        # print(f"outflow {idx_node + 1:3d}")
-    
-    # set boundary conditions no-slip
-    for idx_node in sim.nodes_no_slip:
-        u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
-        B[idx_bd_condition, u_idx] = 1.
-        idx_bd_condition += 1
-        B[idx_bd_condition, v_idx] = 1.
-        idx_bd_condition += 1
-        # print(f"no-slip {idx_node + 1:3d}")
-
-    # print(f"U : {0:3d} -> {ID-1:3d}")
-    # print(f"D : {ID:3d} -> {IS-1:3d}")
+    # print(f"U : {0:3d} -> {IB-1:3d}")
+    # print(f"U' : {IB:3d} -> {IS-1:3d}")
     # print(f"S : {IS:3d} -> {IT-1:3d}")
     # print(f"T : {IT:3d} -> {IT+ng_all-1:3d}")
-    # plt.spy(np.r_[A, B])
-    # plt.spy(G, markersize=0.5, aspect='auto')
+    # plt.spy(np.r_[A, B, G], markersize=0.5, aspect='auto')
     # plt.show()
     # exit(0)
-
+    # print(np.linalg.matrix_rank(G))
     # print(np.linalg.matrix_rank(np.r_[A, B]))
+    # print(np.linalg.matrix_rank(np.r_[A, B, G]))
+    # print(np.shape(G))
     # print(np.shape(np.r_[A, B]))
+    # print(np.shape(np.r_[A, B, G]))
+    # gmsh.fltk.initialize()
+    # gmsh.fltk.run()
     # exit(0)
 
     cost, G, h, A, b = matrix(cost), matrix(G), matrix(h), matrix(np.r_[A, B]), matrix(np.r_[a, b])
-    dims = {'l':0, 'q': [5 for i in range(ng_all)] + [4 for i in range(ng_all)], 's': []}
+    if sim.tau_zero > 0.:
+        dims = {'l':0, 'q': [5 for i in range(ng_all)] + [4 for i in range(ng_all)], 's': []}
+    else:
+        dims = {'l':0, 'q': [5 for i in range(ng_all)], 's': []}
 
     solvers.options['abstol'] = atol
     solvers.options['reltol'] = rtol
-    # solvers.options['maxiters'] = 1
+    solvers.options['maxiters'] = 30
     start_time = perf_counter()
     res = solvers.conelp(cost, G, h, dims, A, b)
     end_time = perf_counter()
@@ -318,11 +365,11 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
     print(f"Number variables of the problem  = {sim.n_var:d}")
 
     u_num = np.array(res['x'])[:IB].reshape((sim.n_node, 2))
-    u_bbl = np.array(res['x'])[IB:IS].reshape((sim.n_elem * (sim.degree == 3), 2))
-    s_num = np.array(res['x'])[IS:IT].reshape((sim.n_elem, sim.ng_loc))
-    t_num = np.array(res['x'])[IT:].reshape((sim.n_elem, sim.ng_loc))
+    # u_bbl = np.array(res['x'])[IB:IS].reshape((sim.n_elem * (sim.degree == 3), 2))
+    # s_num = np.array(res['x'])[IS:IT].reshape((sim.n_elem, sim.ng_loc))
+    # t_num = np.array(res['x'])[IT:].reshape((sim.n_elem, sim.ng_loc))
 
-    return u_num, s_num, t_num
+    return u_num
 
 
 def solve_interface_tracking(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
@@ -336,67 +383,81 @@ def plot_solution_2D(u_num, sim: Simulation_2D):
         dudy = np.dot(u_local[:, 0], dphi_local[:, 1])
         dvdx = np.dot(u_local[:, 1], dphi_local[:, 0])
         dvdy = np.dot(u_local[:, 1], dphi_local[:, 1]) 
-        return np.sqrt(2 * dudx ** 2 + 2 * dvdy ** 2 + (dudy + dvdx) ** 2)
+        return dudx, dudy, dvdx, dvdy
 
-    # all_nodes = sim.n_node + sim.n_elem * (sim.degree == 3)
-    velocity = np.c_[u_num, np.zeros_like(u_num[:, 0])].reshape((sim.n_node, -1))
-    # strain_norm_node = np.zeros((*sim.elem_node_tags.shape, 1))
-    # strain_norm_elem = np.zeros(sim.n_elem)
+    # strain_tensor = np.zeros((sim.n_elem,  3 * 3 + sim.elem_node_tags.shape[1] * 9))
+    #     strain_tensor[i, :9] = np.r_[sim.coords[idx_local_nodes[:3], 0],
+    #                                  sim.coords[idx_local_nodes[:3], 1],
+    #                                  np.zeros(3)]
+    #         strain_tensor[i, 9+9*j+np.array([0,1,3,4])] = local_strain_tensor.flatten() / np.sqrt(3)
 
-    # n_local_node = strain_norm_node.shape[1]
-    # _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, sim.local_node_coords, 'GradLagrange')
-    # dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
+    n_local_node = sim.elem_node_tags.shape[1]
+    n_local_node -= 1 if sim.degree == 3 else 0
+    velocity = np.c_[u_num, np.zeros_like(u_num[:, 0])]
+    strain_tensor = np.zeros((sim.n_elem, n_local_node, 9))
+    vorticity = np.zeros((sim.n_elem, n_local_node, 1))
+    strain_norm_elem = np.zeros(sim.n_elem)
 
-    # # if sim.degree == 3:
-    # #     xi_eta_eval = np.array(sim.local_node_coords).reshape(n_local_node, 3)[:, :-1].T
-    # #     bubble_dsf = np.c_[DPHI_DXI(*xi_eta_eval), DPHI_DETA(*xi_eta_eval)]  # eval bubble derivatives at node pts
-    # #     dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf.reshape((n_local_node, 1, 2)), axis=1)
+    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, sim.local_node_coords, 'GradLagrange')
+    dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
+    # if sim.degree == 3:
+    #     local_node_coords = sim.local_node_coords if sim.degree == 2 else np.r_[sim.local_node_coords, 1./3., 1./3., 0.]
+    #     xi_eta_eval = np.array(sim.local_node_coords).reshape(n_local_node, 3)[:, :-1].T
+    #     bubble_dsf = np.c_[DPHI_DXI(*xi_eta_eval), DPHI_DETA(*xi_eta_eval)]  # eval bubble derivatives at node pts
+    #     dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf.reshape((n_local_node, 1, 2)), axis=1)
+    
+    for i in range(sim.n_elem):
+        idx_local_nodes = sim.elem_node_tags[i, :n_local_node]
+        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
 
-    # for i in range(sim.n_elem):
-    #     idx_local_nodes = sim.elem_node_tags[i]
-    #     det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        
-    #     for j, idx_node in enumerate(idx_local_nodes):
+        for j, idx_node in enumerate(idx_local_nodes):
             
-    #         dphi = dsf_at_nodes[j, :]  # dphi in reference element
-    #         dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
-    #         strain_norm_node[i, j] = eval_strain_norm(u_num[idx_local_nodes], dphi)
+            dphi = dsf_at_nodes[j, :]  # dphi in reference element
+            dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
+            l11, l12, l21, l22 = eval_strain_norm(u_num[idx_local_nodes], dphi)
+            vorticity[i, j] = l21 - l12
+            local_strain_tensor = np.array([[l11, 0.5*(l12+l21)], [0.5*(l12+l21), l22]])
+            strain_tensor[i, j, np.array([0,1,3,4])] = local_strain_tensor.flatten() / np.sqrt(3)
+            # use sqrt(3) to rescale Von Mises
 
-    #     for g, wg in enumerate(sim.weights):
+        for g, wg in enumerate(sim.weights):
 
-    #         dphi = sim.dv_shape_functions_at_v[g]  # size (n_sf, 2)
-    #         dphi = np.dot(dphi, inv_jac) / det # size (n_sf, 2)
-    #         strain_norm_elem[i] += wg * eval_strain_norm(u_num[idx_local_nodes], dphi)
+            dphi = sim.dv_shape_functions_at_v[g][:n_local_node]  # size (n_sf, 2)
+            dphi = np.dot(dphi, inv_jac) / det # size (n_sf, 2)
+            l11, l12, l21, l22 = eval_strain_norm(u_num[idx_local_nodes], dphi)
+            strain_norm_elem[i] += wg * np.sqrt(2 * l11 ** 2 + 2 * l22 ** 2 + (l12 + l21) ** 2)
 
-    # strain_norm_elem = strain_norm_elem.flatten()
-    # strain_norm_node = strain_norm_node.flatten()
     velocity = velocity.flatten()
-    # # strain_norm_elem = strain_norm_elem.reshape((sim.n_elem, -1))
-    # # strain_norm_node = strain_norm_node.reshape((strain_norm_node.size, -1))
-    # # strain_data_elem = [list(vector) for vector in strain_norm_elem]
-    # # strain_data_node = [list(vector) for vector in strain_norm_node]
-    # # velocity_data = [list(vector) for vector in velocity]
+    strain_tensor = strain_tensor.flatten()
+    vorticity = vorticity.flatten()
+    strain_norm_elem = strain_norm_elem.flatten()
 
     gmsh.fltk.initialize()
     tag_v = gmsh.view.add("Velocity")
-    # tag_d1 = gmsh.view.add("|D| - by element")
-    # tag_d2 = gmsh.view.add("|D| - by node")
+    tag_strain = gmsh.view.add("Strain tensor")
+    tag_vorticity = gmsh.view.add("Vorticity")
+    tag_strain_norm_avg = gmsh.view.add("Strain norm averaged")
     modelName = gmsh.model.list()[0]
 
     gmsh.view.addHomogeneousModelData(
         tag_v, 0, modelName, "NodeData", sim.node_tags + 1, velocity, numComponents=3)
-    # gmsh.view.addHomogeneousModelData(
-    #     tag_d1, 0, modelName, "ElementData", sim.elem_tags, strain_norm_elem, numComponents=1)
-    # gmsh.view.addHomogeneousModelData(
-    #     tag_d2, 0, modelName, "ElementNodeData", sim.elem_tags, strain_norm_node, numComponents=1)
+    # gmsh.view.addListData(tag_strain, "TT", sim.n_elem, strain_tensor)
+    gmsh.view.addHomogeneousModelData(
+        tag_strain, 0, modelName, "ElementNodeData", sim.elem_tags, strain_tensor, numComponents=9)
+    gmsh.view.addHomogeneousModelData(
+        tag_vorticity, 0, modelName, "ElementNodeData", sim.elem_tags, vorticity, numComponents=1)
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_norm_avg, 0, modelName, "ElementData", sim.elem_tags, strain_norm_elem, numComponents=1)
 
-    gmsh.option.setNumber("View.AdaptVisualizationGrid", 1)
-    gmsh.option.setNumber("View.MaxRecursionLevel", 3)
-    gmsh.option.setNumber("View.TargetError", 0.)
-    gmsh.option.setNumber("View.VectorType", 6)
-    gmsh.option.setNumber("View[0].NormalRaise", -2.)
-    # gmsh.option.setNumber("View[1].Visible", 0)
-    # gmsh.option.setNumber("View[2].Visible", 0)
+    for tag in [tag_v, tag_strain, tag_vorticity]:
+        gmsh.view.option.setNumber(tag, "AdaptVisualizationGrid", 1)
+        gmsh.view.option.setNumber(tag, "TargetError", -0.0001)
+        gmsh.view.option.setNumber(tag, "MaxRecursionLevel", 2)
+    for tag in [tag_vorticity, tag_strain_norm_avg]:
+        gmsh.view.option.setNumber(tag, "Visible", 0)
+    gmsh.view.option.setNumber(tag_v, "VectorType", 6)
+    gmsh.view.option.setNumber(tag_v, "NormalRaise", -2.)
+    gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
 
     gmsh.fltk.run()
     return
@@ -410,11 +471,14 @@ def plot_solution_2D_matplotlib(u_num, sim: Simulation_2D):
     coords = sim.coords  # size (n_nodes, 2)
     
     triang = Triangulation(sim.coords[:, 0], sim.coords[:, 1], sim.elem_node_tags[:, :3])
-    tricontourset = ax.tricontourf(triang, u_num[:, 0])
+    tricontourset = ax.tricontourf(triang, u_num[:sim.n_node, 0])
     ax.triplot(triang, 'ko-', alpha=0.5)
     _ = fig.colorbar(tricontourset)
 
-    ax.quiver(coords[:, 0], coords[:, 1], u_num[:, 0], u_num[:, 1])
+    ax.quiver(coords[:, 0], coords[:, 1], u_num[:sim.n_node, 0], u_num[:sim.n_node, 1],
+              angles='xy', scale_units='xy', scale=5)
+    # ax.quiver(centers[:, 0], centers[:, 1], u_num[sim.n_node:, 0], u_num[sim.n_node:, 1],
+    #  color='C2', angles='xy', scale_units='xy', scale=5)
 
     plt.show()
     
@@ -423,13 +487,11 @@ def plot_solution_2D_matplotlib(u_num, sim: Simulation_2D):
 
 def plot_1D_slice(u_num, sim: Simulation_2D):
     
+    if sim.mesh_filename[:4] != "rect":
+        return
+    
     slice_node_tags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
     slice_node_tags = np.array(slice_node_tags).astype(int) - 1
-
-    # print(slice_node_tags + 1)
-    # gmsh.fltk.initialize()
-    # gmsh.fltk.run()
-    # exit(0)
     
     slice_xy = sim.coords[slice_node_tags]
     slice_y = slice_xy[:, 1]
@@ -439,20 +501,17 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
     arg_sorted_tags = np.argsort(slice_y)
     slice_u = slice_u[arg_sorted_tags]
 
-    if sim.degree == 1:
+    if sim.degree == 3:  # MINI
         slice_y = slice_y[arg_sorted_tags]
         n_intervals = len(slice_node_tags) - 1
+        deg_along_edge = 1
     else:
         slice_y = slice_y[arg_sorted_tags][::2]
         n_intervals = (len(slice_node_tags) - 1) // 2
-    
-    # print(slice_y)
-    # print(slice_u)
-    # print("n intervals = ", n_intervals)
-    # exit(0)
+        deg_along_edge = 2
 
     sim_1D = Simulation_1D(
-        H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], deg=sim.degree,
+        H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], deg=deg_along_edge,
         nElem=n_intervals, random_seed=-1, fix_interface=False, save=False
     )
     sim_1D.set_y(slice_y)
@@ -462,21 +521,30 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
 
 if __name__ == "__main__":
 
+    mode = 3  # 1: load previous, 2: solve problem iterative, 3: solve problem oneshot, 4: dummy solver debug
+
     gmsh.initialize()
-    sim = Simulation_2D(
-        K=1., tau_zero=0.3, f=(1., 0.), element="taylor-hood", meshFilename="rect_coarse.msh", save=False
-        # K=1., tau_zero=0.3, f=(1., 0.), element="mini", meshFilename="rect_coarse.msh", save=False
-    )
 
-    # Solve the problem ITERATE
-    # u_nodes = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
-    
-    # Solve problem ONE SHOT
-    u_nodes, s_num, t_num = solve_FE(sim, atol=1e-10, rtol=1e-8)
+    if mode == 1:
+        parameters, u_nodes = load_solution("cavity_coarse")
+    elif mode in [2, 3, 4]:
+        # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_coarse")
+        parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="hole_coarse")
+        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="taylor-hood", mesh_filename="rect_coarse")
+    else:
+        raise ValueError
 
-    # DUMB solution to debug
-    # u_nodes = np.zeros((sim.n_node, 2))
-    # u_nodes[:, 0] = 1. - sim.coords[:, 1]**2
+    sim = Simulation_2D(**parameters)
+
+    if mode == 2:  # Solve the problem ITERATE
+        u_nodes = solve_interface_tracking(sim, atol=1e-8, rtol=1e-6)
+    elif mode == 3:  # Solve problem ONE SHOT
+        u_nodes = solve_FE(sim, atol=1e-8, rtol=1e-6)
+        sim.save_solution(u_nodes)
+    elif mode == 4:  # DUMMY solution to debug
+        u_nodes = np.zeros((sim.n_node, 2))
+        u_nodes[:, 0] = 1. - sim.coords[:, 1]**2
+        u_nodes[:, 1] = 0*sim.coords[:, 0] * (1.+sim.coords[:, 1])
     
     plot_solution_2D(u_nodes, sim)
     plot_1D_slice(u_nodes, sim)
