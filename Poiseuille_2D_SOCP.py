@@ -1,3 +1,4 @@
+import sys
 import gmsh
 import matplotlib.pyplot as plt
 import numpy as np
@@ -33,7 +34,7 @@ class Simulation_2D:
         else:
             raise ValueError(f"Element '{element:s}' not implemented. Choose 'mini' or 'taylor-hood'")
 
-        self.n_iterations = 0
+        self.iteration = 0
 
         res = self.get_elements_info()
         self.elem_type, self.elem_tags, self.elem_node_tags, self.local_node_coords = res[0:4]
@@ -149,21 +150,13 @@ class Simulation_2D:
         bd_nodes_12, coords_12 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # zero v
         bd_nodes_13, coords_13 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=3)  # impose non-zero u
 
-        nodes_zero_u = bd_nodes_11.astype(int) - 1
+        nodes_zero_u = np.setdiff1d(bd_nodes_11.astype(int), bd_nodes_13.astype(int)) - 1
         nodes_zero_v = bd_nodes_12.astype(int) - 1
         nodes_with_u = bd_nodes_13.astype(int) - 1
-        nodes_dont_check = bd_nodes_05.astype(int) - 1
-        # nodes_dont_check = np.array([], dtype=int)
         
-        # print("Zero u")
-        # print(nodes_zero_u+1)
-        # print("\nZero v")
-        # print(nodes_zero_v+1)
-        # print("\nWith u")
-        # print(nodes_with_u+1)
-        # gmsh.fltk.initialize()
-        # gmsh.fltk.run()
-        # exit(0)
+        # nodes_dont_check = bd_nodes_05.astype(int) - 1
+        # nodes_dont_check = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
+        nodes_dont_check = np.array([], dtype=int)
 
         node_is_vertex_list = np.zeros(len(node_tags))
         for i in range(self.n_elem):
@@ -186,7 +179,8 @@ class Simulation_2D:
         return
     
 
-def load_solution(res_file_name):
+def load_solution(res_file_name, simu_number):
+    res_file_name += f"_{simu_number:d}" if simu_number >= 0 else ""
     with open(f"./res/{res_file_name:s}.txt", 'r') as file:
         K, tau_zero = float(next(file).strip('\n')), float(next(file).strip('\n')),
         f = [float(component) for component in next(file).strip('\n').split(' ')]
@@ -194,8 +188,6 @@ def load_solution(res_file_name):
         u_num = np.loadtxt(file)
     
     return dict(K=K, tau_zero=tau_zero, f=f, element=element, mesh_filename=mesh_filename), u_num
-
-
 
 
 def set_boundary_conditions(sim: Simulation_2D, B, b):
@@ -220,12 +212,15 @@ def set_boundary_conditions(sim: Simulation_2D, B, b):
     for idx_node in sim.nodes_with_u:
         u_idx, v_idx = 2*idx_node + 0, 2*idx_node + 1
         B[idx_bd_condition, u_idx] = 1.
-        b[idx_bd_condition] = 1.
-        # b[idx_bd_condition] = np.sin(np.pi * sim.coords[idx_node, 0] / 1.)**2
+        # b[idx_bd_condition] = 1.
+        b[idx_bd_condition] = np.sin(np.pi * sim.coords[idx_node, 0] / 1.)**2
+        # b[idx_bd_condition] = (1. - sim.coords[idx_node, 1] ** 2) / 2.
         idx_bd_condition += 1
     #     print(f"node {idx_node + 1:3d} : u = {b[idx_bd_condition-1]:.3f}")
     # print("")
     
+    # plt.spy(B)
+    # plt.show()
     # gmsh.fltk.initialize()
     # gmsh.fltk.run()
     # exit(0)
@@ -372,91 +367,126 @@ def solve_FE(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
     return u_num
 
 
-def solve_interface_tracking(sim: Simulation_2D, atol=1e-8, rtol=1e-6):
+def eval_velocity_gradient(u_local, dphi_local):
+    dudx = np.dot(u_local[:, 0], dphi_local[:, 0])
+    dudy = np.dot(u_local[:, 0], dphi_local[:, 1])
+    dvdx = np.dot(u_local[:, 1], dphi_local[:, 0])
+    dvdy = np.dot(u_local[:, 1], dphi_local[:, 1]) 
+    return dudx, dudy, dvdx, dvdy
+
+
+def compute_strain_per_elem(sim: Simulation_2D, u_num, strain_norm_avg):
+    strain_norm_avg[:] = 0.
+    for i in range(sim.n_elem):
+        idx_local_nodes = sim.elem_node_tags[i]
+        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
+        for g, wg in enumerate(sim.weights):
+            dphi = sim.dv_shape_functions_at_v[g]  # size (n_sf, 2)
+            dphi = np.dot(dphi, inv_jac) / det # size (n_sf, 2)
+            l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
+            strain_norm_avg[i] += wg * np.sqrt(0.5 * l11 ** 2 + 0.5 * l22 ** 2 + 0.25 * (l12 + l21) ** 2) * 2.
+            # multiplied 2 bc sum(wg) = 0.5
+    return
+
+
+def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
+    velocity_gradient[:] = 0.
+    _, n_local_node, _ = velocity_gradient.shape  # n_elem, n_local, 9
+    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, sim.local_node_coords, 'GradLagrange')
+    dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
+
+    for i in range(sim.n_elem):
+        idx_local_nodes = sim.elem_node_tags[i, :]
+        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
+        for j, idx_node in enumerate(idx_local_nodes):
+            dphi = dsf_at_nodes[j, :]  # dphi in reference element
+            dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
+            l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
+            velocity_gradient[i, j, np.array([0,1,3,4])] = np.array([l11, l12, l21, l22])
+    return
+
+
+def solve_interface_tracking(sim: Simulation_2D, atol=1e-8, rtol=1e-6, max_it=20, tol_unyielded=1.e-3):
+
+    # Solve first time with initial mesh
+    u_nodes, s_num, t_num = solve_FE(sim, atol=atol, rtol=rtol)
+
+    while sim.iteration < max_it: 
+        print("")
+        strains = compute_strains(sim, u_nodes)
+
     return
 
 
 def plot_solution_2D(u_num, sim: Simulation_2D):
-
-    def eval_strain_norm(u_local, dphi_local):
-        dudx = np.dot(u_local[:, 0], dphi_local[:, 0])
-        dudy = np.dot(u_local[:, 0], dphi_local[:, 1])
-        dvdx = np.dot(u_local[:, 1], dphi_local[:, 0])
-        dvdy = np.dot(u_local[:, 1], dphi_local[:, 1]) 
-        return dudx, dudy, dvdx, dvdy
 
     # strain_tensor = np.zeros((sim.n_elem,  3 * 3 + sim.elem_node_tags.shape[1] * 9))
     #     strain_tensor[i, :9] = np.r_[sim.coords[idx_local_nodes[:3], 0],
     #                                  sim.coords[idx_local_nodes[:3], 1],
     #                                  np.zeros(3)]
     #         strain_tensor[i, 9+9*j+np.array([0,1,3,4])] = local_strain_tensor.flatten() / np.sqrt(3)
-
-    n_local_node = sim.elem_node_tags.shape[1]
-    n_local_node -= 1 if sim.degree == 3 else 0
-    velocity = np.c_[u_num, np.zeros_like(u_num[:, 0])]
-    strain_tensor = np.zeros((sim.n_elem, n_local_node, 9))
-    vorticity = np.zeros((sim.n_elem, n_local_node, 1))
-    strain_norm_elem = np.zeros(sim.n_elem)
-
-    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, sim.local_node_coords, 'GradLagrange')
-    dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
     # if sim.degree == 3:
     #     local_node_coords = sim.local_node_coords if sim.degree == 2 else np.r_[sim.local_node_coords, 1./3., 1./3., 0.]
     #     xi_eta_eval = np.array(sim.local_node_coords).reshape(n_local_node, 3)[:, :-1].T
     #     bubble_dsf = np.c_[DPHI_DXI(*xi_eta_eval), DPHI_DETA(*xi_eta_eval)]  # eval bubble derivatives at node pts
     #     dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf.reshape((n_local_node, 1, 2)), axis=1)
-    
-    for i in range(sim.n_elem):
-        idx_local_nodes = sim.elem_node_tags[i, :n_local_node]
-        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-
-        for j, idx_node in enumerate(idx_local_nodes):
-            
-            dphi = dsf_at_nodes[j, :]  # dphi in reference element
-            dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
-            l11, l12, l21, l22 = eval_strain_norm(u_num[idx_local_nodes], dphi)
-            vorticity[i, j] = l21 - l12
-            local_strain_tensor = np.array([[l11, 0.5*(l12+l21)], [0.5*(l12+l21), l22]])
-            strain_tensor[i, j, np.array([0,1,3,4])] = local_strain_tensor.flatten() / np.sqrt(3)
-            # use sqrt(3) to rescale Von Mises
-
-        for g, wg in enumerate(sim.weights):
-
-            dphi = sim.dv_shape_functions_at_v[g][:n_local_node]  # size (n_sf, 2)
-            dphi = np.dot(dphi, inv_jac) / det # size (n_sf, 2)
-            l11, l12, l21, l22 = eval_strain_norm(u_num[idx_local_nodes], dphi)
-            strain_norm_elem[i] += wg * np.sqrt(2 * l11 ** 2 + 2 * l22 ** 2 + (l12 + l21) ** 2)
-
-    velocity = velocity.flatten()
-    strain_tensor = strain_tensor.flatten()
-    vorticity = vorticity.flatten()
-    strain_norm_elem = strain_norm_elem.flatten()
+    # gmsh.view.addListData(tag_strain, "TT", sim.n_elem, strain_tensor)
 
     gmsh.fltk.initialize()
+    modelName = gmsh.model.list()[0]
+    # tag_psi = gmsh.view.add("psi")
+    # show P1 basis
+    # for j, idx_node in enumerate(sim.primary_nodes):
+    #     data = np.zeros(sim.primary_nodes.size)
+    #     if idx_node not in np.r_[sim.nodes_zero_u, sim.nodes_zero_v, sim.nodes_with_u]:
+    #         data[j] = 1.
+    #     gmsh.view.addHomogeneousModelData(tag_psi, j, modelName, "NodeData", sim.primary_nodes + 1, data, time=j, numComponents=1)
+
+    if sim.degree == 3:
+        sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
+        sim.elem_node_tags = sim.elem_node_tags[:, :-1]
+    
+    n_local_node = sim.elem_node_tags.shape[1]
+    velocity = np.c_[u_num, np.zeros_like(u_num[:, 0])]
+    strain_tensor = np.zeros((sim.n_elem, n_local_node, 9))
+    strain_norm_avg = np.zeros(sim.n_elem)
+    
+    compute_strain_per_elem(sim, u_num, strain_norm_avg)
+    compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) for now
+
+    vorticity = (strain_tensor[:, :, 3] - strain_tensor[:, :, 1]).copy().flatten()
+    divergence = (strain_tensor[:, :, 0] - strain_tensor[:, :, 4]).copy().flatten()
+    velocity = velocity.flatten()
+    strain_norm_avg = strain_norm_avg.flatten()
+    strain_tensor[:, :, 1] = 0.5 * (strain_tensor[:, :, 1] + strain_tensor[:, :, 3])  # symmetrize grad(v)
+    strain_tensor[:, :, 3] = strain_tensor[:, :, 1]
+    strain_tensor = strain_tensor.flatten()
+
     tag_v = gmsh.view.add("Velocity")
     tag_strain = gmsh.view.add("Strain tensor")
     tag_vorticity = gmsh.view.add("Vorticity")
+    tag_divergence = gmsh.view.add("Divergence")
     tag_strain_norm_avg = gmsh.view.add("Strain norm averaged")
-    modelName = gmsh.model.list()[0]
 
     gmsh.view.addHomogeneousModelData(
         tag_v, 0, modelName, "NodeData", sim.node_tags + 1, velocity, numComponents=3)
-    # gmsh.view.addListData(tag_strain, "TT", sim.n_elem, strain_tensor)
     gmsh.view.addHomogeneousModelData(
         tag_strain, 0, modelName, "ElementNodeData", sim.elem_tags, strain_tensor, numComponents=9)
     gmsh.view.addHomogeneousModelData(
         tag_vorticity, 0, modelName, "ElementNodeData", sim.elem_tags, vorticity, numComponents=1)
     gmsh.view.addHomogeneousModelData(
-        tag_strain_norm_avg, 0, modelName, "ElementData", sim.elem_tags, strain_norm_elem, numComponents=1)
+        tag_divergence, 0, modelName, "ElementNodeData", sim.elem_tags, divergence, numComponents=1)
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_norm_avg, 0, modelName, "ElementData", sim.elem_tags, strain_norm_avg, numComponents=1)
 
-    for tag in [tag_v, tag_strain, tag_vorticity]:
+    for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:
         gmsh.view.option.setNumber(tag, "AdaptVisualizationGrid", 1)
         gmsh.view.option.setNumber(tag, "TargetError", -0.0001)
         gmsh.view.option.setNumber(tag, "MaxRecursionLevel", 2)
-    for tag in [tag_vorticity, tag_strain_norm_avg]:
+    for tag in [tag_vorticity, tag_divergence, tag_strain_norm_avg]:
         gmsh.view.option.setNumber(tag, "Visible", 0)
     gmsh.view.option.setNumber(tag_v, "VectorType", 6)
-    gmsh.view.option.setNumber(tag_v, "NormalRaise", -2.)
+    gmsh.view.option.setNumber(tag_v, "NormalRaise", -.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1])))
     gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
 
     gmsh.fltk.run()
@@ -521,16 +551,24 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
 
 if __name__ == "__main__":
 
-    mode = 3  # 1: load previous, 2: solve problem iterative, 3: solve problem oneshot, 4: dummy solver debug
+    if len(sys.argv) == 3 and sys.argv[1] == "-mode":
+        mode = int(sys.argv[2])
+    else:
+        mode = 4
+    
+    # 1: load previous, 
+    # 2: solve problem iterative, 
+    # 3: solve problem oneshot, 
+    # 4: dummy solver debug
 
     gmsh.initialize()
 
     if mode == 1:
-        parameters, u_nodes = load_solution("cavity_coarse")
+        parameters, u_nodes = load_solution("cavity_normal", -1)
     elif mode in [2, 3, 4]:
-        # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_coarse")
-        parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="hole_coarse")
-        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="taylor-hood", mesh_filename="rect_coarse")
+        # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_normal")
+        # parameters = dict(K=1., tau_zero=0.3, f=[0., 0.], element="taylor-hood", mesh_filename="hole_normal")
+        parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="rect_coarse")
     else:
         raise ValueError
 
@@ -543,7 +581,7 @@ if __name__ == "__main__":
         sim.save_solution(u_nodes)
     elif mode == 4:  # DUMMY solution to debug
         u_nodes = np.zeros((sim.n_node, 2))
-        u_nodes[:, 0] = 1. - sim.coords[:, 1]**2
+        u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
         u_nodes[:, 1] = 0*sim.coords[:, 0] * (1.+sim.coords[:, 1])
     
     plot_solution_2D(u_nodes, sim)
