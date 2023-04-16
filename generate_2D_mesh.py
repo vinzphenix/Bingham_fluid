@@ -2,13 +2,25 @@ import sys
 import numpy as np
 import gmsh
 
-def create_split_rectangle(filename, elemSizeRatio, y_zero=0., cut=True):
+
+def display_elem_edge_node():
+    _, elem_tags, _ = gmsh.model.mesh.getElements(dim=2)
+    node_tags, coords, _ = gmsh.model.mesh.getNodes()
+    gmsh.model.mesh.create_edges()
+    edge_tags, _ = gmsh.model.mesh.getAllEdges()
+    print("N elem = ", len(elem_tags[0]))
+    print("N node = ", len(node_tags))
+    print("N edge = ", len(edge_tags))
+    return
+
+
+def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_zero=0., cut=True):
     gmsh.initialize()
     factory = gmsh.model.geo
     meshFact = gmsh.model.mesh
 
-    width, height = 3., 2.
-    lc = elemSizeRatio * width
+    # width, height = 1., 2.
+    lc = elemSizeRatio * height
 
     fit = 0. < y_zero < height / 2.
     h = y_zero if fit else height / 2.
@@ -119,7 +131,7 @@ def create_split_rectangle(filename, elemSizeRatio, y_zero=0., cut=True):
     
     tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
     tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
-    tag_u_set = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")
+    tag_u_set = gmsh.model.addPhysicalGroup(1, [] + ln_inflow, tag=3, name="u_one")
     tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
     tag_other = gmsh.model.addPhysicalGroup(1, ln_others, tag=5, name="others")
     
@@ -134,8 +146,9 @@ def create_split_rectangle(filename, elemSizeRatio, y_zero=0., cut=True):
     #     meshFact.setTransfiniteSurface(si)
 
     meshFact.generate(2)
-
     gmsh.write(filename)
+    
+    display_elem_edge_node()
     gmsh.fltk.run()
     gmsh.finalize()
     return
@@ -161,7 +174,7 @@ def create_hole(filename, elemSizeRatio):
 
     tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
     tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
-    tag = gmsh.model.addPhysicalGroup(1, [2], tag=3, name="u_one")
+    tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [2]
     tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
 
     tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
@@ -177,12 +190,11 @@ def create_hole(filename, elemSizeRatio):
     gmsh.model.mesh.generate(2)
 
     # gmsh.model.mesh.setOrder(2)
-
-    gmsh.option.setNumber("Mesh.Nodes", 1)
+    # gmsh.option.setNumber("Mesh.Nodes", 1)
     gmsh.write(filename)
 
-    if '-nopopup' not in sys.argv:
-        gmsh.fltk.run()
+    display_elem_edge_node()
+    gmsh.fltk.run()
     gmsh.finalize()
 
 
@@ -275,8 +287,46 @@ def create_cavity(filename, elemSizeRatio, cut=True):
     #     meshFact.setTransfiniteSurface(si)
 
     meshFact.generate(2)
+    gmsh.write(filename)
+
+    display_elem_edge_node()
+    gmsh.fltk.run()
+    gmsh.finalize()
+    return
+
+
+def create_backward_facing_step(filename, elemSizeRatio):
+    gmsh.initialize()
+    gmsh.model.add("bfs")
+
+    width, height = 3., 1.  # width and height before step
+    step_size = height/2.
+    step_loc = width / 3.
+
+    rect = gmsh.model.occ.add_rectangle(0., -step_size, 0., width, height + step_size, 0)
+    rect_to_remove = gmsh.model.occ.add_rectangle(0., -step_size, 0., step_loc, step_size, 1000)
+    res_cut = gmsh.model.occ.cut([(2, rect)], [(2, rect_to_remove)])
+    
+    gmsh.model.occ.synchronize()
+
+    tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
+
+    tag = gmsh.model.addPhysicalGroup(1, [1, 2, 4, 6], tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5, 6], tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [3]
+    tag = gmsh.model.addPhysicalGroup(1, [5], tag=4, name="cut")
+
+    tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
+
+    gmsh.model.mesh.set_size_callback(lambda *args: elemSizeRatio * height)
+    gmsh.model.occ.synchronize()
+    gmsh.model.mesh.generate(2)
 
     gmsh.write(filename)
+
+    display_elem_edge_node()
     gmsh.fltk.run()
     gmsh.finalize()
     return
@@ -285,6 +335,8 @@ def create_cavity(filename, elemSizeRatio, cut=True):
 if __name__ == "__main__":
     path_to_dir = "./mesh/"
 
-    # create_split_rectangle(path_to_dir + "rect_coarse.msh", elemSizeRatio=1./10., y_zero=0., cut=False)
-    # create_hole(path_to_dir + "hole_normal.msh", elemSizeRatio=1./15.)
+    # create_split_rectangle(path_to_dir + "test.msh", width=2., height=2., elemSizeRatio=1., y_zero=0., cut=False)
+    # create_split_rectangle(path_to_dir + "rect_dirichlet.msh", width=2., height=2., elemSizeRatio=1./10., y_zero=0., cut=False)
+    # create_hole(path_to_dir + "hole_normal.msh", elemSizeRatio=1./12.)
     create_cavity(path_to_dir + "cavity_normal.msh", elemSizeRatio=1./12., cut=False)
+    # create_backward_facing_step(path_to_dir + "bckw_fs.msh", elemSizeRatio=1./5.)

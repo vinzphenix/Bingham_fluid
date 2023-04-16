@@ -246,7 +246,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
         idxs_switch, = np.where(np.logical_and(np.abs(strains) > tol_unyielded,
                                              np.logical_or(np.roll(np.abs(strains), +1) < tol_unyielded,
                                                            np.roll(np.abs(strains), -1) < tol_unyielded)))
-        
+
         # if sim.degree == 1:
         reconstruct_du(idxs_switch)
         if check_sol_C1(u_nodes, idxs_switch, tol=1e-5):
