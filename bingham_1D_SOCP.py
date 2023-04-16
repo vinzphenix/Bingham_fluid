@@ -5,12 +5,13 @@ from cvxopt import matrix, solvers
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
 class Simulation_1D:
-    def __init__(self, H, K, tau_zero, f, deg, nElem, random_seed, fix_interface, save):
+    def __init__(self, H, K, tau_zero, f, deg, nElem, random_seed, fix_interface, save, plot_density=25):
         self.H = H  # Half-channel width
         self.K = K  # Viscosity
         self.tau_zero = tau_zero  # yield stress
         self.f = f  # body force (pressure gradient)
         self.save = save  # Boolean
+        self.plot_density = plot_density
 
         # Reference velocity imposed by (1) pressure gradient, (2) channel width, (3) viscosity
         self.V = self.f * (self.H * self.H) / (2. * self.K)
@@ -198,24 +199,34 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
     def reconstruct_du(idx_elem_switch):
         n_pts = 2 * sim.nG
-        matrix, vector = np.ones((n_pts, 2)), np.empty(n_pts)
         dudy_reconstructed = {}  # element idx : (xi_interface, dudy_interface, dudy_root)
 
         for i in idx_elem_switch:
             neighbour = 1 if sim.ym[i] > 0. else -1
             xi_interface = -1. if sim.ym[i] > 0. else 1.
             y_interface = sim.y[i] if sim.ym[i] > 0. else sim.y[i+1]
+            matrix, vector = np.ones((n_pts, 2)), np.empty(n_pts)
 
             this_i = i
             idx_nodes_elem = [this_i, this_i+1] if sim.degree == 1 else [2*this_i, 2*this_i+1, 2*this_i+2]
             matrix[:sim.nG, 1] = sim.ym[this_i] + sim.xG * sim.dy[this_i] / 2.
             vector[:sim.nG] = eval_dudy(sim.xG, u_nodes[idx_nodes_elem], sim.dy[this_i])
+            
             this_i = i + neighbour
-            idx_nodes_elem = [this_i, this_i+1] if sim.degree == 1 else [2*this_i, 2*this_i+1, 2*this_i+2]
-            matrix[sim.nG:, 1] = sim.ym[this_i] + sim.xG * sim.dy[this_i] / 2.
-            vector[sim.nG:] = eval_dudy(sim.xG, u_nodes[idx_nodes_elem], sim.dy[this_i])
+            if 0 <= this_i < sim.nElem:  # if the switch element has a neighbour, i.e. not at boundary
+                idx_nodes_elem = [this_i, this_i+1] if sim.degree == 1 else [2*this_i, 2*this_i+1, 2*this_i+2]
+                print(matrix.shape)
+                matrix[sim.nG:, 1] = sim.ym[this_i] + sim.xG * sim.dy[this_i] / 2.
+                vector[sim.nG:] = eval_dudy(sim.xG, u_nodes[idx_nodes_elem], sim.dy[this_i])
+            else:  # the switch element is touching the boundary
+                # matrix[sim.nG, 1] = sim.ym[i - neighbour] + sim.xG * sim.dy[this_i - neighbour] / 2.
+                # vector[sim.nG] = 0.
+                matrix = matrix[:sim.nG + 0]
+                vector = vector[:sim.nG + 0]
+            
             coefs = np.linalg.solve(np.dot(matrix.T, matrix), np.dot(matrix.T, vector))
-            dudy_reconstructed[i] = (xi_interface, np.dot(coefs, np.array([1., y_interface])), -coefs[0] / coefs[1])
+            dudy_interface = np.dot(coefs, np.array([1., y_interface]))
+            dudy_reconstructed[i] = (xi_interface, dudy_interface, -coefs[0] / coefs[1])
 
         sim.set_reconstruction(dudy_reconstructed)
         return
@@ -249,6 +260,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
         # if sim.degree == 1:
         reconstruct_du(idxs_switch)
+
         if check_sol_C1(u_nodes, idxs_switch, tol=1e-5):
             break
 
@@ -274,7 +286,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
                 info = "root of du/dy (bot)"
                 print(f"iteration {sim.it:3d} : {info:>20s} = {y0_guess:6.3f}  y0 update = {this_y[i+1]:6.3f}")
 
-        plot_solution_1D(sim, u_nodes, pts_per_elem=150)
+        plot_solution_1D(sim, u_nodes)
         print("")
 
         sim.set_y(this_y)
@@ -285,8 +297,10 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     return u_nodes
 
 
-def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
+def plot_solution_1D(sim: Simulation_1D, u_nodes):
     H, K, tau_zero, f, V, y0, Bn, nElem, y = sim.H, sim.K, sim.tau_zero, sim.f, sim.V, sim.y0, sim.Bn, sim.nElem, sim.y
+    pts_per_elem = sim.plot_density + 1
+
     def get_analytical_sol(y_eval):
         e0, eta, u_ana = y0 / H, y_eval / H, np.zeros(len(y_eval))
         m_bot, m_mid, m_top = (-1. <= eta) & (eta <= -e0), (-e0-1e-6 <= eta) & (eta <= e0), (e0-1e-6 <= eta) & (eta <= 1.)        
@@ -302,24 +316,24 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
     u_vertex = np.dstack((u_ext_nodes[:-1], u_ext_nodes[1:])).flatten()
     y_vertex = np.dstack((y[:-1], y[1:])).flatten()
     y_middle = (y[:-1] + y[1:]) / 2.
-    y_dense = np.empty(pts_per_elem * nElem + 1)
-    y_dense[-1] = y[-1]
+    y_dense = np.empty(pts_per_elem * nElem)
     # y_nodes = np.empty(2 * nElem + 1)
     # y_nodes[::2], y_nodes[1::2] = y, (y[:-1] + y[1:]) / 2.
     
     xi_vertex = np.array([-1., 1.])
-    this_xi = np.linspace(-1., 1., pts_per_elem, endpoint=False)
+    this_xi = np.linspace(-1., 1., pts_per_elem, endpoint=True)
 
     # Compute numerical solutions
     u_num, du_num = np.zeros_like(y_dense), np.zeros_like(y_dense)
     du_vertex, du_middle = np.zeros(2 * sim.nElem), np.zeros(sim.nElem)
     dy = np.diff(y)
     for i in range(nElem):
-        y_dense[i * pts_per_elem: (i+1) * pts_per_elem] = np.linspace(y[i], y[i+1], pts_per_elem, endpoint=False)
+        indices_this_elem = range(i * pts_per_elem, (i+1) * pts_per_elem)
+        y_dense[indices_this_elem] = np.linspace(y[i], y[i+1], pts_per_elem, endpoint=True)
         idx_nodes_elem = [i, i+1] if sim.degree == 1 else [2*i, 2*i+1, 2*i+2]
         for idx, phi, dphi in zip(idx_nodes_elem, sim.PHI, sim.DPHI):
-            u_num[i * pts_per_elem: (i+1) * pts_per_elem] += u_nodes[idx] * phi(this_xi)
-            du_num[i * pts_per_elem: (i+1) * pts_per_elem] += 2. / dy[i] * u_nodes[idx] * dphi(this_xi)
+            u_num[indices_this_elem] += u_nodes[idx] * phi(this_xi)
+            du_num[indices_this_elem] += 2. / dy[i] * u_nodes[idx] * dphi(this_xi)
             du_vertex[[2*i, 2*i+1]] += 2. / dy[i] * u_nodes[idx] * dphi(xi_vertex)
             du_middle[i] += 2. / dy[i] * u_nodes[idx] * dphi(0.)
     du_num[-1] = du_vertex[-1]
@@ -366,8 +380,9 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
     ax.plot(du_ana, y_dense / H, label="Analytical", color="C0", alpha=alp, lw=lw)
     ax.plot(du_vertex, y_vertex / H, ls='', marker='o', color='C1')
     ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
-    pos = np.where(np.abs(np.diff(du_num)) >= 5 * np.mean(np.abs(np.diff(du_num))))[0] + 1
+    pos = pts_per_elem * np.arange(1, sim.nElem)
     ax.plot(np.insert(du_num, pos, np.nan), np.insert(y_dense, pos, np.nan) / H, marker='', ms=2, color='C1')
+    # ax.plot(du_num, y_dense / H, marker='', ms=2, color='C1')
 
     ax = axs[0, 2]
     ax.set_xlabel(r"$|\tau_{{xy}}| \:/\: \tau_0$", fontsize=ftSz2)
@@ -375,8 +390,9 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
     ax.plot(tau_xy_ana, y_dense / H, label="Analytical", color="C0", alpha=alp, lw=lw)
     ax.plot(tau_xy_vertex, y_vertex / H, ls='', marker='o', color='C1')
     ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
-    pos = np.where(np.abs(np.diff(du_num)) >= 5 * np.mean(np.abs(np.diff(du_num))))[0] + 1
-    ax.plot(np.insert(tau_xy_num, pos, np.nan), np.insert(y_dense, pos, np.nan) / H, marker='', ms=2, color='C1')
+    # pos = np.where(np.abs(np.diff(du_num)) >= 5 * np.mean(np.abs(np.diff(du_num))))[0] + 1
+    # ax.plot(np.insert(tau_xy_num, pos, np.nan), np.insert(y_dense, pos, np.nan) / H, marker='', ms=2, color='C1')
+    ax.plot(tau_xy_num, y_dense / H, marker='', ms=2, color='C1')
 
     ax = axs[1, 0]
     # ax.set_title(r"Velocity error", fontsize=ftSz1)
@@ -426,7 +442,8 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, pts_per_elem=50):
 
 if __name__ == "__main__":
 
-    sim = Simulation_1D(H=1., K=1., tau_zero=0.3, f=1., deg=2, nElem=10, random_seed=12, fix_interface=False, save=False)
+    sim = Simulation_1D(H=1., K=1., tau_zero=0.4, f=1., deg=2, nElem=10, random_seed=12,
+                        fix_interface=False, save=False, plot_density=25)
     
     # Solve the problem ITERATE
     u_nodes = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
@@ -434,4 +451,4 @@ if __name__ == "__main__":
     # Solve problem ONE SHOT
     # u_nodes, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
     
-    plot_solution_1D(sim, u_nodes, pts_per_elem=150)
+    plot_solution_1D(sim, u_nodes)

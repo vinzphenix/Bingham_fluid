@@ -205,13 +205,14 @@ def create_cavity(filename, elemSizeRatio, cut=True):
 
     width, height = 1., 1.
     lc = elemSizeRatio * width
+    refinement_factor_surface = 2.
 
     c = width / 2. if cut else width
 
-    p1 = factory.addPoint(0., 0., 0., lc)
+    p1 = factory.addPoint(0., 0., 0., lc / refinement_factor_surface)
     p2 = factory.addPoint(0., -height, 0., lc)
     p3 = factory.addPoint(width, -height, 0., lc)
-    p4 = factory.addPoint(width, 0., 0., lc)
+    p4 = factory.addPoint(width, 0., 0., lc / refinement_factor_surface)
     pts_u_zero = [p2, p3, p1, p4]  # p1, p4 corners --> can be zero / one
     pts_v_zero = [p1, p2, p3, p4]
     pts_u_one = [p1, p4]
@@ -221,7 +222,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
     
     if cut:
         p5 = factory.addPoint(c, -height, 0., lc)
-        p6 = factory.addPoint(c, 0., 0., lc)
+        p6 = factory.addPoint(c, 0., 0., lc / refinement_factor_surface)
         pts_u_zero += [p5]
         pts_v_zero += [p5, p6]
         pts_u_one += [p6]
@@ -338,5 +339,5 @@ if __name__ == "__main__":
     # create_split_rectangle(path_to_dir + "test.msh", width=2., height=2., elemSizeRatio=1., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_dirichlet.msh", width=2., height=2., elemSizeRatio=1./10., y_zero=0., cut=False)
     # create_hole(path_to_dir + "hole_normal.msh", elemSizeRatio=1./12.)
-    create_cavity(path_to_dir + "cavity_normal.msh", elemSizeRatio=1./12., cut=False)
+    create_cavity(path_to_dir + "cavity_fine.msh", elemSizeRatio=1./12., cut=False)
     # create_backward_facing_step(path_to_dir + "bckw_fs.msh", elemSizeRatio=1./5.)

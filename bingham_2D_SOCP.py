@@ -512,6 +512,7 @@ def plot_solution_2D(u_num, sim: Simulation_2D):
 
     gmsh.view.option.setNumber(tag_v, "VectorType", 6)
     gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
+    gmsh.view.option.setNumber(tag_v, "DrawPoints", 0)
     gmsh.view.option.setNumber(tag_v, "NormalRaise", -0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1])))
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", 0.5 / np.amax(strain_norm_avg))
     for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:
@@ -596,12 +597,12 @@ if __name__ == "__main__":
     gmsh.initialize()
 
     if mode == 1:
-        parameters, u_nodes = load_solution("cavity_normal", 2)
+        parameters, u_nodes = load_solution("cavity_fine", 3)
     elif mode in [2, 3, 4]:
         # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="taylor-hood", mesh_filename="rect_coarse")
         # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="rect_dirichlet")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="hole_normal")
-        parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_normal")
+        parameters = dict(K=1., tau_zero=2., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_fine")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="bckw_fs")
     else:
         raise ValueError
@@ -609,9 +610,9 @@ if __name__ == "__main__":
     sim = Simulation_2D(**parameters)
     print(sim.n_node)
 
-    if mode == 2:  # Solve the problem ITERATE
+    if mode == 2:  # Solve the problem: ITERATE
         u_nodes = solve_interface_tracking(sim, atol=1e-8, rtol=1e-6)
-    elif mode == 3:  # Solve problem ONE SHOT
+    elif mode == 3:  # Solve problem: ONE SHOT
         u_nodes = solve_FE(sim, atol=1e-8, rtol=1e-6)
         sim.save_solution(u_nodes)
     elif mode == 4:  # DUMMY solution to debug
@@ -624,3 +625,7 @@ if __name__ == "__main__":
     # plot_solution_2D_matplotlib(u_nodes, sim)
 
     gmsh.finalize()
+
+
+    # 09m07s cavity_fine, tau_zero=0.
+    # 28m21s cavity_fine, tau_zero=2.
