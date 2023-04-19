@@ -4,6 +4,7 @@ from cvxopt import matrix, solvers
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
+
 class Simulation_1D:
     def __init__(self, H, K, tau_zero, f, deg, nElem, random_seed, fix_interface, save, plot_density=25):
         self.H = H  # Half-channel width
@@ -39,7 +40,7 @@ class Simulation_1D:
             raise ValueError("Element order should be 1 or 2")
         self.nVar = self.nVert + 2 * self.nG * nElem
         # velocities --- bounds on viscosity term --- bounds on yield-stress term
-        
+
         self.generate_mesh1D(random_seed=random_seed, fix_interface=fix_interface)
 
     def generate_mesh1D(self, random_seed=-1, fix_interface=False):
@@ -50,11 +51,11 @@ class Simulation_1D:
             dy = rng.random(self.nElem)
             dy /= np.sum(dy)
             y = (2. * self.H * np.r_[0., np.cumsum(dy)] - self.H)
-        
+
         if fix_interface:
             idx_bot, idx_top = np.argmin(np.abs(y + self.y0)), np.argmin(np.abs(y - self.y0))
             y[idx_bot], y[idx_top] = -self.y0, self.y0
-        
+
         self.set_y(y)
         return
 
@@ -70,7 +71,7 @@ class Simulation_1D:
 xG_P1 = np.array([0.])  # integration points over [-1, 1]
 wG_P1 = np.array([2.])  # weights over [-1, 1]
 
-xG_P2 = np.array([-1./np.sqrt(3), 1./np.sqrt(3)])  # integration points over [-1, 1]
+xG_P2 = np.array([-1. / np.sqrt(3), 1. / np.sqrt(3)])  # integration points over [-1, 1]
 wG_P2 = np.array([1., 1.])  # weights over [-1, 1]
 # yg = ym[i] + xg * dy[i] / 2.
 
@@ -79,8 +80,8 @@ PHI_P1 = [
     lambda xi: (1. + xi) * 0.5,
 ]
 DPHI_P1 = [
-    lambda xi: 0.*xi - 0.5,
-    lambda xi: 0.*xi + 0.5,
+    lambda xi: 0. * xi - 0.5,
+    lambda xi: 0. * xi + 0.5,
 ]
 
 PHI_P2 = [
@@ -98,20 +99,20 @@ DPHI_P2 = [
 def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     # nVert = 2 * sim.nElem + 1
     # nG = 2  # quad shape fcts -> two gauss point needed
-    # nVar = nVert + 2 * nG * sim.nElem  # velocities --- bounds on viscosity term --- bounds on yield-stress term    
+    # nVar = nVert + 2 * nG * sim.nElem  # velocities --- bounds on viscosity term --- bounds on yield-stress term
 
     c = np.zeros(sim.nVar)
     I1 = sim.nVert
     I2 = I1 + sim.nG * sim.nElem
-    
+
     # COST
     for i in range(sim.nElem):
         for g, (wg, xg) in enumerate(zip(sim.wG, sim.xG)):
-            
-            idx_nodes_elem = [i, i+1] if sim.degree == 1 else [2*i, 2*i+1, 2*i+2]
+
+            idx_nodes_elem = [i, i + 1] if sim.degree == 1 else [2 * i, 2 * i + 1, 2 * i + 2]
             for idx, phi in zip(idx_nodes_elem, sim.PHI):
                 c[idx] -= wg * sim.f * sim.dy[i] / 2. * phi(xg)
-            
+
             # c[2*i + 0] -= wg * sim.f * dy[i] * PHI[0](xg)
             # c[2*i + 1] -= wg * sim.f * dy[i] * PHI[1](xg)
             # c[2*i + 2] -= wg * sim.f * dy[i] * PHI[2](xg)
@@ -120,7 +121,7 @@ def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
             c[I2 + sim.nG * i + g] += sim.tau_zero * wg * sim.dy[i] / 2.
 
     A = np.zeros((2, sim.nVar))
-    A[0, 0], A[1, sim.nVert-1] = 1., 1.
+    A[0, 0], A[1, sim.nVert - 1] = 1., 1.
     b = np.zeros(2)
     G = np.zeros((5 * sim.nElem * sim.nG, sim.nVar))
     h = np.zeros(5 * sim.nElem * sim.nG)
@@ -137,16 +138,16 @@ def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
             # s1 = (sig + 0.5)/sqrt2 ; s2 = (sig - 0.5)/sqrt2 ; s3 = (...)
             # G x + s = h  with  s >= 0 (conic inequality)
 
-            G[3*(sim.nG*i + g) + 0, I1 + sim.nG*i + g] = -1. / np.sqrt(2.)
-            h[3*(sim.nG*i + g) + 0] = 0.5 / np.sqrt(2.)
+            G[3 * (sim.nG * i + g) + 0, I1 + sim.nG * i + g] = -1. / np.sqrt(2.)
+            h[3 * (sim.nG * i + g) + 0] = 0.5 / np.sqrt(2.)
 
-            G[3*(sim.nG*i + g) + 1, I1 + sim.nG*i + g] = -1. / np.sqrt(2.)
-            h[3*(sim.nG*i + g) + 1] = -0.5 / np.sqrt(2.)
+            G[3 * (sim.nG * i + g) + 1, I1 + sim.nG * i + g] = -1. / np.sqrt(2.)
+            h[3 * (sim.nG * i + g) + 1] = -0.5 / np.sqrt(2.)
 
             dxi_dy = 2. / sim.dy[i]
-            idx_nodes_elem = [i, i+1] if sim.degree == 1 else [2*i, 2*i+1, 2*i+2]
+            idx_nodes_elem = [i, i + 1] if sim.degree == 1 else [2 * i, 2 * i + 1, 2 * i + 2]
             for idx, dphi in zip(idx_nodes_elem, sim.DPHI):
-                G[3*(sim.nG*i + g) + 2, idx] = -dphi(xg) * dxi_dy
+                G[3 * (sim.nG * i + g) + 2, idx] = -dphi(xg) * dxi_dy
             # G[3*(sim.nG*i + g) + 2, 2*i + 0] = -DPHI[0](xg) * dxi_dy
             # G[3*(sim.nG*i + g) + 2, 2*i + 1] = -DPHI[1](xg) * dxi_dy
             # G[3*(sim.nG*i + g) + 2, 2*i + 2] = -DPHI[2](xg) * dxi_dy
@@ -156,15 +157,15 @@ def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
             # s1 = t; s2 = |...|
             # G x + s = h  with  s >= 0 (conic inequality)
 
-            G[idx_st + 2*(sim.nG*i + g) + 0, I2 + sim.nG*i + g] = -1.
+            G[idx_st + 2 * (sim.nG * i + g) + 0, I2 + sim.nG * i + g] = -1.
             for idx, dphi in zip(idx_nodes_elem, sim.DPHI):
-                G[idx_st + 2*(sim.nG*i + g) + 1, idx] = -dphi(xg) * dxi_dy
+                G[idx_st + 2 * (sim.nG * i + g) + 1, idx] = -dphi(xg) * dxi_dy
             # G[idx_st + 2*(sim.nG*i + g) + 1, 2*i + 0] = -DPHI[0](xg) * dxi_dy
             # G[idx_st + 2*(sim.nG*i + g) + 1, 2*i + 1] = -DPHI[1](xg) * dxi_dy
             # G[idx_st + 2*(sim.nG*i + g) + 1, 2*i + 2] = -DPHI[2](xg) * dxi_dy
 
     c, G, h, A, b = matrix(c), matrix(G), matrix(h), matrix(A), matrix(b)
-    dims = {'l':0, 'q': [3 for i in range(sim.nElem*sim.nG)]+[2 for i in range(sim.nElem*sim.nG)], 's': []}
+    dims = {'l': 0, 'q': [3 for i in range(sim.nElem * sim.nG)] + [2 for i in range(sim.nElem * sim.nG)], 's': []}
 
     solvers.options['abstol'] = atol
     solvers.options['reltol'] = rtol
@@ -192,7 +193,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
         func = (lambda a: np.abs(a)) if use_abs else (lambda a: a)
         strains = np.zeros(sim.nElem)
         for i in range(sim.nElem):
-            idx_nodes_elem = [i, i+1] if sim.degree == 1 else [2*i, 2*i+1, 2*i+2]
+            idx_nodes_elem = [i, i + 1] if sim.degree == 1 else [2 * i, 2 * i + 1, 2 * i + 2]
             du_gauss_pt = eval_dudy(sim.xG, u[idx_nodes_elem], sim.dy[i])
             strains[i] = np.dot(sim.wG / 2., func(du_gauss_pt))
         return strains
@@ -204,17 +205,18 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
         for i in idx_elem_switch:
             neighbour = 1 if sim.ym[i] > 0. else -1
             xi_interface = -1. if sim.ym[i] > 0. else 1.
-            y_interface = sim.y[i] if sim.ym[i] > 0. else sim.y[i+1]
+            y_interface = sim.y[i] if sim.ym[i] > 0. else sim.y[i + 1]
             matrix, vector = np.ones((n_pts, 2)), np.empty(n_pts)
 
             this_i = i
-            idx_nodes_elem = [this_i, this_i+1] if sim.degree == 1 else [2*this_i, 2*this_i+1, 2*this_i+2]
+            idx_nodes_elem = [this_i, this_i + 1] if sim.degree == 1 else [2 * this_i, 2 * this_i + 1, 2 * this_i + 2]
             matrix[:sim.nG, 1] = sim.ym[this_i] + sim.xG * sim.dy[this_i] / 2.
             vector[:sim.nG] = eval_dudy(sim.xG, u_nodes[idx_nodes_elem], sim.dy[this_i])
-            
+
             this_i = i + neighbour
             if 0 <= this_i < sim.nElem:  # if the switch element has a neighbour, i.e. not at boundary
-                idx_nodes_elem = [this_i, this_i+1] if sim.degree == 1 else [2*this_i, 2*this_i+1, 2*this_i+2]
+                idx_nodes_elem = [this_i, this_i + 1] if sim.degree == 1 else [2 *
+                                                                               this_i, 2 * this_i + 1, 2 * this_i + 2]
                 print(matrix.shape)
                 matrix[sim.nG:, 1] = sim.ym[this_i] + sim.xG * sim.dy[this_i] / 2.
                 vector[sim.nG:] = eval_dudy(sim.xG, u_nodes[idx_nodes_elem], sim.dy[this_i])
@@ -223,14 +225,14 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
                 # vector[sim.nG] = 0.
                 matrix = matrix[:sim.nG + 0]
                 vector = vector[:sim.nG + 0]
-            
+
             coefs = np.linalg.solve(np.dot(matrix.T, matrix), np.dot(matrix.T, vector))
             dudy_interface = np.dot(coefs, np.array([1., y_interface]))
             dudy_reconstructed[i] = (xi_interface, dudy_interface, -coefs[0] / coefs[1])
 
         sim.set_reconstruction(dudy_reconstructed)
         return
-    
+
     def check_sol_C1(u, idx_elem_switch, tol):  # verify if |D| is continuous at interface (|D| = 0)
         for i in idx_elem_switch[::-1]:
             xi_interface, dudy_interface, dudy_root = sim.dudy_reconstructed[i]
@@ -242,7 +244,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
                 return False
         return True
 
-    # Set some parameters    
+    # Set some parameters
     sim.it, max_it = 0, 20
     tol_unyielded = 1.e-3
     update_coef = 1.  # 1. for full update, 0.5 for half-update, 0. for no update
@@ -251,12 +253,12 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     u_nodes, s_num, t_num = solve_FE(sim, atol=atol, rtol=rtol)
 
     while sim.it < max_it:  # and if sol is C1, break
-        
+
         print("")
         strains = compute_strains(u_nodes)
         idxs_switch, = np.where(np.logical_and(np.abs(strains) > tol_unyielded,
-                                             np.logical_or(np.roll(np.abs(strains), +1) < tol_unyielded,
-                                                           np.roll(np.abs(strains), -1) < tol_unyielded)))
+                                               np.logical_or(np.roll(np.abs(strains), +1) < tol_unyielded,
+                                                             np.roll(np.abs(strains), -1) < tol_unyielded)))
 
         # if sim.degree == 1:
         reconstruct_du(idxs_switch)
@@ -266,7 +268,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
         this_y = np.copy(sim.y)
         for loopnb, i in enumerate(idxs_switch):
-            
+
             # Find dudy root
             y0_guess = sim.dudy_reconstructed[i][2]
             # else:  # use classic interpolation
@@ -282,7 +284,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
                 info = "root of du/dy (top)"
                 print(f"iteration {sim.it:3d} : {info:>20s} = {y0_guess:6.3f}  y0 update = {this_y[i]:6.3f}")
             else:  # lower part
-                this_y[i+1] += (y0_guess - this_y[i+1]) * update_coef
+                this_y[i + 1] += (y0_guess - this_y[i + 1]) * update_coef
                 info = "root of du/dy (bot)"
                 print(f"iteration {sim.it:3d} : {info:>20s} = {y0_guess:6.3f}  y0 update = {this_y[i+1]:6.3f}")
 
@@ -303,9 +305,10 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
 
     def get_analytical_sol(y_eval):
         e0, eta, u_ana = y0 / H, y_eval / H, np.zeros(len(y_eval))
-        m_bot, m_mid, m_top = (-1. <= eta) & (eta <= -e0), (-e0-1e-6 <= eta) & (eta <= e0), (e0-1e-6 <= eta) & (eta <= 1.)        
-        u_ana[m_top] = -Bn * (1. - eta[m_top])  + (1. - np.square(eta[m_top]))
-        u_ana[m_bot] = -Bn * (1. + eta[m_bot])  + (1. - np.square(eta[m_bot]))
+        m_bot, m_mid, m_top = (-1. <= eta) & (eta <= -e0), (-e0 - 1e-6 <=
+                                                            eta) & (eta <= e0), (e0 - 1e-6 <= eta) & (eta <= 1.)
+        u_ana[m_top] = -Bn * (1. - eta[m_top]) + (1. - np.square(eta[m_top]))
+        u_ana[m_bot] = -Bn * (1. + eta[m_bot]) + (1. - np.square(eta[m_bot]))
         u_ana[m_mid] = (1. - Bn / 2.) ** 2
         return V * u_ana
 
@@ -319,7 +322,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
     y_dense = np.empty(pts_per_elem * nElem)
     # y_nodes = np.empty(2 * nElem + 1)
     # y_nodes[::2], y_nodes[1::2] = y, (y[:-1] + y[1:]) / 2.
-    
+
     xi_vertex = np.array([-1., 1.])
     this_xi = np.linspace(-1., 1., pts_per_elem, endpoint=True)
 
@@ -328,13 +331,13 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
     du_vertex, du_middle = np.zeros(2 * sim.nElem), np.zeros(sim.nElem)
     dy = np.diff(y)
     for i in range(nElem):
-        indices_this_elem = range(i * pts_per_elem, (i+1) * pts_per_elem)
-        y_dense[indices_this_elem] = np.linspace(y[i], y[i+1], pts_per_elem, endpoint=True)
-        idx_nodes_elem = [i, i+1] if sim.degree == 1 else [2*i, 2*i+1, 2*i+2]
+        indices_this_elem = range(i * pts_per_elem, (i + 1) * pts_per_elem)
+        y_dense[indices_this_elem] = np.linspace(y[i], y[i + 1], pts_per_elem, endpoint=True)
+        idx_nodes_elem = [i, i + 1] if sim.degree == 1 else [2 * i, 2 * i + 1, 2 * i + 2]
         for idx, phi, dphi in zip(idx_nodes_elem, sim.PHI, sim.DPHI):
             u_num[indices_this_elem] += u_nodes[idx] * phi(this_xi)
             du_num[indices_this_elem] += 2. / dy[i] * u_nodes[idx] * dphi(this_xi)
-            du_vertex[[2*i, 2*i+1]] += 2. / dy[i] * u_nodes[idx] * dphi(xi_vertex)
+            du_vertex[[2 * i, 2 * i + 1]] += 2. / dy[i] * u_nodes[idx] * dphi(xi_vertex)
             du_middle[i] += 2. / dy[i] * u_nodes[idx] * dphi(0.)
     du_num[-1] = du_vertex[-1]
     tau_xy_num = 1 + K * np.abs(du_num) / tau_zero
@@ -352,7 +355,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
     du_ana_middle = (tau_zero - y_middle * f) / K
     du_ana_middle[y_middle < y0] = 0.
     du_ana_middle[y_middle < -y0] = (-tau_zero - y_middle[y_middle < -y0] * f) / K
-    tau_xy_ana = np.abs(f/tau_zero * y_dense)
+    tau_xy_ana = np.abs(f / tau_zero * y_dense)
     tau_xy_ana_middle = np.abs(f / tau_zero * y_middle)
 
     # FIGURE
@@ -444,11 +447,11 @@ if __name__ == "__main__":
 
     sim = Simulation_1D(H=1., K=1., tau_zero=0.4, f=1., deg=2, nElem=10, random_seed=12,
                         fix_interface=False, save=False, plot_density=25)
-    
+
     # Solve the problem ITERATE
     u_nodes = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
-    
+
     # Solve problem ONE SHOT
     # u_nodes, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
-    
+
     plot_solution_1D(sim, u_nodes)

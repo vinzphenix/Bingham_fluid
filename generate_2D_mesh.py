@@ -48,7 +48,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
 
     # curve loops
     cl1 = factory.addCurveLoop([l1, l2, l3, l4])
-    
+
     # surfaces
     s1 = factory.addPlaneSurface([cl1])
     srfs = [s1]
@@ -61,7 +61,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
         pts_no_slip = [p5, p6, p7, p8]
         pts_inflow += [p5, p8]
         pts_outflow += [p6, p7]
-        
+
         ldl = factory.addLine(p1, p5)
         ldd = factory.addLine(p5, p6)
         ldr = factory.addLine(p6, p2, tag=202)
@@ -72,10 +72,10 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
         ln_inflow += [ldl, lul]
         ln_outflow += [ldr, lur]
         ln_no_slip = [ldd, luu]
-        
+
         cl2 = factory.addCurveLoop([ldl, ldd, ldr, -l1])
         cl3 = factory.addCurveLoop([lur, luu, lul, -l3])
-        
+
         s2 = factory.addPlaneSurface([cl2])
         s3 = factory.addPlaneSurface([cl3])
         srfs += [s2, s3]
@@ -117,7 +117,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
             cl6 = factory.addCurveLoop([-lup, lur_, luu_, -lur])
             s5 = factory.addPlaneSurface([cl5])
             s6 = factory.addPlaneSurface([cl6])
-            srfs += [s5, s6]            
+            srfs += [s5, s6]
 
     factory.synchronize()
 
@@ -128,17 +128,17 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     tag_pts_v_zero = gmsh.model.addPhysicalGroup(0, pts_inflow + pts_outflow + pts_no_slip, tag=2, name="v_zero")
     tag_pts_u_set = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
     tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_cut, tag=4, name="cut")
-    
+
     tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
     tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
     tag_u_set = gmsh.model.addPhysicalGroup(1, [] + ln_inflow, tag=3, name="u_one")
     tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
     tag_other = gmsh.model.addPhysicalGroup(1, ln_others, tag=5, name="others")
-    
+
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
     # Meshing
-    
+
     # n_nodes = int(np.ceil(height / lc))
     # for li in lines:
     #     meshFact.setTransfiniteCurve(li, numNodes=n_nodes)
@@ -147,7 +147,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
 
     meshFact.generate(2)
     gmsh.write(filename)
-    
+
     display_elem_edge_node()
     gmsh.fltk.run()
     gmsh.finalize()
@@ -160,12 +160,12 @@ def create_hole(filename, elemSizeRatio):
 
     width, height = 3., 2.
     radius = height / 8.
-    rect = gmsh.model.occ.add_rectangle(0., -height/2., 0., width, height, 0)
-    disk1 = gmsh.model.occ.add_disk(width/2., 0., 0., radius, radius, 1000)
+    rect = gmsh.model.occ.add_rectangle(0., -height / 2., 0., width, height, 0)
+    disk1 = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
     res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1)])
     # disk2 = gmsh.model.occ.add_disk(width, 0., 0., radius, radius, 1001)
     # res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1), (2, disk2)], tag=1)
-    
+
     gmsh.model.occ.synchronize()
 
     tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
@@ -219,7 +219,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
     pts_cut = []
     lines_u_zero, lines_v_zero, lines_u_one, lines_cut = [], [], [], []
     lines, lengths = [], []
-    
+
     if cut:
         p5 = factory.addPoint(c, -height, 0., lc)
         p6 = factory.addPoint(c, 0., 0., lc / refinement_factor_surface)
@@ -240,7 +240,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
         lines_u_one += [l5, l6]
         lines_cut += [l7]
         lines += [l1, l2, l3, l4, l5, l6, l7]
-        lengths += [height, width/2., width/2., height, width/2., width/2., height]
+        lengths += [height, width / 2., width / 2., height, width / 2., width / 2., height]
 
         cl1 = factory.addCurveLoop([l1, l2, l7, l6])
         cl2 = factory.addCurveLoop([l3, l4, l5, -l7])
@@ -262,7 +262,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
         cl1 = factory.addCurveLoop([l1, l2, l3, l4])
         s1 = factory.addPlaneSurface([cl1])
         srfs = [s1]
-    
+
     factory.synchronize()
 
     # Physical groups for boundary conditions
@@ -272,12 +272,12 @@ def create_cavity(filename, elemSizeRatio, cut=True):
     tag_pts_u_set = gmsh.model.addPhysicalGroup(0, pts_u_one, tag=3, name="u_one")
     tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_cut, tag=4, name="cut")
     tag_pts_singular = gmsh.model.addPhysicalGroup(0, [p1, p4], tag=5, name="singular")
-    
+
     tag_u_zero = gmsh.model.addPhysicalGroup(1, lines_u_zero, tag=1, name="u_zero")
     tag_v_zero = gmsh.model.addPhysicalGroup(1, lines_v_zero, tag=2, name="v_zero")
     tag_u_set = gmsh.model.addPhysicalGroup(1, lines_u_one, tag=3, name="u_one")
     tag_cut = gmsh.model.addPhysicalGroup(1, lines_cut, tag=4, name="cut")
-    
+
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
     # Meshing
@@ -301,13 +301,13 @@ def create_backward_facing_step(filename, elemSizeRatio):
     gmsh.model.add("bfs")
 
     width, height = 3., 1.  # width and height before step
-    step_size = height/2.
+    step_size = height / 2.
     step_loc = width / 3.
 
     rect = gmsh.model.occ.add_rectangle(0., -step_size, 0., width, height + step_size, 0)
     rect_to_remove = gmsh.model.occ.add_rectangle(0., -step_size, 0., step_loc, step_size, 1000)
     res_cut = gmsh.model.occ.cut([(2, rect)], [(2, rect_to_remove)])
-    
+
     gmsh.model.occ.synchronize()
 
     tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
@@ -336,8 +336,8 @@ def create_backward_facing_step(filename, elemSizeRatio):
 if __name__ == "__main__":
     path_to_dir = "./mesh/"
 
-    # create_split_rectangle(path_to_dir + "test.msh", width=2., height=2., elemSizeRatio=1., y_zero=0., cut=False)
+    create_split_rectangle(path_to_dir + "test.msh", width=2., height=2., elemSizeRatio=1., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_dirichlet.msh", width=2., height=2., elemSizeRatio=1./10., y_zero=0., cut=False)
     # create_hole(path_to_dir + "hole_normal.msh", elemSizeRatio=1./12.)
-    create_cavity(path_to_dir + "cavity_fine.msh", elemSizeRatio=1./12., cut=False)
+    # create_cavity(path_to_dir + "cavity_fine.msh", elemSizeRatio=1./12., cut=False)
     # create_backward_facing_step(path_to_dir + "bckw_fs.msh", elemSizeRatio=1./5.)

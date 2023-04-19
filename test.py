@@ -533,9 +533,71 @@ def main5():
     gmsh.finalize()
 
 
+import mosek
+import cvxopt
+from cvxopt import matrix, solvers, spmatrix
+from time import perf_counter
+def main6():
+
+
+    c = matrix([-2., 1., 5.])
+    G = [ matrix( [[12., 13., 12.], [6., -3., -12.], [-5., -5., 6.]] ) ]
+    G += [ matrix( [[3., 3., -1., 1.], [-6., -6., -9., 19.], [10., -2., -2., -3.]] ) ]
+    # h = [ matrix( [-12., -3., -2.] ),  matrix( [27., 0., 3., -42.] ) ]
+    
+    print(G[0])
+
+    G, h = [], []
+
+    data = [12., 6., -5., 13., -3., -5., 12., -12., 6.]
+    rows = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
+    cols = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
+    G += [ spmatrix(data, rows, cols, size=(3, 3))]
+    h += [ matrix( np.array([-12., -3., -2.]) ) ]
+
+    # data = np.array([3., -6., 10., 3., -6., -2., -1., -9., -2., 1., 19., -3.])
+    data = np.array([3., -6., -1., -9., 1., 19., 3., -6.])
+    rows = np.array([1, 1, 2, 2, 3, 3, 0, 0])
+    cols = np.array([0, 1, 0, 1, 0, 1, 0, 1])
+    G += [ spmatrix(data, rows, cols, size=(4, 3))]
+    h += [ matrix( np.array([27., 0., 3., -42.]) ) ]
+
+
+    # Gl = matrix( np.array([[-1., 0., 0.], [+1., 0., 0.]]) )
+    hl = matrix( np.array([+4., -4.]) )
+
+    data = np.array([-1., 1.])
+    rows = np.array([0, 1])
+    cols = np.array([0, 0])
+    Gl = spmatrix(data, rows, cols, size=(2, 3))
+
+    print(Gl)
+    print(hl)
+
+    A = matrix(np.array([[1., 0., 0.]]))
+    b = matrix(np.array([-4.]))
+    # x = -4  --> x >= -4  &  x <= -4
+    # -1*x + s = +4
+    # +1*x + s = -4
+
+
+    cvxopt.solvers.options['show_progress'] = False
+    solvers.options['mosek'] = {mosek.iparam.log: 0}
+
+    start = perf_counter()
+    sol = solvers.socp(c, Gl=Gl, hl=hl, Gq=G, hq=h, solver="mosek", )
+    # sol = solvers.socp(c, Gq=G, hq=h, A=A, b=b, solver="conelp", )
+    end = perf_counter()
+
+    sol['status']
+    print(sol['x'])
+    print(f"Elapsed time = {(end-start)*1e3:.3f} ms")
+
+
 if __name__ == "__main__":
     # main1()
     # main2()
     # main3()
-    main4()
+    # main4()
     # main5()
+    main6()
