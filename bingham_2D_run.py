@@ -247,14 +247,14 @@ if __name__ == "__main__":
         # parameters, u_nodes = load_solution("hole_normal", -1)
         # parameters, u_nodes = load_solution("hole_normal", 1)
         # parameters, u_nodes = load_solution("cavity_fine", 1)
-        parameters, u_nodes = load_solution("cavity_fine", -1)
-        # parameters, u_nodes = load_solution("bckw_fs", -1)
+        # parameters, u_nodes = load_solution("cavity_fine", -1)
+        parameters, u_nodes = load_solution("bckw_fs", -1)
     elif mode in [2, 3, 4]:
         # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="taylor-hood", mesh_filename="rect_coarse")
         # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="rect_dirichlet")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="hole_normal")
-        parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_fine")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="bckw_fs")
+        # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="cavity_fine")
+        parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", mesh_filename="bckw_fs")
         # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", mesh_filename="test")
     else:
         raise ValueError
