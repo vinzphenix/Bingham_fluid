@@ -97,6 +97,8 @@ def main1():
     #                 numElements=[num_els_z], recombine=True)
 
     factory.synchronize()
+    gmsh.fltk.run()
+    exit(0)
 
     # Meshing
     meshFact = gmsh.model.mesh
@@ -125,6 +127,7 @@ def main1():
 
     gmsh.fltk.run()
 
+    gmsh.write("test_mesh.msh")
     gmsh.finalize()
 
 
@@ -539,29 +542,43 @@ from cvxopt import matrix, solvers, spmatrix
 from time import perf_counter
 def main6():
 
+    def my_func(data_, rows_, cols_):
+        print("\nOH")
+        print(data_)
+        print("OH\n")
+        return spmatrix(data_, rows_, cols_, size=(4, 3))
+
 
     c = matrix([-2., 1., 5.])
     G = [ matrix( [[12., 13., 12.], [6., -3., -12.], [-5., -5., 6.]] ) ]
     G += [ matrix( [[3., 3., -1., 1.], [-6., -6., -9., 19.], [10., -2., -2., -3.]] ) ]
     # h = [ matrix( [-12., -3., -2.] ),  matrix( [27., 0., 3., -42.] ) ]
     
-    print(G[0])
-
     G, h = [], []
 
-    data = [12., 6., -5., 13., -3., -5., 12., -12., 6.]
-    rows = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2])
-    cols = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2])
-    G += [ spmatrix(data, rows, cols, size=(3, 3))]
-    h += [ matrix( np.array([-12., -3., -2.]) ) ]
+    data_1 = np.array([12., 6., -5., 13., -3., -5., 12., -12., 6., 0., 0., 0.])
+    rows_1 = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+    cols_1 = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+    G += [ spmatrix(data_1, rows_1, cols_1, size=(4, 3))]
+    h += [ matrix( np.array([-12., -3., -2., 0.]) ) ]
 
-    # data = np.array([3., -6., 10., 3., -6., -2., -1., -9., -2., 1., 19., -3.])
-    data = np.array([3., -6., -1., -9., 1., 19., 3., -6.])
-    rows = np.array([1, 1, 2, 2, 3, 3, 0, 0])
-    cols = np.array([0, 1, 0, 1, 0, 1, 0, 1])
-    G += [ spmatrix(data, rows, cols, size=(4, 3))]
+    data_2 = np.array([3., -6., 10., 3., -6., -2., -1., -9., -2., 1., 19., -3.])
+    rows_2 = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+    cols_2 = np.array([0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2])
+    G += [ spmatrix(data_2, rows_2, cols_2, size=(4, 3))]
     h += [ matrix( np.array([27., 0., 3., -42.]) ) ]
 
+    data_all = np.c_[data_1, data_2]
+    rows_all = np.c_[rows_1, 4+rows_2]
+    cols_all = np.c_[cols_1, cols_2]
+
+    new_G = spmatrix(data_all, rows_all, cols_all, size=(8, 3))
+    sub1_G = new_G[:4, :]
+    sub2_G = new_G[4:, :]
+    G = np.empty(2, dtype=spmatrix)
+    G[0] = sub1_G
+    G[1] = sub2_G
+    G = G.tolist()
 
     # Gl = matrix( np.array([[-1., 0., 0.], [+1., 0., 0.]]) )
     hl = matrix( np.array([+4., -4.]) )
@@ -571,8 +588,8 @@ def main6():
     cols = np.array([0, 0])
     Gl = spmatrix(data, rows, cols, size=(2, 3))
 
-    print(Gl)
-    print(hl)
+    # print(Gl)
+    # print(hl)
 
     A = matrix(np.array([[1., 0., 0.]]))
     b = matrix(np.array([-4.]))
@@ -594,10 +611,13 @@ def main6():
     print(f"Elapsed time = {(end-start)*1e3:.3f} ms")
 
 
+
 if __name__ == "__main__":
+
     # main1()
     # main2()
     # main3()
     # main4()
     # main5()
     main6()
+    

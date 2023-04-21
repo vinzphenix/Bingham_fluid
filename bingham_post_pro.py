@@ -1,0 +1,180 @@
+from bingham_structure import *
+from bingham_tracking import compute_strain_per_elem, compute_gradient_at_nodes
+
+
+def plot_1D_slice(u_num, sim: Simulation_2D):
+
+    if sim.model_name[:4] != "rect":
+        return
+
+    slice_node_tags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
+    slice_node_tags = np.array(slice_node_tags).astype(int) - 1
+
+    slice_xy = sim.coords[slice_node_tags]
+    slice_y = slice_xy[:, 1]
+    slice_u = u_num[slice_node_tags, 0]  # only u component of (u, v)
+    H = np.amax(slice_y)
+
+    arg_sorted_tags = np.argsort(slice_y)
+    slice_u = slice_u[arg_sorted_tags]
+
+    if sim.degree == 3:  # MINI
+        slice_y = slice_y[arg_sorted_tags]
+        n_intervals = len(slice_node_tags) - 1
+        deg_along_edge = 1
+    else:
+        slice_y = slice_y[arg_sorted_tags][::2]
+        n_intervals = (len(slice_node_tags) - 1) // 2
+        deg_along_edge = 2
+
+    sim_1D = Simulation_1D(
+        H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], deg=deg_along_edge,
+        nElem=n_intervals, random_seed=-1, fix_interface=False, save=False
+    )
+    sim_1D.set_y(slice_y)
+    plot_solution_1D(sim=sim_1D, u_nodes=slice_u)
+    return
+
+
+def plot_streamlines(sim: Simulation_2D):
+    n_time_steps = 1000
+    dic = {'View': 0, 'X0': 1., 'Y0': -0.5, 'X1': 1.2, 'Y1': -0.3, 'DT': 1., 'NumPointsU': 30, 'MaxIter': 1000}
+    
+    option_names = ['View', 'X0', 'Y0', 'X1', 'Y1', 'DT', 'NumPointsU', 'MaxIter']
+    
+    model_name = sim.model_name.split("_")[0]
+    if model_name == "bfs":
+        option_values_list = [
+            [0, 0., 0., 0., 1., 0.2, 20, 500],
+            [0, 1., -0.5, 1.1, -0.4, 2., 5, 500],
+            [0, 1.005, -0.05, 1.06, -0.05, 0.5, 5, 500]
+        ]
+    elif model_name == "cavity":
+        option_values_list = [
+            [0, 0.5, -0.25, 0.5, -0.9, 0.1, 20, 400],
+            # [0, 1., -1., 0.97, -0.97, .5, 5, 5000],
+        ]
+    elif model_name == "cylinder":
+        option_values_list = [
+            [0, 0., -0.95, 0., 0.95, 0.1, 30, 400],
+        ]   
+    else:
+        return
+    
+    for option_values in option_values_list:
+        for option_name, option_value in zip(option_names, option_values):
+            gmsh.plugin.set_number('StreamLines', option=option_name, value=option_value)
+        tag_streamlines = gmsh.plugin.run('StreamLines')
+        gmsh.view.option.set_number(tag_streamlines, "TimeStep", -1)
+        gmsh.view.option.set_number(tag_streamlines, "ShowScale", 0)
+
+    return
+
+
+def add_unstrained_zone(sim: Simulation_2D, strain_norm_avg, modelName, tol=1e-3):
+    mask = strain_norm_avg <= tol
+    percentile_95 = -np.partition(-strain_norm_avg, sim.n_elem//20)[sim.n_elem//20]
+
+    if np.any(mask):
+        tag_unstrained = gmsh.view.add("Unstrained_zone", tag=6)
+        gmsh.view.addHomogeneousModelData(
+            tag_unstrained, 0, modelName, "ElementData", sim.elem_tags[mask], strain_norm_avg[mask], numComponents=1)
+        gmsh.view.option.setNumber(tag_unstrained, "RangeType", 2)
+        gmsh.view.option.setNumber(tag_unstrained, "CustomMin", 0.)
+        gmsh.view.option.setNumber(tag_unstrained, "CustomMax", percentile_95)
+        gmsh.view.option.set_number(tag_unstrained, "ShowScale", 0)
+
+    return
+
+
+def plot_solution_2D(u_num, sim: Simulation_2D):
+
+    gmsh.fltk.initialize()
+    modelName = gmsh.model.list()[0]
+    # tag_psi = gmsh.view.add("psi")
+    # show P1 basis
+    # for j, idx_node in enumerate(sim.primary_nodes):
+    #     data = np.zeros(sim.primary_nodes.size)
+    #     if idx_node not in np.r_[sim.nodes_zero_u, sim.nodes_zero_v, sim.nodes_with_u]:
+    #         data[j] = 1.
+    #     gmsh.view.addHomogeneousModelData(tag_psi, j, modelName, "NodeData", sim.primary_nodes + 1, data, time=j, numComponents=1)
+
+    if sim.degree == 3:
+        sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
+        sim.elem_node_tags = sim.elem_node_tags[:, :-1]
+
+    n_local_node = sim.elem_node_tags.shape[1]
+    velocity = np.c_[u_num, np.zeros_like(u_num[:, 0])]
+    strain_tensor = np.zeros((sim.n_elem, n_local_node, 9))
+    strain_norm_avg = np.zeros(sim.n_elem)
+
+    compute_strain_per_elem(sim, u_num, strain_norm_avg)
+    compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) for now
+
+    vorticity = (strain_tensor[:, :, 3] - strain_tensor[:, :, 1]).copy().flatten()
+    divergence = (strain_tensor[:, :, 0] - strain_tensor[:, :, 4]).copy().flatten()
+    velocity = velocity.flatten()
+    strain_norm_avg = strain_norm_avg.flatten()
+    strain_tensor[:, :, 1] = 0.5 * (strain_tensor[:, :, 1] + strain_tensor[:, :, 3])  # symmetrize grad(v)
+    strain_tensor[:, :, 3] = strain_tensor[:, :, 1]
+    strain_tensor = 2 * strain_tensor.flatten() / np.sqrt(3)  # compute 2D, and rescale because of 3/2 in Von Mises
+
+    tag_v = gmsh.view.add("Velocity", tag=1)
+    tag_strain = gmsh.view.add("Strain tensor", tag=2)
+    tag_vorticity = gmsh.view.add("Vorticity", tag=3)
+    tag_divergence = gmsh.view.add("Divergence", tag=4)
+    tag_strain_norm_avg = gmsh.view.add("Strain norm averaged", tag=5)
+
+    gmsh.view.addHomogeneousModelData(
+        tag_v, 0, modelName, "NodeData", sim.node_tags + 1, velocity, numComponents=3)
+    gmsh.view.addHomogeneousModelData(
+        tag_strain, 0, modelName, "ElementNodeData", sim.elem_tags, strain_tensor, numComponents=9)
+    gmsh.view.addHomogeneousModelData(
+        tag_vorticity, 0, modelName, "ElementNodeData", sim.elem_tags, vorticity, numComponents=1)
+    gmsh.view.addHomogeneousModelData(
+        tag_divergence, 0, modelName, "ElementNodeData", sim.elem_tags, divergence, numComponents=1)
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_norm_avg, 0, modelName, "ElementData", sim.elem_tags, strain_norm_avg, numComponents=1)
+
+    add_unstrained_zone(sim, strain_norm_avg, modelName, tol=1e-3)
+    plot_streamlines(sim)
+
+    gmsh.view.option.setNumber(tag_v, "VectorType", 6)
+    gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
+    gmsh.view.option.setNumber(tag_v, "DrawPoints", 0)
+    gmsh.view.option.setNumber(tag_v, "NormalRaise", -0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1])))
+    gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", 0.5 / np.amax(strain_norm_avg))
+    for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:
+        gmsh.view.option.setNumber(tag, "AdaptVisualizationGrid", 1)
+        gmsh.view.option.setNumber(tag, "TargetError", -0.0001)
+        gmsh.view.option.setNumber(tag, "MaxRecursionLevel", 2)
+    for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence, tag_strain_norm_avg]:
+        gmsh.view.option.setNumber(tag, "Visible", 0)
+
+    # gmsh.option.set_number("Mesh.SurfaceEdges", 0)
+    # gmsh.option.set_number("Mesh.Lines", 1)
+    # gmsh.option.set_number("Mesh.Points", 0)
+    # gmsh.option.set_number("Mesh.ColorCarousel", 0)
+    gmsh.fltk.run()
+    return
+
+def plot_solution_2D_matplotlib(u_num, sim: Simulation_2D):
+
+    fig, ax = plt.subplots(1, 1, figsize=(10., 6.), constrained_layout=True)
+
+    n_elem, n_node_per_elem = sim.elem_node_tags.shape
+    coords = sim.coords  # size (n_nodes, 2)
+
+    triang = mpl_tri.Triangulation(sim.coords[:, 0], sim.coords[:, 1], sim.elem_node_tags[:, :3])
+    tricontourset = ax.tricontourf(triang, u_num[:sim.n_node, 0])
+    ax.triplot(triang, 'ko-', alpha=0.5)
+    _ = fig.colorbar(tricontourset)
+
+    ax.quiver(coords[:, 0], coords[:, 1], u_num[:sim.n_node, 0], u_num[:sim.n_node, 1],
+              angles='xy', scale_units='xy', scale=5)
+    # ax.quiver(centers[:, 0], centers[:, 1], u_num[sim.n_node:, 0], u_num[sim.n_node:, 1],
+    #  color='C2', angles='xy', scale_units='xy', scale=5)
+
+    plt.show()
+
+    return

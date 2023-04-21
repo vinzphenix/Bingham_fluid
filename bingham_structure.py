@@ -19,13 +19,15 @@ def DPHI_DETA(xi, eta): return -27. * xi * eta + 27. * xi * (1. - xi - eta)
 
 
 class Simulation_2D:
-    def __init__(self, K, tau_zero, f, element, mesh_filename):
+    np.set_printoptions(precision=4)
+
+    def __init__(self, K, tau_zero, f, element, model_name):
         self.K = K  # Viscosity
         self.tau_zero = tau_zero  # yield stress
         self.f = f  # body force (pressure gradient)
 
-        self.mesh_filename = mesh_filename
-        gmsh.open("./mesh/" + mesh_filename + ".msh")
+        self.model_name = model_name
+        gmsh.open("./mesh/" + model_name + ".msh")
 
         self.element = element
         if element == "taylor-hood":
@@ -171,11 +173,11 @@ class Simulation_2D:
         return node_tags, coords, nodes_zero_u, nodes_zero_v, nodes_with_u, primary_nodes, nodes_singular_p
 
     def save_solution(self, u_num):
-        with open(f"./res/{self.mesh_filename:s}.txt", 'w') as file:
+        with open(f"./res/{self.model_name:s}.txt", 'w') as file:
             file.write(f"{self.K:.6e}\n")
             file.write(f"{self.tau_zero:.6e}\n")
             file.write(f"{self.f[0]:.6e} {self.f[1]:.6e}\n")
             file.write(f"{self.element:s}\n")
-            file.write(f"{self.mesh_filename:s}\n")
+            file.write(f"{self.model_name:s}\n")
             np.savetxt(file, u_num, fmt="%.6e")
         return
