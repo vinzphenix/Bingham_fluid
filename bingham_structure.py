@@ -24,7 +24,7 @@ class Simulation_2D:
     def __init__(self, K, tau_zero, f, element, model_name):
         self.K = K  # Viscosity
         self.tau_zero = tau_zero  # yield stress
-        self.f = f  # body force (pressure gradient)
+        self.f = np.array(f)  # body force (pressure gradient)
 
         self.model_name = model_name
         gmsh.open("./mesh/" + model_name + ".msh")
@@ -48,6 +48,7 @@ class Simulation_2D:
         self.q_shape_functions, self.dv_shape_functions_at_q = res[8:10]
         self.inverse_jacobians, self.determinants = res[10:12]
         self.n_elem, self.ng_loc, self.ng_loc_q = len(self.elem_tags), len(self.weights), len(self.weights_q)
+        self.nsf = self.elem_node_tags.shape[1]
         self.ng_all = self.n_elem * self.ng_loc
 
         res = self.get_nodes_info()

@@ -11,7 +11,7 @@ def streamprinter(text):
 def func_append_var(numvar, task: mosek.Task):
     task.appendvars(numvar)
 
-def solve_fem():
+def linear_pb():
     inf = 0.
 
     with mosek.Task() as task:
@@ -114,9 +114,88 @@ def solve_fem():
         #     print("Other solution status")
 
 
+def conic_pb():
+    n, k = 3, 2
+    inf = 0.
+    # Create a task
+    with mosek.Task() as task:
+        # Attach a printer to the task
+        task.set_Stream(mosek.streamtype.log, streamprinter)
+
+        # Create n free variables
+        task.appendvars(n)
+        task.putvarboundsliceconst(0, n, mosek.boundkey.fr, -inf, inf)
+
+        # Set up the objective
+        c = [1, 1, 0]
+        task.putobjsense(mosek.objsense.minimize)
+        task.putclist(range(n), c)
+
+        # One linear constraint - sum(x) = 1
+        # task.appendcons(1)
+        # task.putarow(0, range(n), [1]*n)
+        # task.putconbound(0, mosek.boundkey.fx, 1.0, 1.0)
+
+
+        # Append empty AFE rows for affine expression storage
+        task.appendafes((k + 1)+(k+1))
+
+        # G matrix in sparse form
+        Fsubi = [0, 0, 1, 1, 2, 2]
+        Fsubj = [0, 1, 0, 1, 0, 2]
+        Fval  = [-.5, -1., 3., -.5, 1., -2.]
+        g     = [20., -15., -10.]
+
+        # Fsubi_ = np.array([0, 0, 1, 2, 2, 3, 3])+3
+        # Fsubj_ = [0, 1, 2, 0, 1, 1, 2]
+        # Fval_  = [1., -.5, 1., -.25, 2., 1., -3.]
+        # g_     = [0., 0., -5., +10.]
+
+        Fsubi_ = np.array([0, 0, 1, 1, 2, 2])+3
+        Fsubj_ = [0, 1, 0, 1, 1, 2]
+        Fval_  = [1., -.5, -.25, 2., 1., -3.]
+        g_     = [0., -5., +10.]
+
+        # Fill in F storage
+        task.putafefentrylist(Fsubi, Fsubj, Fval)
+        task.putafefentrylist(Fsubi_, Fsubj_, Fval_)
+        print(spmatrix(Fval, Fsubi, Fsubj))
+
+        # Fill in g storage
+        task.putafegslice(0, k+1, g)
+        task.putafegslice(k+1, 2*k+2, g_)
+
+        # Define a conic quadratic domain
+        quadDom = task.appendquadraticconedomain(k + 1)
+        rquadDom = task.appendrquadraticconedomain(k + 2)
+
+        # Create the ACC
+        print(np.arange(2*k+2))
+        task.appendaccs([quadDom]*2, np.arange(2*k+2), None)
+        # task.appendaccs([], np.array([]), None)
+
+        # task.appendacc(quadDom,    # Domain index
+        #                range(k+1), # Indices of AFE rows [0,...,k]
+        #                None)       # Ignored
+        # task.appendacc(quadDom,    # Domain index
+        #                range(k+1, 2*k+2), # Indices of AFE rows [0,...,k]
+        #                None)       # Ignored
+
+        # task.appendacc(rquadDom,    # Domain index
+        #                range(k+1, 2*k+3), # Indices of AFE rows [0,...,k]
+        #                None)       # Ignored
+
+        # Solve and retrieve solution
+        task.optimize()
+        xx = task.getxx(mosek.soltype.itr)
+        if task.getsolsta(mosek.soltype.itr) == mosek.solsta.optimal:
+            print("Solution: {xx}".format(xx=list(xx)))
+    return
+
+
 # call the main function
 try:
-    solve_fem()
+    conic_pb()
 except mosek.Error as e:
     print("ERROR: %s" % str(e.errno))
     if e.msg is not None:

@@ -1,5 +1,6 @@
 from bingham_structure import *
 from bingham_fem_solver import solve_FE_sparse
+from bingham_fem_mosek import solve_FE_mosek
 from bingham_post_pro import plot_1D_slice, plot_solution_2D, plot_solution_2D_matplotlib
 from bingham_tracking import solve_interface_tracking
 
@@ -40,8 +41,8 @@ if __name__ == "__main__":
         # parameters, u_nodes = load_solution("bfs", 0)
         # parameters, u_nodes = load_solution("bfs", 1)
     elif mode in [2, 3, 4]:
-        parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="taylor-hood", model_name="test")
-        # parameters = dict(K=1., tau_zero=0.1, f=[1., 0.], element="taylor-hood", model_name="rectangle")
+        # parameters = dict(K=1., tau_zero=0.1, f=[3., 0.], element="taylor-hood", model_name="test")
+        parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", model_name="rectangle")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", model_name="rectangle")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", model_name="rect_fit")
         # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="taylor-hood", model_name="cylinder")
@@ -58,12 +59,20 @@ if __name__ == "__main__":
 
     elif mode == 3:  # Solve problem: ONE SHOT
         # u_nodes = solve_FE(sim, atol=1e-8, rtol=1e-6)
-        u_nodes = solve_FE_sparse(sim, solver_name='mosek', strong=True)
         
-        # from bingham_fem_mosek import impose_strong_divergence
+        u_nodes = solve_FE_sparse(sim, solver_name='mosek', strong=False)
+        # sim.save_solution(u_nodes)
+        # _, u_nodes = load_solution("rectangle", 10)
+        
+        # set_strong_divergence_free, impose_conic_constraints, get_affine_expressions
         # impose_strong_divergence(sim)
-        
-        sim.save_solution(u_nodes)
+        # impose_conic_constraints(sim)
+        # get_affine_expressions(sim, 6 if sim.tau_zero > 0. else 5,
+        #                        2 * sim.n_node + sim.n_elem * (sim.element == "mini"))
+
+        u_nodes -= solve_FE_mosek(sim, strong=False)
+
+        # sim.save_solution(u_nodes)
 
     elif mode == 4:  # DUMMY solution to debug
         u_nodes = np.zeros((sim.n_node, 2))

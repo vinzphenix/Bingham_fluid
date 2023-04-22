@@ -349,7 +349,7 @@ def create_backward_facing_step(filename, elemSizeRatio):
 if __name__ == "__main__":
     path_to_dir = "./mesh/"
 
-    create_split_rectangle(path_to_dir + "test.msh", width=2., height=2., elemSizeRatio=1., y_zero=0., cut=False)
+    create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./25.)
