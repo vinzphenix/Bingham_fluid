@@ -1,4 +1,5 @@
 from bingham_structure import *
+from bingham_fem_mosek import solve_FE_mosek
 
 def eval_velocity_gradient(u_local, dphi_local):
     dudx = np.dot(u_local[:, 0], dphi_local[:, 0])
@@ -9,6 +10,10 @@ def eval_velocity_gradient(u_local, dphi_local):
 
 
 def compute_strain_per_elem(sim: Simulation_2D, u_num, strain_norm_avg):
+    """
+    Evaluate the average value of the strain-rate norm '|D| = sqrt(1/2 D:D)'
+    Should be noted that in the objective function, we bound |2D|, twice the norm
+    """
     strain_norm_avg[:] = 0.
     for i in range(sim.n_elem):
         idx_local_nodes = sim.elem_node_tags[i]
@@ -24,15 +29,21 @@ def compute_strain_per_elem(sim: Simulation_2D, u_num, strain_norm_avg):
 
 def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
     velocity_gradient[:] = 0.
-    _, n_local_node, _ = velocity_gradient.shape  # n_elem, n_local, 9
-    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, sim.local_node_coords, 'GradLagrange')
+    elem_type, n_local_node, local_coords = sim.elem_type, sim.n_local_node, sim.local_node_coords
+    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(elem_type, local_coords, 'GradLagrange')
     dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
+
+    if sim.element == "mini":
+        # eval bubble derivatives at nodes
+        xi_eta = local_coords.reshape(n_local_node, 3)[:, :-1].T
+        bubble_dsf = np.c_[DPHI_DXI(*xi_eta), DPHI_DETA(*xi_eta)]
+        dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf[:, np.newaxis, :], axis=1)
 
     for i in range(sim.n_elem):
         idx_local_nodes = sim.elem_node_tags[i, :]
         det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        for j, idx_node in enumerate(idx_local_nodes):
-            dphi = dsf_at_nodes[j, :]  # dphi in reference element
+        for j, idx_node in enumerate(idx_local_nodes[:3]):  # don't evaluate at bubble node
+            dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
             dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
             l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
             velocity_gradient[i, j, np.array([0, 1, 3, 4])] = np.array([l11, l12, l21, l22])
@@ -82,7 +93,7 @@ def solve_interface_tracking(sim: Simulation_2D, atol=1e-8, rtol=1e-6, max_it=20
     neighbours_map = get_neighbours_mapping(sim)
 
     # Solve first time with initial mesh
-    u_num = solve_FE_sparse(sim, solver_name='mosek', strong=False)
+    u_num = solve_FE_mosek(sim, solver_name='mosek', strong=False)
 
     while sim.iteration < max_it:
         print("")

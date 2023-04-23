@@ -13,14 +13,12 @@ def streamprinter(text):
 def set_objective(sim: Simulation_2D, task: mosek.Task):
 
     cost = np.zeros(sim.n_var)
-    st_idx_sig = 2 * sim.n_node + sim.n_elem * (sim.element == "mini")
-    st_idx_tig = st_idx_sig + sim.ng_all
 
     # Handle objective coefficients of the bounds Sig, Tig
     wg_det = np.outer(sim.determinants, sim.weights).flatten()
-    cost[st_idx_sig:st_idx_tig] = 0.5 * sim.K * wg_det
+    cost[sim.n_velocity_var: sim.n_velocity_var + sim.ng_all] = 0.5 * sim.K * wg_det
     if sim.tau_zero > 0.:
-        cost[st_idx_tig:sim.n_var] = sim.tau_zero * wg_det
+        cost[-sim.ng_all:] = sim.tau_zero * wg_det
 
     # Handle objective coefficients of the body force terms
     # -integral (fx, fy) * (u, v)
@@ -38,7 +36,7 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
     # vals[np.abs(vals) < 1e-14] = 0.
     vals = vals.flatten()
 
-    sparse_cost = coo_matrix((vals, (rows, cols)), shape=(1, st_idx_sig))
+    sparse_cost = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))
     sparse_cost.sum_duplicates()
     cols, vals = sparse_cost.col, sparse_cost.data
     cost[cols] = -vals
@@ -61,16 +59,21 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
     task.putvarboundlistconst(idxs_zero_v, mosek.boundkey.fx, 0., 0.)
 
     # Impose u = ..., where needed
-    idxs_with_u = 2 * sim.nodes_with_u + 1
+    idxs_with_u = 2 * sim.nodes_with_u + 0
     bound_key_var = np.full(idxs_with_u.size, mosek.boundkey.fx)
-    # bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
+    bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
     # bound_value = np.sin(np.pi * sim.coords[sim.nodes_with_u, 0] / 1.)**2
-    bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
+    # bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
     task.putvarboundlist(idxs_with_u, bound_key_var, bound_value, bound_value)
+
     return
 
 
 def get_dphi(sim: Simulation_2D, at_v):
+    """
+    compute the variation of phi: [dphi_j/dx, dphi_j/dy] * det[element]
+    for every shape function j, at every gauss point of every element
+    """
     # dphi/dxi, dphi/deta in reference element
     if at_v:
         dphi_loc = sim.dv_shape_functions_at_v  # size (ng_v, nsf, 2)
@@ -110,22 +113,21 @@ def set_weak_divergence_free(sim: Simulation_2D):
     phi_indices[:, :, :, 1] = 2 * phi_indices[:, :, :, 1] + 1  # v_idx
 
     dphi = get_dphi(sim, at_v=False)  # (ne, ng, nsf, 2)
-    coefficients = np.einsum("g,kg,igjn->ikjn", sim.weights_q, sim.q_shape_functions, dphi)
+    coefficients = np.einsum("g,gk,igjn->ikjn", sim.weights_q, sim.q_shape_functions, dphi)
 
     # Construct sparse matrix, and sum duplicates
     rows, cols, vals = psi_indices.flatten(), phi_indices.flatten(), coefficients.flatten()
     sparse_matrix = coo_matrix((vals, (rows, cols)), shape=(sim.n_node, sim.n_var))
     sparse_matrix.sum_duplicates()
-    sparse_matrix.eliminate_zeros()
     rows, cols, vals = sparse_matrix.row, sparse_matrix.col, sparse_matrix.data
+
+    # filter the elements belonging to rows of singular pressures
+    filter_sgl = np.isin(rows, sim.nodes_singular_p, invert=True)  # looks fast
+    rows, cols, vals = rows[filter_sgl], cols[filter_sgl], vals[filter_sgl]
 
     # Renumber the rows of divergence constraints from node idx to vertex idx
     # i.e. remove zero rows of the sparse matrix
     _, rows = np.unique(rows, return_inverse=True)
-
-    # print("check")
-    # vals[np.abs(vals) < 1e-14] = 0.  # remove (almost) zero entries
-    # np.savetxt("./mosek_array.txt", coo_matrix((vals, (rows, cols))).todense().T, fmt='%8.3g')
 
     return rows, cols, vals, num_con
 
@@ -148,28 +150,18 @@ def set_strong_divergence_free(sim: Simulation_2D):
     # Duplicate for every gauss point
     # Duplicate for (du/dx) and (dv/dy) components
     phi_indices = sim.elem_node_tags[:, np.newaxis, :].repeat(sim.ng_loc, axis=1)
-    phi_indices = phi_indices[:, :, np.newaxis, :].repeat(2, axis=2)
-    phi_indices[:, :, 0, :] = 2 * phi_indices[:, :, 0, :] + 0  # u_idx
-    phi_indices[:, :, 1, :] = 2 * phi_indices[:, :, 1, :] + 1  # v_idx
+    phi_indices = phi_indices[:, :, :, np.newaxis].repeat(2, axis=3)
+    phi_indices[:, :, :, 0] = 2 * phi_indices[:, :, :, 0] + 0  # u_idx
+    phi_indices[:, :, :, 1] = 2 * phi_indices[:, :, :, 1] + 1  # v_idx
 
     dphi = get_dphi(sim, at_v=True)  # (ne, ng, nsf, 2)
     dphi /= sim.determinants[:, np.newaxis, np.newaxis, np.newaxis]
-    dphi = np.swapaxes(dphi, 2, 3)
 
     # Construct sparse matrix, and sum duplicates
     rows, cols, vals = gauss_indices.flatten(), phi_indices.flatten(), dphi.flatten()
     sparse_matrix = coo_matrix((vals, (rows, cols)), shape=(num_con, sim.n_var))
     sparse_matrix.sum_duplicates()
-    sparse_matrix.eliminate_zeros()
     rows, cols, vals = sparse_matrix.row, sparse_matrix.col, sparse_matrix.data
-
-    # print("\n\n")
-    # for i in range(12):
-    #     for j in range(2*13):
-    #         print(f"{sparse_matrix.todense()[i, j]: 8.3g}", end=', ')
-    #     print("")
-    # print("\n\n")
-    # print(spmatrix(vals, rows, cols))
 
     return rows, cols, vals, num_con
 
@@ -183,12 +175,12 @@ def impose_divergence_free(sim: Simulation_2D, task: mosek.Task, strong: bool):
     task.appendcons(num_con)
     task.putaijlist(rows, cols, vals)
     task.putconboundsliceconst(0, num_con, mosek.boundkey.fx, 0., 0.)
-    task.putatruncatetol(1e-14)
+    # task.putatruncatetol(1e-14)
 
     return
 
 
-def get_affine_expressions(sim: Simulation_2D, n_local_afe: int, n_velocity_var: int):
+def get_affine_expressions(sim: Simulation_2D, n_local_afe: int):
     """
     (0.5, Sig, sqrt2 dudx, sqrt2 dvdy, dudy + dvdx) in rot quad cone
     (Tig, sqrt2 dudx, sqrt2 dvdy, dudy + dvdx) in quad cone
@@ -225,9 +217,9 @@ def get_affine_expressions(sim: Simulation_2D, n_local_afe: int, n_velocity_var:
     F_cols[slice_dv_dx] = 2 * elem_node_tags + 1
 
     arange_elem_gauss = np.arange(sim.ng_all).reshape((sim.n_elem, sim.ng_loc))
-    F_cols[:, :, 0] = n_velocity_var + arange_elem_gauss  # Sig
+    F_cols[:, :, 0] = sim.n_velocity_var + arange_elem_gauss  # Sig
     if sim.tau_zero > 0.:
-        F_cols[:, :, -1] = n_velocity_var + sim.ng_all + arange_elem_gauss  # Tig
+        F_cols[:, :, -1] = sim.n_velocity_var + sim.ng_all + arange_elem_gauss  # Tig
 
     F_vals = np.empty((sim.n_elem, sim.ng_loc, nnz_local))
     F_vals[slice_du_dx] = sqrt2 * dphi[:, :, :, 0]
@@ -242,60 +234,20 @@ def get_affine_expressions(sim: Simulation_2D, n_local_afe: int, n_velocity_var:
     g_idxs = np.arange(0, n_global_afe, n_local_afe)
     g_vals = 0.5 * np.ones(sim.ng_all)
 
-    # print(g_idxs)
-    # print(F_rows)
-    # print(F_cols)
-    # print(F_vals)
-    # print("\n\n")
-    # print("NOWW")
-    # mat = spmatrix(F_vals.flatten(), F_rows.flatten(), F_cols.flatten())
-    # for i in range(n_global_afe):
-    #     if i > 2 * sim.ng_loc * n_local_afe:
-    #         break
-    #     for j in range(sim.n_var//10):
-    #         coef = sqrt2 if i % n_local_afe == 4 else 1.
-    #         tmp = coef * mat[i, j]
-    #         if abs(tmp) > 0.:
-    #             print(f"{tmp: 6.2g}", end=', ')
-    #         else:
-    #             print(f"{'':6s}", end=', ')
-    #     print("")
-    #     if (i+1) % n_local_afe == 0:
-    #         print("")
-    # print("\n\n")
-
     return (F_rows.flatten(), F_cols.flatten(), F_vals.flatten()), (g_idxs, g_vals)
-
-
-# def get_afe_bounds(sim: Simulation_2D, n_afe_strain, n_velocity_var):
-#     """
-#     (0.5, Sig, sqrt2 dudx, sqrt2 dvdy, dudy + dvdx) in rot quad cone
-#     (Tig, sqrt2 dudx, sqrt2 dvdy, dudy + dvdx) in quad cone
-#     affine expressions :
-#     """
-#     n_local_bound_variables = 1 + (sim.tau_zero > 0.)
-#     n_bound_variables = sim.n_elem * sim.ng_loc * n_local_bound_variables
-
-#     F_rows = n_afe_strain + sim.n_elem * sim.ng_loc + np.arange(n_bound_variables)
-#     F_cols = n_velocity_var + np.arange(n_bound_variables)
-#     F_vals = np.ones(n_bound_variables)
-
-#     return F_rows, F_cols, F_vals
-#     sparse_afe_bounds = get_afe_bounds(sim, n_afe_strain, n_velocity_var)
 
 
 def impose_conic_constraints(sim: Simulation_2D, task: mosek.Task):
 
     n_local_afe = 6 if sim.tau_zero > 0. else 5
     n_global_afe = sim.n_elem * sim.ng_loc * n_local_afe
-    n_velocity_var = 2 * sim.n_node + sim.n_elem * (sim.element == "mini")
 
     # append empty AFE rows for affine expression storage
     # store affine expression F x + g
     # locally equal to: [sqrt2 du/dx, sqrt2 dv/dy, du/dx+dv/dy, Sig, Tig]
     task.appendafes(n_global_afe)
 
-    sparse_afe, g_afe = get_affine_expressions(sim, n_local_afe, n_velocity_var)
+    sparse_afe, g_afe = get_affine_expressions(sim, n_local_afe)
 
     task.putafefentrylist(*sparse_afe)
     task.putafeglist(*g_afe)
@@ -317,19 +269,6 @@ def impose_conic_constraints(sim: Simulation_2D, task: mosek.Task):
         ltz_cones_idxs = ltz_cones_idxs[:, :, [5, 2, 3, 4]].flatten()
         task.appendaccs(dom_idxs, ltz_cones_idxs, b=None)
 
-    # # print("\n\n")
-    # mat = spmatrix(F_vals.flatten(), F_rows.flatten(), F_cols.flatten())
-    # for i1 in range(4*3):
-    #     for i2 in range(3):
-    #         coef = sqrt2 if i2 == 2 else 1.
-    #         for j in range(2*13):
-    #             print(f"{0.+(-coef)*mat[i1*3+i2, j]: 8.3g}", end=', ')
-    #         print("")
-    #     print("")
-    # print("\n\n")
-
-    # task.putafefentrylist(F_rows.flatten(), F_cols.flatten(), F_vals.flatten())
-
     return
 
 
@@ -339,7 +278,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         # Attach a log stream printer to the task
         task.set_Stream(mosek.streamtype.log, streamprinter)
 
-        n_velocity_var = 2 * sim.n_node + sim.n_elem * (sim.element == "mini")
+        n_velocity_var = sim.n_velocity_var
 
         # Append 'numvar' variables.
         # The variables will initially be fixed at zero (x=0).
@@ -367,9 +306,63 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         print(f"\nTime to BUILD conic optimization = {end_build_time-start_build_time:.2f} s")
         print(f"Time to SOLVE conic optimization = {end_time-start_time:.2f} s\n")
 
-        # Retrieve solution
-        u_num = np.zeros(2 * sim.n_node)
-        task.getxxslice(soltype.itr, 0, 2 * sim.n_node, u_num)
+        # Retrieve solution (only velocity field variables)
         task.onesolutionsummary(mosek.streamtype.log, mosek.soltype.itr)
 
-    return u_num.reshape((sim.n_node, 2))
+        p_num = np.array(task.gety(soltype.itr))
+        u_num = np.array(task.getxxslice(soltype.itr, 0, sim.n_velocity_var))
+        u_num = u_num.reshape((sim.n_node + sim.n_elem * (sim.element == 'mini'), 2))
+
+        # if sim.tau_zero > 0.:
+        #     idx_st, idx_fn = n_velocity_var + sim.ng_all, n_velocity_var + 2 * sim.ng_all
+        #     yield_bounds = np.array(task.getxxslice(soltype.itr, idx_st, idx_fn))
+        #     print(yield_bounds[:6 * sim.ng_loc].reshape((6, sim.ng_loc)))
+        #     print(sim.elem_node_tags[:6] + 1)
+        #     print(yield_bounds[-6 * sim.ng_loc:].reshape((6, sim.ng_loc)))
+        #     print(sim.elem_node_tags[-6:] + 1)
+
+    return u_num, p_num
+
+
+#########################################
+
+    # set_weak_divergence_free
+    # print("check")
+    # vals[np.abs(vals) < 1e-14] = 0.  # remove (almost) zero entries
+    # np.savetxt("./mosek_array.txt", coo_matrix((vals, (rows, cols))).todense().T, fmt='%8.3g')
+
+
+    # impose_conic_constraints    
+    # # print("\n\n")
+    # mat = spmatrix(F_vals.flatten(), F_rows.flatten(), F_cols.flatten())
+    # for i1 in range(4*3):
+    #     for i2 in range(3):
+    #         coef = sqrt2 if i2 == 2 else 1.
+    #         for j in range(2*13):
+    #             print(f"{0.+(-coef)*mat[i1*3+i2, j]: 8.3g}", end=', ')
+    #         print("")
+    #     print("")
+    # print("\n\n")
+
+    # get_affine_expressions()
+    # print(g_idxs)
+    # print(F_rows)
+    # print(F_cols)
+    # print(F_vals)
+    # print("\n\n")
+    # print("NOWW")
+    # mat = spmatrix(F_vals.flatten(), F_rows.flatten(), F_cols.flatten())
+    # for i in range(n_global_afe):
+    #     if i > 2 * sim.ng_loc * n_local_afe:
+    #         break
+    #     for j in range(sim.n_var//10):
+    #         coef = sqrt2 if i % n_local_afe == 4 else 1.
+    #         tmp = coef * mat[i, j]
+    #         if abs(tmp) > 0.:
+    #             print(f"{tmp: 6.2g}", end=', ')
+    #         else:
+    #             print(f"{'':6s}", end=', ')
+    #     print("")
+    #     if (i+1) % n_local_afe == 0:
+    #         print("")
+    # print("\n\n")

@@ -120,78 +120,78 @@ def build_objective_and_socp(sim: Simulation_2D, IS, IT):
     sqrt2 = np.sqrt(2.)
     n_node_per_elem = sim.elem_node_tags.shape[1]
 
-    # # initialize list of conic constraints
-    # n_cone_per_gauss_pt = 2 if sim.tau_zero > 0. else 1
-    # Gq = np.empty((sim.n_elem * sim.ng_loc, n_cone_per_gauss_pt), dtype=spmatrix)
-    # hq = np.empty((sim.n_elem * sim.ng_loc, n_cone_per_gauss_pt), dtype=matrix)
+    # initialize list of conic constraints
+    n_cone_per_gauss_pt = 2 if sim.tau_zero > 0. else 1
+    Gq = np.empty((sim.n_elem * sim.ng_loc, n_cone_per_gauss_pt), dtype=spmatrix)
+    hq = np.empty((sim.n_elem * sim.ng_loc, n_cone_per_gauss_pt), dtype=matrix)
 
-    # # entries indicate the column and rows of an entry in the socp constraint
-    # # (n_elem, n_gauss, n_entry_per_elem)
+    # entries indicate the column and rows of an entry in the socp constraint
+    # (n_elem, n_gauss, n_entry_per_elem)
 
-    # idx_sparse_s1 = 2 + 0*n_node_per_elem + np.arange(n_node_per_elem)
-    # idx_sparse_s2 = 2 + 1*n_node_per_elem + np.arange(n_node_per_elem)
-    # idx_sparse_s3 = 2 + 2*n_node_per_elem + np.arange(n_node_per_elem)
-    # idx_sparse_s4 = 2 + 3*n_node_per_elem + np.arange(n_node_per_elem)
-    # elem_node_tags_duplicated = sim.elem_node_tags[:, np.newaxis, :]
-    # u_idxs = 2 * elem_node_tags_duplicated + 0
-    # v_idxs = 2 * elem_node_tags_duplicated + 1
+    idx_sparse_s1 = 2 + 0*n_node_per_elem + np.arange(n_node_per_elem)
+    idx_sparse_s2 = 2 + 1*n_node_per_elem + np.arange(n_node_per_elem)
+    idx_sparse_s3 = 2 + 2*n_node_per_elem + np.arange(n_node_per_elem)
+    idx_sparse_s4 = 2 + 3*n_node_per_elem + np.arange(n_node_per_elem)
+    elem_node_tags_duplicated = sim.elem_node_tags[:, np.newaxis, :]
+    u_idxs = 2 * elem_node_tags_duplicated + 0
+    v_idxs = 2 * elem_node_tags_duplicated + 1
 
-    # Gq_rows_local = np.r_[[0, 4], [1] * n_node_per_elem, [2] * n_node_per_elem, [3] * n_node_per_elem * 2, [0]]
-    # Gq_rows = 5*np.arange(sim.n_elem * sim.ng_loc).reshape((sim.n_elem, sim.ng_loc))[:, :, np.newaxis] + Gq_rows_local[np.newaxis, np.newaxis, :]
+    Gq_rows_local = np.r_[[0, 4], [1] * n_node_per_elem, [2] * n_node_per_elem, [3] * n_node_per_elem * 2, [0]]
+    Gq_rows = 5*np.arange(sim.n_elem * sim.ng_loc).reshape((sim.n_elem, sim.ng_loc))[:, :, np.newaxis] + Gq_rows_local[np.newaxis, np.newaxis, :]
     
-    # Gq_cols = np.empty((sim.n_elem, sim.ng_loc, 2 + 4 * n_node_per_elem + 1), dtype=int)
-    # Gq_cols[:, :, [0, 1]] = IS + np.arange(sim.n_elem * sim.ng_loc).reshape((sim.n_elem, sim.ng_loc))[:, :, np.newaxis]
-    # Gq_cols[:, :, -1] = Gq_cols[:, :, 0] + IT - IS
-    # Gq_cols[:, :, idx_sparse_s1] = u_idxs
-    # Gq_cols[:, :, idx_sparse_s2] = v_idxs
-    # Gq_cols[:, :, idx_sparse_s3] = u_idxs
-    # Gq_cols[:, :, idx_sparse_s4] = v_idxs
+    Gq_cols = np.empty((sim.n_elem, sim.ng_loc, 2 + 4 * n_node_per_elem + 1), dtype=int)
+    Gq_cols[:, :, [0, 1]] = IS + np.arange(sim.n_elem * sim.ng_loc).reshape((sim.n_elem, sim.ng_loc))[:, :, np.newaxis]
+    Gq_cols[:, :, -1] = Gq_cols[:, :, 0] + IT - IS
+    Gq_cols[:, :, idx_sparse_s1] = u_idxs
+    Gq_cols[:, :, idx_sparse_s2] = v_idxs
+    Gq_cols[:, :, idx_sparse_s3] = u_idxs
+    Gq_cols[:, :, idx_sparse_s4] = v_idxs
 
-    # dphi_loc = sim.dv_shape_functions_at_v  # size (ng, nsf, 2)
-    # inv_jacobians = sim.inverse_jacobians  # size (ne, 2, 2)
-    # determinants = sim.determinants
-    # dphi = np.einsum('gjk,ikl->igjl', dphi_loc, inv_jacobians)
-    # dphi[:] /= determinants[:, np.newaxis, np.newaxis, np.newaxis]
+    dphi_loc = sim.dv_shape_functions_at_v  # size (ng, nsf, 2)
+    inv_jacobians = sim.inverse_jacobians  # size (ne, 2, 2)
+    determinants = sim.determinants
+    dphi = np.einsum('gjk,ikl->igjl', dphi_loc, inv_jacobians)
+    dphi[:] /= determinants[:, np.newaxis, np.newaxis, np.newaxis]
     
-    # Gq_data = np.empty((sim.n_elem, sim.ng_loc, 2 + 4 * n_node_per_elem + 1))
-    # Gq_data[:, :, [0, 1]] = -1. / sqrt2
-    # Gq_data[:, :, idx_sparse_s1] = -dphi[:, :, :, 0] * sqrt2
-    # Gq_data[:, :, idx_sparse_s2] = -dphi[:, :, :, 1] * sqrt2
-    # Gq_data[:, :, idx_sparse_s3] = -dphi[:, :, :, 1]
-    # Gq_data[:, :, idx_sparse_s4] = -dphi[:, :, :, 0]
-    # Gq_data[:, :, [-1]] = -1.
+    Gq_data = np.empty((sim.n_elem, sim.ng_loc, 2 + 4 * n_node_per_elem + 1))
+    Gq_data[:, :, [0, 1]] = -1. / sqrt2
+    Gq_data[:, :, idx_sparse_s1] = -dphi[:, :, :, 0] * sqrt2
+    Gq_data[:, :, idx_sparse_s2] = -dphi[:, :, :, 1] * sqrt2
+    Gq_data[:, :, idx_sparse_s3] = -dphi[:, :, :, 1]
+    Gq_data[:, :, idx_sparse_s4] = -dphi[:, :, :, 0]
+    Gq_data[:, :, [-1]] = -1.
 
-    # Gq_global = spmatrix(Gq_data[:, :, :-1].flatten(), Gq_rows[:, :, :-1].flatten(), Gq_cols[:, :, :-1].flatten(),
-    #                      size=(5 * sim.n_elem * sim.ng_loc, sim.n_var))
+    Gq_global = spmatrix(Gq_data[:, :, :-1].flatten(), Gq_rows[:, :, :-1].flatten(), Gq_cols[:, :, :-1].flatten(),
+                         size=(5 * sim.n_elem * sim.ng_loc, sim.n_var))
 
-    # # cannot find other method
-    # start = perf_counter()
-    # hq_local_viscous = matrix(np.array([0.5 / sqrt2, 0., 0., 0., -0.5 / sqrt2]))
-    # hq_local_yield = matrix(np.zeros(4))
-    # # for i in range(sim.n_elem):
-    # #     for g in range(sim.ng_loc):
-    # #     cone_idx = i * sim.ng_loc + g
+    # cannot find other method
+    start = perf_counter()
+    hq_local_viscous = matrix(np.array([0.5 / sqrt2, 0., 0., 0., -0.5 / sqrt2]))
+    hq_local_yield = matrix(np.zeros(4))
+    # for i in range(sim.n_elem):
+    #     for g in range(sim.ng_loc):
+    #     cone_idx = i * sim.ng_loc + g
+
+    for cone_idx in range(sim.n_elem * sim.ng_loc):
+        i, g = cone_idx // sim.ng_loc, cone_idx % sim.ng_loc
+        Gq[cone_idx, 0] = spmatrix(Gq_data[i, g, :-1], Gq_rows_local[:-1], Gq_cols[i, g, :-1], size=(5, sim.n_var))
+        hq[cone_idx, 0] = hq_local_viscous
+    # if sim.tau_zero > 0.:
+    #     for cone_idx in range(sim.n_elem * sim.ng_loc):
+    #         i, g = cone_idx // sim.ng_loc, cone_idx % sim.ng_loc
+    #         Gq[cone_idx, 1] = spmatrix(Gq_data[i, g, 2:], Gq_rows[2:], Gq_cols[i, g, 2:], size=(4, sim.n_var))
+    #         hq[cone_idx, 1] = hq_local_yield
 
     # for cone_idx in range(sim.n_elem * sim.ng_loc):
     #     i, g = cone_idx // sim.ng_loc, cone_idx % sim.ng_loc
-    #     Gq[cone_idx, 0] = spmatrix(Gq_data[i, g, :-1], Gq_rows_local[:-1], Gq_cols[i, g, :-1], size=(5, sim.n_var))
+    #     Gq[cone_idx, 0] = Gq_global[5*cone_idx:5*(cone_idx+1), :]
     #     hq[cone_idx, 0] = hq_local_viscous
-    # # if sim.tau_zero > 0.:
-    # #     for cone_idx in range(sim.n_elem * sim.ng_loc):
-    # #         i, g = cone_idx // sim.ng_loc, cone_idx % sim.ng_loc
-    # #         Gq[cone_idx, 1] = spmatrix(Gq_data[i, g, 2:], Gq_rows[2:], Gq_cols[i, g, 2:], size=(4, sim.n_var))
-    # #         hq[cone_idx, 1] = hq_local_yield
-
-    # # for cone_idx in range(sim.n_elem * sim.ng_loc):
-    # #     i, g = cone_idx // sim.ng_loc, cone_idx % sim.ng_loc
-    # #     Gq[cone_idx, 0] = Gq_global[5*cone_idx:5*(cone_idx+1), :]
-    # #     hq[cone_idx, 0] = hq_local_viscous
 
 
-    # Gq_fast = Gq.flatten().tolist()
-    # hq_fast = hq.flatten().tolist()
-    # end = perf_counter()
-    # print(f"Fast ? {end-start:.3f} s")
+    Gq_fast = Gq.flatten().tolist()
+    hq_fast = hq.flatten().tolist()
+    end = perf_counter()
+    print(f"Fast ? {end-start:.3f} s")
 
     # coefficients of linear minimization function
     cost = np.zeros(sim.n_var)
@@ -248,25 +248,6 @@ def build_objective_and_socp(sim: Simulation_2D, IS, IT):
     end = perf_counter()
     print(f"Slow ? {end-start:.3f} s")
 
-    # for Gi in Gq[::2]:
-    #     for i in [0, 4, 1, 2, 3]:
-    #         coef = sqrt2 if i == 3 else 1.
-    #         for j in range(sim.n_var):
-    #             tmp = (-1)*coef * Gi[i, j]
-    #             if abs(tmp) > 1e-13:
-    #                 print(f"{tmp: 6.2g}", end=', ')
-    #             else:
-    #                 print(f"{'':6s}", end=', ')
-    #         print("")
-    #     print("")
-
-    # for cone_idx in range(sim.n_elem * sim.ng_loc):
-    #     res1 = sum(abs(Gq_fast[cone_idx] - Gq[cone_idx]))
-    #     res2 = sum(abs(hq_fast[cone_idx] - hq[cone_idx]))
-    #     if res1 > 1e-12 or res2 > 1e-12:
-    #         print(cone_idx, res1, res2)
-
-    # exit(0)
     return cost, Gq, hq
 
 
@@ -339,10 +320,6 @@ def solve_FE_sparse(sim: Simulation_2D, solver_name='mosek', strong=False):
         raise ValueError(
             f"solver_name should be either 'mosek' or 'conelp', not {solver_name:s}")
 
-    if sim.degree == 3:  # Mini element: set correct indices to 'bubble' nodes
-        # it was previously set to [0, 1, 2 ..., n_elem]
-        sim.elem_node_tags[:, -1] += sim.n_node
-
     IB = 2 * sim.n_node  # start of dofs related to bubble function
     IS = IB + 2 * sim.n_elem if sim.degree == 3 else IB  # start of S variables
     IT = IS + sim.ng_all  # start of T variables
@@ -357,7 +334,7 @@ def solve_FE_sparse(sim: Simulation_2D, solver_name='mosek', strong=False):
     # stack both kinds to create the full matrix of linear constraints
     size_lin_eq = (n_div_constraints + n_bd_constraints, sim.n_var)
     hl = matrix(np.r_[np.zeros(n_div_constraints), bd_hl])
-    Gl_data[np.abs(Gl_data) < 1e-14] = 0.
+    # Gl_data[np.abs(Gl_data) < 1e-14] = 0.
     # print(spmatrix(Gl_data, Gl_rows, Gl_cols)[::2, :].T)
     # for i in range(12):
     #     for j in range(2*13):
@@ -381,13 +358,15 @@ def solve_FE_sparse(sim: Simulation_2D, solver_name='mosek', strong=False):
 
     # solve the conic optimization problem with 'mosek', or 'conelp'
     start_time = perf_counter()
+    print(sim.n_var)
+    print(2*(sim.n_node+sim.n_elem)+2*sim.ng_all)
     res = solvers.socp(matrix(cost), Gl=Gl, hl=hl, Gq=Gq, hq=hq, solver=solver_name)
     end_time = perf_counter()
 
     print(f"\nTime to BUILD conic optimization = {end_build_time-start_build_time:.2f} s")
     print(f"Time to SOLVE conic optimization = {end_time-start_time:.2f} s\n")
 
-    u_num = np.array(res['x'])[:IB].reshape((sim.n_node, 2))
+    u_num = np.array(res['x'])[:IS].reshape((sim.n_node + sim.n_elem * (sim.element=='mini'), 2))
     # u_bbl = np.array(res['x'])[IB:IS].reshape((sim.n_elem * (sim.degree == 3), 2))
     # s_num = np.array(res['x'])[IS:IT].reshape((sim.n_elem, sim.ng_loc))
     # t_num = np.array(res['x'])[IT:].reshape((sim.n_elem, sim.ng_loc))

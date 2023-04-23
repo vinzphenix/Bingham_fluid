@@ -4,16 +4,44 @@ from bingham_fem_mosek import solve_FE_mosek
 from bingham_post_pro import plot_1D_slice, plot_solution_2D, plot_solution_2D_matplotlib
 from bingham_tracking import solve_interface_tracking
 
-def load_solution(res_file_name, simu_number):
-    res_file_name += f"_{simu_number:d}" if simu_number >= 0 else ""
-    with open(f"./res/{res_file_name:s}.txt", 'r') as file:
-        K, tau_zero = float(next(file).strip('\n')), float(next(file).strip('\n')),
+
+def load_solution(model_name, simu_number):
+    
+    res_file_name = f"./res/{model_name:s}_{simu_number:d}"
+
+    with open(res_file_name + "_params.txt", 'r') as file:
+        K = float(next(file).strip('\n'))
+        tau_zero = float(next(file).strip('\n'))
         f = [float(component) for component in next(file).strip('\n').split(' ')]
-        element, model_name = next(file).strip('\n'), next(file).strip('\n')
-        u_num = np.loadtxt(file)
+        element = next(file).strip('\n')
+    
+    u_num = np.loadtxt(res_file_name + "_velocity.txt")
+    p_num = np.loadtxt(res_file_name + "_pressure.txt")
+    dic_params = dict(K=K, tau_zero=tau_zero, f=f, element=element, model_name=model_name)
 
-    return dict(K=K, tau_zero=tau_zero, f=f, element=element, model_name=model_name), u_num
+    return dic_params, u_num, p_num
 
+
+def get_analytical_poiseuille(sim: Simulation_2D):
+
+    H = np.amax(sim.coords[:, 1])  # half channel width (centered at y = 0)
+    U_inf = sim.f[0] * (H ** 2) / (2. * sim.K)  # max velocity when tau_zero = 0
+    Bn = sim.tau_zero * H / (sim.K * U_inf)
+
+    y_zero = sim.tau_zero / sim.f[0]
+    eta_zero = y_zero / H
+    eta = sim.coords[:, 1] / H
+    u_analytical = np.zeros_like(eta)
+
+    mask_top = (eta_zero < eta) & (eta <= 1.)
+    mask_bot = (-1. <= eta) & (eta < -eta_zero)
+    mask_mid = ~(mask_top | mask_bot)
+
+    u_analytical[mask_top] = -Bn * (1. - eta[mask_top]) + (1. - np.square(eta[mask_top]))
+    u_analytical[mask_bot] = -Bn * (1. + eta[mask_bot]) + (1. - np.square(eta[mask_bot]))
+    u_analytical[mask_mid] = (1. - Bn / 2.) ** 2
+
+    return np.c_[U_inf * u_analytical, np.zeros_like(u_analytical)]
 
 
 if __name__ == "__main__":
@@ -31,55 +59,62 @@ if __name__ == "__main__":
     gmsh.initialize()
 
     if mode == 1:
-        # parameters, u_nodes = load_solution("rectangle", 0)
-        # parameters, u_nodes = load_solution("rectangle", 1)
-        # parameters, u_nodes = load_solution("rect_fit", 1)
-        parameters, u_nodes = load_solution("cylinder", 0)
-        # parameters, u_nodes = load_solution("cylinder", 1)
-        # parameters, u_nodes = load_solution("cavity", 0)
-        # parameters, u_nodes = load_solution("cavity", 1)
-        # parameters, u_nodes = load_solution("bfs", 0)
-        # parameters, u_nodes = load_solution("bfs", 1)
+        # parameters, u_nodes, p_field = load_solution("test", 12)
+        # parameters, u_nodes, p_field = load_solution("rectangle", 1)
+        # parameters, u_nodes, p_field = load_solution("rectangle", 2)
+        # parameters, u_nodes, p_field = load_solution("rect_fit", 1)
+        # parameters, u_nodes, p_field = load_solution("cylinder", 11)
+        # parameters, u_nodes, p_field = load_solution("cavity", 0)
+        parameters, u_nodes, p_field = load_solution("cavity", 3)
+        # parameters, u_nodes, p_field = load_solution("bfs", 1)
+        # parameters, u_nodes, p_field = load_solution("bfs", 3)
+        pass
     elif mode in [2, 3, 4]:
-        # parameters = dict(K=1., tau_zero=0.1, f=[3., 0.], element="taylor-hood", model_name="test")
-        parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="taylor-hood", model_name="rectangle")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", model_name="rectangle")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", model_name="rect_fit")
-        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="taylor-hood", model_name="cylinder")
-        # parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="taylor-hood", model_name="cavity")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="taylor-hood", model_name="bfs")
+        # parameters = dict(K=1., tau_zero=0.2, f=[1., 0.], element="th", model_name="test")
+        # parameters = dict(K=1., tau_zero=0.30, f=[1., 0.], element="th", model_name="rectangle")
+        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rectangle")
+        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
+        # parameters = dict(K=1., tau_zero=0.5, f=[1., 0.], element="th", model_name="cylinder")
+        parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="mini", model_name="cavity")
+        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="bfs")
+        pass
     else:
         raise ValueError
 
     sim = Simulation_2D(**parameters)
     print(sim.n_node)
 
+    # if mode == 1:
+    #     _, u_nodes, p_field = load_solution("cylinder", 10)
+    #     u_nodes = u_nodes
+
     if mode == 2:  # Solve the problem: ITERATE
         u_nodes = solve_interface_tracking(sim, atol=1e-8, rtol=1e-6)
 
     elif mode == 3:  # Solve problem: ONE SHOT
-        # u_nodes = solve_FE(sim, atol=1e-8, rtol=1e-6)
-        
-        u_nodes = solve_FE_sparse(sim, solver_name='mosek', strong=False)
-        # sim.save_solution(u_nodes)
-        # _, u_nodes = load_solution("rectangle", 10)
-        
-        # set_strong_divergence_free, impose_conic_constraints, get_affine_expressions
-        # impose_strong_divergence(sim)
-        # impose_conic_constraints(sim)
-        # get_affine_expressions(sim, 6 if sim.tau_zero > 0. else 5,
-        #                        2 * sim.n_node + sim.n_elem * (sim.element == "mini"))
+        # for legacy only
+        # u_nodes_slow = solve_FE_sparse(sim, solver_name='mosek', strong=False)
+        # sim.save_solution(u_nodes, simu_nb=-1)
 
-        u_nodes -= solve_FE_mosek(sim, strong=False)
+        u_nodes_weak, p_field_weak = solve_FE_mosek(sim, strong=False)
+        sim.save_solution(u_nodes_weak, p_field_weak, simu_number=3)
 
-        # sim.save_solution(u_nodes)
+        u_nodes_strong, p_field_strong = solve_FE_mosek(sim, strong=True)
+        sim.save_solution(u_nodes_strong, p_field_strong, simu_number=4)
+
+        u_nodes, p_field = u_nodes_weak-u_nodes_weak, p_field_weak
 
     elif mode == 4:  # DUMMY solution to debug
         u_nodes = np.zeros((sim.n_node, 2))
         u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
         u_nodes[:, 1] = 0 * sim.coords[:, 0] * (1. + sim.coords[:, 1])
+        # x_centered = sim.coords[:, 0] - np.mean(sim.coords[:, 0])
+        # y_centered = sim.coords[:, 1] - np.mean(sim.coords[:, 1])
+        # u_nodes[:, 0] = +x_centered**2-y_centered**2
+        # u_nodes[:, 1] = -2*x_centered*y_centered
+        p_field = np.zeros(sim.primary_nodes.size - sim.nodes_singular_p.size)
 
-    plot_solution_2D(u_nodes, sim)
+    plot_solution_2D(u_nodes, p_field, sim)
     # plot_1D_slice(u_nodes, sim)
 
     gmsh.finalize()
