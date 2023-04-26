@@ -1,0 +1,377 @@
+\documentclass[11 pt]{report}
+\usepackage{structure}
+
+
+\title{Bingham fluids using X-MESH} % not definitive of course
+\author{\textsc{DEGROOFF} Vincent}
+\date{\today}
+
+\begin{document}
+ 
+\maketitle
+
+\tableofcontents
+
+\chapter{Governing equations}
+
+\section{General notions of continuum mechanics}
+Let $\Omega \in \mathbf{R}^3$ denote the domain of interest, $\mathbf{u}$ be the fluid velocity, and $\boldsymbol{\sigma}=-p\mathbf{I}+\boldsymbol{\tau}$ be the stress tensor with its deviatoric contribution $\boldsymbol\tau$.
+
+Let us recall the mass and momentum conservation equations, with body forces $\mathbf{f}$:
+\begin{align}
+    \nabla \cdot \mathbf{u} &= 0\label{eq:mass}\\
+    \rho \left(\pdv{\mathbf{u}}{t} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}\label{eq:momentum}
+\end{align}
+
+In both yielded and unyielded regions, the stress tensor is continuous (\textcolor{red}{seems obvious, in the yielded zones, but what about the solid part ?}). At the interface, the conservation of mass and momentum read as follows, where $[\![ . ]\!]$ refers to the difference of the fields across the interface and $\mathbf{u^*}$ to the interface velocity:
+\begin{align}
+    [\![ \rho (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} ]\!] &= 0 \label{eq:interface_mass}\\
+    [\![ \rho \mathbf{u} (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} + \mathbf{\hat n} \cdot \sigma ]\!] &= 0 \label{eq:interface_momentum}
+\end{align}
+
+Throughout this study, we will consider low Reynolds numbers, so that we can neglect the inertia terms on the left of equation \eqref{eq:momentum}. We will also consider that no external force is applied, $\mathbf{f}=\mathbf{0}$.
+
+Let us also recall the following velocity gradient decomposition,
+\begin{align}
+    \nabla \mathbf{u} &= \mathbf{D} + \mathbf{W}\\
+    \mathbf{D} &= \frac{1}{2} \left(\nabla \mathbf{u} + \nabla^T \mathbf{u}\right)\\
+    \mathbf{\Omega} &= \frac{1}{2} \left(\nabla \mathbf{u} - \nabla^T \mathbf{u}\right)
+\end{align}
+
+where
+\begin{itemize}[label=---]
+    \item $\mathbf{D}$ is the strain-rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
+    \item $\mathbf{\Omega}$ is the spin tensor that indicates the axis around which the flow is locally rotating.
+\end{itemize} 
+
+\section{Constitutive equations of Bingham fluids}
+
+Bingham fluids is a subset of non-Newtonian fluids. They behave either as solid or liquids depending on the shear stress they undergo. In low-stress regions, we have an \textit{unyielded} zone, while in high-stress regions, we have a \textit{yielded} zone.
+
+?Introduce with 1D behavior.?
+
+The constitutive law of Bingham fluids reads as follows in the general framework of 2D and 3D flows:
+\begin{align}
+    \mathbf{D} &= \mathbf{0} & \text{if} \quad \|\boldsymbol\tau\| < \tau_0 \label{eq:tensor_unyielded_v0}\\
+    \boldsymbol{\tau} &= 2\mu \mathbf{D} + \tau_0 \frac{\mathbf{D}}{\|\mathbf{D}\|} & \text{if} \quad  \|\boldsymbol\tau\| \geq \tau_0 \label{eq:tensor_yielded_v0}
+\end{align}
+
+This can also be expressed the other way around:
+\begin{align}
+    \|\boldsymbol\tau\| &< \tau_0 & \text{if} \quad \mathbf{D(\uu)} = \mathbf{0} \label{eq:tensor_unyielded}\\
+    \boldsymbol{\tau} &= 2\mu \mathbf{D} + \tau_0 \frac{\mathbf{D}}{\|\mathbf{D}\|} & \text{if} \quad  \mathbf{D(\uu)} \neq \mathbf{0} \label{eq:tensor_yielded}
+\end{align}
+
+where the matrix norm is the square root of the second invariant of a traceless tensor:
+\begin{align}
+    I_2(\mathbf{A}) &\coloneqq \frac{1}{2} \left[\Tr(\mathbf{A}^2) - \big(\Tr(\mathbf{A})\big)^2\right]\\
+    \|\mathbf{A}\| & \coloneqq \sqrt{I_2} = \sqrt{\frac{1}{2} \, \boldsymbol A \boldsymbol: \boldsymbol A}
+\end{align}
+
+?Figure?
+
+\section{Weak formulation}
+Let us first multiply \autoref{eq:momentum} by a test function $\mathbf{v}$ that is zero on $\partial \Omega$ and integrate it over $\Omega$. Then, let us use integration by parts. Finally use the Divergence theorem.
+\begin{equation}
+    \begin{aligned}
+        0 &= {\color{blue}-\nabla p} + {\color{red} \nabla \cdot \taub(\uu)} + \ff\\
+        &= {\color{blue} \int_{\Omega} - \vv \cdot \nabla p \;\dd \xx} + {\color{red} \int_{\Omega} \vv \cdot (\nabla \cdot \taub (\uu)) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff  \;\dd \xx\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\Omega} \nabla \cdot (p\vv)} + {\color{red} \int_{\Omega} \nabla \cdot (\taub \cdot \vv) - \int_{\Omega}  \taub (\uu) : \nabla^\top \vv} + \int_{\Omega} \vv \cdot \ff\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\partial \Omega} p \vv \cdot \nn} + {\color{red} \int_{\partial\Omega} (\taub \cdot \vv) \cdot \nn - \int_{\Omega}  \taub (\uu) : \big(\mathbf{D}(\vv) + \mathbf{\Omega}(\vv)\big)^\top} + \int_{\Omega} \vv \cdot \ff\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd \xx} - {\color{red} \int_{\Omega}  \taub (\uu) : \mathbf{D}(\vv) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff \;\dd \xx\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd \xx} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff \;\dd \xx
+    \end{aligned}\label{eq:weak_formulation}
+\end{equation}
+being valid $\forall \vv \in H^1_0(\Omega)^d$.
+
+On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function $q$.
+\begin{equation}
+    \begin{aligned}
+        \int_{\Omega} q \nabla \cdot \uu &= 0  && \forall q \in L^2(\Omega)
+    \end{aligned}
+    \label{eq:weak_formulation_p}
+\end{equation}
+
+The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $J(\vv)$ \cite{Saramito, Bleyer}:
+\begin{equation}
+    \begin{aligned}
+        \uu &= \argmin_{\vv \in \mathcal{V}} J(\vv)\\
+        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|2 \mathbf{D}(\vv)\|^2 \;\dd \xx + \tau_0 \int_{\Omega} \|2 \mathbf{D}(\vv)\| \;\dd\xx - \int_{\Omega} \ff\cdot \vv \; \dd\xx  %\int_{\Omega} p \cdot \nabla \cdot (\vv)
+    \end{aligned}\label{eq:minimize}
+\end{equation}
+
+where $\mathcal{V} = \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{U}_{\Gamma} \;\text{on}\; \partial \Omega\}$
+
+We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$. Note that we added the incompressibility constraint in the objective through its lagrange multiplier $-p$:
+\begin{align}
+    J(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{\mu}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
+    &\qquad - (p + \epsilon q) \nabla \cdot (\uu + \epsilon \vv) - \mathbf{f}\cdot(\uu + \epsilon \vv) \: \dd \xx\\[8pt]
+    \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 &= \frac{1}{2} 2\mathbf{D}(\uu + \epsilon \vv) : 2\mathbf{D}(\uu + \epsilon \vv) \nonumber \\
+    &= 2 \mathbf{D}(\uu):\mathbf{D}(\uu) + 4\epsilon \mathbf{D}(\uu):\mathbf{D}(\vv) + 2\epsilon^2 \mathbf{D}(\vv):\mathbf{D}(\vv)\\[8pt]
+    \left. \dv{J(\uu + \epsilon \vv, p)}{\epsilon}\right\vert_{\epsilon=0} &= \int_{\Omega} \frac{\mu}{2}   4\mathbf{D}(\uu):\mathbf{D}(\vv) + \tau_0 \frac{4\mathbf{D}(\uu):\mathbf{D}(\vv)}{2\sqrt{2\mathbf{D}(\uu):\mathbf{D}(\uu)}} - p\nabla\cdot(\vv) - \mathbf{f}\cdot(\vv) \: \dd \xx\nonumber\\
+    &= \int_{\Omega} \left(2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|}\right) \mathbf{D}(\uu):\mathbf{D}(\vv) - p\nabla\cdot \vv - \mathbf{f} \cdot \vv \label{eq:gateau_1} \\[8pt]
+    \left. \dv{J(\uu, p+\epsilon q)}{\epsilon}\right\vert_{\epsilon=0} &= -\int_{\Omega}q \nabla \cdot \uu  \label{eq:gateau_2}
+\end{align}
+
+It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{eq:gateau_2} cancel out for every perturbation fields $\vv$ and $q$. Those are precisely the expressions of the weak formulation we derived in \eqref{eq:weak_formulation} and \eqref{eq:weak_formulation_p}.
+
+\chapter{1D solution using SOCP}
+
+\section{Introduction}
+To start, we will study the well know Poiseuille flow: the fluid is pushed forward by a constant pressure gradient in a channel between two infinitely long plates. This flow is of course a bit boring since it is stationary and fully developed. But it has the merit of being simple to introduce the optimization method in a one-dimensional framework.
+
+We consider $\Omega = [-h/2, h/2]$ that represents a transversal 1D slice of the channel whose width is $h$. We also have that the velocity field reduces to $\mathbf{u} = u(y)\,\ex$, since the flow is $x$ independent and incompressible. The pressure gradient $-\Delta p/\Delta x$ is called $G$, and the fluid does not slip at the wall. Furthermore, the symmetry of the problem implies that the shear stress profile satisfies $\tau_{xy}(-y) = -\tau_{xy}(y)$.
+
+%In our 1D case, the interface must have zero velocity $\mathbf{u^*} = \mathbf{0}$, and must be parallel to the flow with $\mathbf{\hat n} = \ey$, both due to the hypothesis of stationarity. 
+%Knowing that, equation \eqref{eq:interface_mass} becomes trivial, and equation \eqref{eq:interface_momentum} enforces continuity of the stress tensor across the interface(s).
+
+\section{Analytic solution}
+We can now solve for $u(y)$. With our hypothesis, the conservation of momentum \eqref{eq:momentum} has boiled down to a scalar equation:
+\begin{align}
+    0 = G + \pdv{\tau_{xy}}{y} \qquad \implies \qquad \tau_{xy} = -G y \qquad \text{since } \tau_{xy}(0)=0
+    \label{eq:tau_xy}
+\end{align}
+
+The expression of $\tau_{xy}$ can be obtained from the general expression of the stress tensor in \eqref{eq:tensor_yielded}:
+\begin{align}
+    \boldsymbol{\tau} &=
+    \begin{pmatrix}
+        0 & \mu \partial_y u\\
+        \mu \partial_y u & 0\\
+    \end{pmatrix} + \tau_0
+    \begin{pmatrix}
+        0 & 1\\
+        1 & 0\\
+    \end{pmatrix} \sign(\partial_y u) \\[6pt] %& \text{if }\quad  \left|\partial_y u\right| > 0
+    \implies \tau_{xy} &=
+    \begin{cases}
+        \mu \partial_y u - \tau_0  \qquad y > y_0\\[3pt]
+        \mu \partial_y u + \tau_0  \qquad y < -y_0\\
+    \end{cases} \label{eq:tau_xy_cases}
+\end{align}
+
+The threshold shear-stress is reached at $y=\pm y_0$ when 
+\begin{align}
+    \tau_{xy}(\pm y_0) = \mp G \, y_0 = \mp \tau_0 \iff y_0 = \frac{\tau_0}{G} \label{eq:threshold}
+\end{align}
+
+In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state when $\frac{\tau_0}{G} \geq \frac{h}{2}$. In that case, its velocity is zero everywhere to satisfy boundary conditions: the fluid is said to be in the \textit{arrested state} \cite{Saramito}.
+
+In the lower zone $[-\frac{h}{2}, -y_0]$, we find the velocity profile $u_3(y)$ by integration equations \eqref{eq:tau_xy} and \eqref{eq:tau_xy_cases}:
+\begin{align}
+    \int_{-\frac{h}{2}}^y \mu \pdv{u}{y} + \tau_0 &= \int_{-\frac{h}{2}}^y -Gy\\
+    u_3(y) &= -\frac{\tau_0}{\mu} \left(\frac{h}{2}+y\right) + \frac{G}{2\mu} \, \left(\left(\frac{h}{2}\right)^2 - y^2\right)
+\end{align}
+
+The continuity of the velocity field allows us to find the velocity of the plug:
+\begin{align}
+    u_2 &= u_3(-y_0) = %-\frac{\tau_0}{\mu} (h+y_0) + \frac{1}{2\mu} \pdv{p}{x} \, (h^2 - y_0^2)\\
+    \frac{G}{8\mu} \left(h - 2y_0\right)^2
+\end{align}
+
+The procedure is very similar for the upper zone $[y_0, h/2]$.
+
+Let us define the non-dimensional coordinate $\eta$, the reference velocity $U_{\infty}$ as the maximum velocity of a classical Poiseuille flow and the Bingham number $Bn$ that relates the yield and viscous stresses.
+\begin{align}
+    \eta=\frac{2y}{h} \qquad U_{\infty}= \frac{G h^2}{8\mu} \qquad Bn=\frac{\tau_0 h}{\mu U_{\infty}}=\frac{8\tau_0}{G h} \qquad \eta_0 = \frac{2y_0}{h} = \frac{Bn}{4}
+\end{align}
+
+The velocity profile can then be expressed as follows, in the presence of a yielded region, i.e. when $\eta_0 < 1 \iff Bn < 4$:
+\begin{align}
+    \frac{u(\eta)}{U_{\infty}} &= -\frac{Bn}{2}(1-\eta) + (1-\eta^2) & \eta_0 < \eta \leq 1\\
+    \frac{u(\eta)}{U_{\infty}} &= \left(1 - \frac{Bn}{4} \right)^2 & -\eta_0 \leq \eta \leq \eta_0 \\
+    \frac{u(\eta)}{U_{\infty}} &= -\frac{Bn}{2}(1+\eta) + (1-\eta^2) & -1 \leq \eta < -\eta_0
+\end{align}
+
+\input{./schema_1D}
+
+\section{Finite element formulation}
+
+Let us first define the mesh $\Omega=[-h/2, h/2]$ that is made of $n$ elements $\Omega_i=[y_{i-1}, y_i]$, $i=1, \dots, N$, and $N+1$ nodal values $(y_i)$. The velocity profile $u(y)$ is approximated by sum of shape functions $\phi_i$ weighted by their associated nodal value $U_i$. These shape functions have a compact support around their associated node, and satisfy $\phi_i(x_j) = \delta_{ij}$.
+
+\begin{equation}
+        u^h(y) = \sum_{i=0}^N U_i \phi_i(y)
+\end{equation}
+
+We will consider both linear and quadratic shape functions. They are expressed on a reference element $\hat \Omega = [-1, 1]$ and numbered with local node index $j=1,\dots,n$ in \autoref{eq:shape_1D} and \autoref{fig:shape_fct_1D}.
+\begin{equation}
+    \begin{split}
+        \phi_1(\eta) &= \frac{1-\eta}{2}\\
+        \phi_2(\eta) &= \frac{1+\eta}{2}\\
+    \end{split}
+    \hspace{40pt}
+    \begin{split}
+        \phi_1(\eta) &= \frac{1}{2} \, \eta \, (1-\eta)\\
+        \phi_2(\eta) &= \frac{1}{2} \, \eta \, (1+\eta)\\
+        \phi_2(\eta) &= 1 - \eta^2\\
+    \end{split}
+    \label{eq:shape_1D}
+\end{equation}
+
+\begin{figure}[ht]
+    \centering
+    \includesvg[width=0.95\textwidth]{../figures/shape_fct_1D.svg}
+    \caption{1-dimensional shape functions $\phi$ on the reference element.}
+    \label{fig:shape_fct_1D}
+\end{figure}
+
+
+The strain-rate tensor with a unidirectional flow $u(y)$ only contains the off-diagonal component,
+\begin{equation}
+    D_{xy}^h(y) = \frac{1}{2} \pdv{u^h}{y} \quad \text{where} \quad \left(\pdv{u^h}{y}\right)_{\Omega_i} = \sum_{j=1}^{n} U_j \dv{\phi_j}{y}
+\end{equation}
+
+The minimization function $J$ of \autoref{eq:minimize} becomes:
+\begin{equation}
+\begin{aligned}
+    J(u^h) &= \int_{\Omega} \left[ \frac{\mu}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
+    &= \sum_{i=1}^N \int_{\Omega_i} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{\Omega_i} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{\Omega_i} - f u^h\vert_{\Omega_i} \; \right] \dd y\\
+    &= \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
+\end{aligned}
+\end{equation}
+where we used Gauss-Legendre quadrature of appropriate order with weights $\omega_g$ and coordinates $y_g$ in the element $\Omega_i$, mapped from coordinates $\eta_g$ in the reference element $[-1,1]$.
+
+In short, one should solve problem \eqref{eq:problem_1D_nonlinear} hereunder
+\begin{equation}
+    \begin{aligned}
+        \textrm{minimize} \qquad & J(u^h)\\
+        \textrm{s.t.} \qquad & u^h(y=-h) = u^h(y=h) = 0
+    \end{aligned}\label{eq:problem_1D_nonlinear}
+\end{equation}
+
+However, this problem cannot be solve straightforwardly with classical optimization techniques such as gradient descent or Newton's method as it contains a non-differentiable term $|\pdv{u^h}{y}|$. Next section will introduce a suitable method, known as second order cone programming or SOCP.
+
+\section{Second order cone programming in a nutshell}
+%CITE NOTES OPTI GLINERUR
+This theory extends linear programming which is restricted to linear cost and linear constraints, by allowing specific nonlinear inequality constraints. For example, $\sqrt{x^2+y^2} \leq z$ is expressed as $(x,y,z) \succeq_{L^3} 0$ or $(x,y,z) \in L^3$, where the Lorentz cone $L^3$ is precisely the set of points $(x,y,z)$ satisfying the nonlinear constraint.
+
+A cone is a subset of a vector space that is closed under linear combinations with positive coefficients. Additional properties can upgrade a cone to a \textit{proper} cone, the only ones we care about in SOCP. These proper cones $K\subseteq \mathbb{R}^n$ satisfy the following properties:
+\begin{enumerate}
+    \item $a \succeq_K 0 \implies \lambda a \succeq_K 0 \quad \forall \lambda \in \mathbb{R}^+$ (cone)
+    \item $a \succeq_K 0 \text{ and } b \succeq_K 0 \implies a + b \succeq_K 0$ (closed under addition)
+    \item $x \succeq_K 0 \text{ and } x \preceq_K 0 \implies x = 0$ (pointed)
+    \item $\textrm{int}(K) \neq \emptyset$ (solid)
+    \item if $\{x_i\}_{i\to\infty}$ with $x_i \succeq_K 0 \quad \forall i$, then $\lim_{i\to\infty} x_i = \bar x \implies \bar x \succeq_K 0$ (closed)
+\end{enumerate}
+
+Cones with such properties will ensure us a global convergence of the Newton's iterations through functions known as \textit{self-concordant barriers}. This is of course very appreciated since Newton's algorithm only converges locally in a general framework.
+A function $g:X\to\mathbb{R}$, where $X\subseteq \mathbb{R}^n$ is called self-concordant iff
+\begin{itemize}[label=--]
+    \item $g \in \mathcal{C}^3$, and
+    \item $g$ is convex, and
+    \item $\nabla^3 g(x) [h, h, h] \leq 2 \big(\nabla^2 g(x) [h, h]\big)^{3/2} \quad \forall x \in X \quad \forall h \in \mathbb{R}^n$
+\end{itemize}
+where $\nabla^3 g(x) [h, h, h] = \sum_{i, j, k} \frac{\partial^3 g}{\partial x_i \partial x_j \partial x_k}(x)\: h_i h_j h_k$. With univariate functions $g(x) : \mathbb{R} \to \mathbb{R}$, this last property gets simplified to $|g'''(x)| \leq 2 \big( g''(x) \big)^{3/2}$. Multivariate functions can then be verified to be self-concordant using the univariate test version on $G_{x,h}(t) : \mathbb{R} \to \mathbb{R} : t \mapsto g(x + th) \quad \forall x \in X \quad \forall h \in \mathbb{R}^n$.
+
+Last but not least, self-concordance (s.c.) is preserved through
+\begin{itemize}[label=--]
+    \item sums: let $f$ and $g$ be s.c. functions, then $h = f+g$ is also a s.c. function.
+    \item linear change of variables: let $x \mapsto f(x)$ be a s.c. functions, then $y \mapsto f(A y + b)$ is also a s.c. function.
+\end{itemize}
+
+The most common proper cones, with their associated s.c. barrier. are listed in \autoref{tab:coefficients}.
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{@{\extracolsep{\stretch{1}}}*{2}{c}@{}}
+        \toprule
+        Name & Definition and barrier \\
+        \midrule
+        Half-space & $\mathbb{R}_+$\\[ 2pt]
+         & $g(x) = -\log(x)$ \\[6 pt]
+        Lorentz/quadratic cone & $L^{n+1} = \{(x, t) \in \mathbb{R}^n \times \mathbb{R} \quad \vert \quad \|x\|_2 \leq t\}$\\[2 pt]
+         & $g(x, t) = -\log(t^2- \|x\|^2)$\\[6 pt]
+        Rotated Lorentz cone & $L_R^{n+2} = \{(x, s, t) \in \mathbb{R}^n \times \mathbb{R}_+ \times \mathbb{R}_+ \quad\vert\quad \|x\|_2^2 \leq 2st\}$\\
+         & $g(x, s, t) = -\log(2st - \|x\|_2^2)$\\[6 pt]
+        Exponential cone & $E = \text{closure} \{(x, y, z) \in \mathbb{R}^3 \quad\vert\quad z \geq y \exp(e/y), y > 0\}$\\[2 pt]
+         & $g(x, y, z) = -\log(z - y \exp(e/y)) - \log(y) - \log(z)$\\[6 pt]
+        Power cone & $P_{\alpha} = \{(x, y, z) \in \mathbb{R}^3 \quad\vert\quad x^{\alpha} y^{1-\alpha} \geq |z|, x>0, y>0, 0<\alpha<1\}$\\[2 pt]
+         & $g(x, y, z) = -\log(x^{2\alpha} y^{2-2\alpha} - z^2) - \log(x) - \log(y)$\\[2 pt]
+        \bottomrule
+    \end{tabularx}
+    \caption{Cone list.}
+     \label{tab:coefficients}
+\end{table}
+%In the case of the Lorentz cone $L^3=\{(x,y,z) \vert \sqrt{x^2+y^2} \leq z\}$, the s.c. barrier is $g(x) = -\log(z^2- x^2 - y^2)$. For linear constraints $a^\top x \geq b$, the s.c. barrier is $g(x) = -\log(a^\top x - b)$. Many more cones exists, and there are tables of conic cones with their associated barrier.
+
+Once all the nonlinear constraints have been translated into conic constraints with s.c. barriers $g_i(x)$, the solution is found using an \textit{Interior-point method} that minimizes
+\begin{equation}
+    f_{\mu} (x) = \frac{c^\top x}{\mu} + \sum_{i} g_i(x)
+\end{equation}
+where $c$ is the original linear cost and $\mu > 0$ is progressively brought to zero. For each $\mu$, there is an unique solution $x^*_{\mu}$. The set of solutions $x^*_{\mu}$ is called the \textit{central path}. One can eventually retrieve the solution of the original problem since $x^*_{\mu} \to x^*$ as $\mu \to 0$.
+
+Let us take a basic example in 2 dimensions.
+\begin{equation*}
+\begin{aligned}
+    \min_{x,y} \qquad &x\\
+    \text{s.t.} \qquad & 2x + y \geq 3 \quad\text{and}\quad 2x - 4y \leq 1 \quad\text{and}\quad x + 5y \leq 10\\
+    \implies \qquad & f_{\mu}(x,y) = \frac{x}{\mu} - \log(2x+y-3) - \log(1-2x+4y) - \log(10 - x - 5y)
+\end{aligned}
+\end{equation*}
+
+\vspace{-18pt}
+\begin{figure}[hb]
+    \centering
+    \includesvg[width=\textwidth]{../figures/interior_point_example.svg}
+    \caption{Solution of the basic example using the interior point method}
+    \label{fig:interior_pt}
+\end{figure}
+
+In practice, no one computes the $x^*_{\mu}$ on the \textit{central path} because these points are only used as starting point of the next iteration with a lower $\mu$. Instead, we use an iterative algorithm where we alternate between a Newton step and a decrease of $\mu$ until we reach the required precision. Newton steps keep the current solution close enough to the central path, while the decrease of $\mu$ brings the objective function $f_{\mu}$ to the linear function $c^\top x$. 
+
+For a precision $\epsilon$ s.t. $c^\top x - c^\top x^* < \epsilon$, a solution $x$ is obtained in $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations with the \textit{short-step algorithm} briefly described here above. $\nu = \sum_{i} \nu_i$, with the barrier parameter $\nu_i$, in a sense related to the \textit{steepness} of the constraint $i$. The initial value x must be close enough to the central path. This can be done with damped Newton steps from any admissible $x \in X$ CITE.
+
+
+\section{Finite element solution}
+With our recent knowledge in SOCP, we can reformulate problem \eqref{eq:problem_1D_nonlinear} in terms of conic constraints:
+\begin{equation}
+    \begin{aligned}
+        %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{\mu}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
+        \min_{s, t, U} \qquad &\sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2} \, S_{i, g} + \tau_0 \, T_{i,g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}\\
+        %\left(\pdv{u^h}{y}\right)^2_{y=y_g}
+        %\left|\pdv{u^h}{y}\right|_{y=y_g}
+        \textrm{s.t.} \qquad & \left(\pdv{u^h}{y}\right)^2_{y=y_g} \leq S_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[\left(\pdv{u^h}{y}\right)^2_{y=y_g}, S_{i,g}, \frac{1}{2}\right] \in L_R^{1+2} \quad \forall i \:\forall g\\
+    \qquad & \left|\pdv{u^h}{y}\right|_{y=y_g} \leq T_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[ \left|\pdv{u^h}{y}\right|_{y=y_g}, T_{i,g}\right] \in L^{1+1} \quad \forall i \:\forall g\\
+        \qquad & U_0 = U_N = 0
+    \end{aligned}
+\end{equation}
+
+We minimize this problem over the nodal velocities $U$, and the newly added $S$ and $T$ variables. Even if the inequalities may confuse at first glance, they are valid from a modelling standpoint. They are always verified as equalities at the optimum. We can show it by contradiction. Let us assume that $\left(\pdv{u^h}{y}\right)^2 < S_{i,g}$ for a specific index $i,g$ at the optimum. Then the cost can be reduced by decreasing $S_{i,g}$ by $\epsilon > 0$, keeping all other variables unchanged: we are not at the optimum. % fool the solver
+
+At this stage, the finite element solution will be relevant only when the interface is represented on the mesh. Therefore, the arbitrary mesh is manually modified such that two nodes are placed at $y=\pm y_0$. In the next chapter, we will develop an algorithm that moves the nodes without knowing the interface position beforehand.
+
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/result_1D_P1.svg}
+    \caption{FE solution of the Poiseuille flow with $P1$ elements. The unyielded zone is shaded in grey. The error is shown at the nodes for $u(y)$ and at the element center for the strain and shear.}
+    \label{fig:results_1D_P1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/result_1D_P2.svg}
+    \caption{FE solution of the Poiseuille flow with $P2$ elements. The unyielded zone is shaded in grey. The error is computed on the whole domain $\Omega$.}
+    \label{fig:results_1D_P2}
+\end{figure}
+
+
+\chapter{Interface tracking}
+
+Going back to the constitutive law of bingham fluids, one can see that the strain rate at the interface is continuous and equal to $0$. However, there is a jump in its derivative, $\pdv[2]{u}{y}$, which is of course zero in the solid plug and $>0$ in the yielded regions as can be seen in \cref{fig:results_1D_P1,fig:results_1D_P2}.
+
+Initially, with a random mesh, it is almost certain that the interface (a point) is represented on the mesh with a node.
+
+%\nocite{*}
+%\printbibliography
+
+\bibliographystyle{plain}
+\bibliography{main.bib}
+
+\end{document}
+
+
+    \draw[gray, thick] (2,0) -- (6,0);
+    \draw[gray, thick, dotted] (-2, 0) -- (2, 0);
+    \filldraw[black] (0,-1) circle (1pt);
+    \draw[black] (0,-1) circle ({sqrt(5)});
+    \draw[<->] (0, -0.1) -- (0, -0.9) node[midway, right] {$\Bar{z} + z^*$};
+    \draw[<->] ({-sqrt(5)+0.1}, -1) -- (-0.1, -1) node[midway, below] {$R$};

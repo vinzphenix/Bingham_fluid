@@ -131,7 +131,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
 
     tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
     tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
-    tag_u_set = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")
+    tag_u_set = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # ln_inflow
     tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
     tag_other = gmsh.model.addPhysicalGroup(1, ln_others, tag=5, name="others")
 
@@ -174,6 +174,7 @@ def create_cylinder(filename, elemSizeRatio):
 
     tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
     tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+    # tag = gmsh.model.addPhysicalGroup(1, [2, 5], tag=2, name="v_zero")
     tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [2]
     tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
 
@@ -329,8 +330,7 @@ def create_backward_facing_step(filename, elemSizeRatio):
     tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
 
     # gmsh.model.mesh.set_size_callback(lambda *args: elemSizeRatio * height)
-    gmsh.model.mesh.setSize([(0, 1)], elemSizeRatio * height / 3.)
-    gmsh.model.mesh.setSize([(0, 2)], elemSizeRatio * height / 2.)
+    gmsh.model.mesh.setSize([(0, 2), (0, 1)], elemSizeRatio * height / 2.)
     for i in [3, 4, 5, 6]:
         gmsh.model.mesh.setSize([(0, i)], elemSizeRatio * height)
 
@@ -349,9 +349,10 @@ def create_backward_facing_step(filename, elemSizeRatio):
 if __name__ == "__main__":
     path_to_dir = "./mesh/"
 
-    # create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./5., y_zero=0., cut=False)
-    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0.3, cut=False)
+    create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
+    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
-    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./30.)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./25., cut=False)
-    create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./15.)
+
+    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50.)
+    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./50., cut=False)
+    # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./35.)

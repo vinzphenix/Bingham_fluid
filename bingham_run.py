@@ -5,9 +5,9 @@ from bingham_post_pro import plot_1D_slice, plot_solution_2D, plot_solution_2D_m
 from bingham_tracking import solve_interface_tracking
 
 
-def load_solution(model_name, simu_number):
+def load_solution(model_name, model_variant):
     
-    res_file_name = f"./res/{model_name:s}_{simu_number:d}"
+    res_file_name = f"./res/{model_name:s}_{model_variant:s}"
 
     with open(res_file_name + "_params.txt", 'r') as file:
         K = float(next(file).strip('\n'))
@@ -24,11 +24,14 @@ def load_solution(model_name, simu_number):
 
 def get_analytical_poiseuille(sim: Simulation_2D):
 
+    # dp_dx = sim.f[0]
+    dp_dx = 1.
     H = np.amax(sim.coords[:, 1])  # half channel width (centered at y = 0)
-    U_inf = sim.f[0] * (H ** 2) / (2. * sim.K)  # max velocity when tau_zero = 0
+    U_inf = dp_dx * (H ** 2) / (2. * sim.K)  # max velocity when tau_zero = 0
+
     Bn = sim.tau_zero * H / (sim.K * U_inf)
 
-    y_zero = sim.tau_zero / sim.f[0]
+    y_zero = sim.tau_zero / dp_dx
     eta_zero = y_zero / H
     eta = sim.coords[:, 1] / H
     u_analytical = np.zeros_like(eta)
@@ -59,24 +62,20 @@ if __name__ == "__main__":
     gmsh.initialize()
 
     if mode == 1:
-        # parameters, u_nodes, p_field = load_solution("test", 12)
-        # parameters, u_nodes, p_field = load_solution("rectangle", 1)
-        # parameters, u_nodes, p_field = load_solution("rectangle", 2)
-        # parameters, u_nodes, p_field = load_solution("rect_fit", 1)
-        # parameters, u_nodes, p_field = load_solution("cylinder", 11)
-        # parameters, u_nodes, p_field = load_solution("cavity", 0)
-        parameters, u_nodes, p_field = load_solution("cavity", 3)
-        # parameters, u_nodes, p_field = load_solution("bfs", 1)
-        # parameters, u_nodes, p_field = load_solution("bfs", 3)
+        # parameters, u_nodes, p_field = load_solution("test", "")
+        parameters, u_nodes, p_field = load_solution("rectangle", "weak")
+        # parameters, u_nodes, p_field = load_solution("cylinder", "")
+        # parameters, u_nodes, p_field = load_solution("cavity", "")
+        # parameters, u_nodes, p_field = load_solution("bfs", "")
         pass
     elif mode in [2, 3, 4]:
-        # parameters = dict(K=1., tau_zero=0.2, f=[1., 0.], element="th", model_name="test")
-        # parameters = dict(K=1., tau_zero=0.30, f=[1., 0.], element="th", model_name="rectangle")
+        parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
+        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="rectangle")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rectangle")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
-        # parameters = dict(K=1., tau_zero=0.5, f=[1., 0.], element="th", model_name="cylinder")
-        parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="mini", model_name="cavity")
-        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="bfs")
+        # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
+        # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cavity")
+        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
         pass
     else:
         raise ValueError
@@ -84,9 +83,11 @@ if __name__ == "__main__":
     sim = Simulation_2D(**parameters)
     print(sim.n_node)
 
-    # if mode == 1:
-    #     _, u_nodes, p_field = load_solution("cylinder", 10)
-    #     u_nodes = u_nodes
+    if mode == 1:
+        # _, u_nodes_1, p_field_1 = load_solution("rectangle", "weak_cross")
+        # _, u_nodes_2, p_field_2 = load_solution("rectangle", "strong_cross")
+        u_nodes = u_nodes - get_analytical_poiseuille(sim)
+        # p_field = p_field_1
 
     if mode == 2:  # Solve the problem: ITERATE
         u_nodes = solve_interface_tracking(sim, atol=1e-8, rtol=1e-6)
@@ -97,12 +98,12 @@ if __name__ == "__main__":
         # sim.save_solution(u_nodes, simu_nb=-1)
 
         u_nodes_weak, p_field_weak = solve_FE_mosek(sim, strong=False)
-        sim.save_solution(u_nodes_weak, p_field_weak, simu_number=3)
+        # sim.save_solution(u_nodes_weak, p_field_weak, model_variant='weak')
 
-        u_nodes_strong, p_field_strong = solve_FE_mosek(sim, strong=True)
-        sim.save_solution(u_nodes_strong, p_field_strong, simu_number=4)
+        # u_nodes_strong, p_field_strong = solve_FE_mosek(sim, strong=True)
+        # sim.save_solution(u_nodes_strong, p_field_strong, model_variant='strong_f')
 
-        u_nodes, p_field = u_nodes_weak-u_nodes_weak, p_field_weak
+        u_nodes, p_field = u_nodes_weak, p_field_weak
 
     elif mode == 4:  # DUMMY solution to debug
         u_nodes = np.zeros((sim.n_node, 2))
@@ -115,7 +116,7 @@ if __name__ == "__main__":
         p_field = np.zeros(sim.primary_nodes.size - sim.nodes_singular_p.size)
 
     plot_solution_2D(u_nodes, p_field, sim)
-    # plot_1D_slice(u_nodes, sim)
+    plot_1D_slice(u_nodes, sim)
 
     gmsh.finalize()
     # python3 bingham_run.py -mode 3

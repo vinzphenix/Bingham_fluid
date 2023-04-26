@@ -203,9 +203,9 @@ class Simulation_2D:
         primary_nodes = np.argwhere(node_is_vertex_list).flatten()
         return primary_nodes
 
-    def save_solution(self, u_num, p_num, simu_number=0):
+    def save_solution(self, u_num, p_num, model_variant):
         
-        res_file_name = f"./res/{self.model_name:s}_{simu_number:d}"
+        res_file_name = f"./res/{self.model_name:s}_{model_variant:s}"
         with open(res_file_name + "_params.txt", 'w') as file:
             file.write(f"{self.K:.6e}\n")
             file.write(f"{self.tau_zero:.6e}\n")

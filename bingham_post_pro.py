@@ -4,7 +4,7 @@ from bingham_tracking import compute_strain_per_elem, compute_gradient_at_nodes
 
 def plot_1D_slice(u_num, sim: Simulation_2D):
 
-    if sim.model_name[:4] != "rect":
+    if sim.model_name[:4] not in ["rect", "test"]:
         return
 
     slice_node_tags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
@@ -13,7 +13,7 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
     slice_xy = sim.coords[slice_node_tags]
     slice_y = slice_xy[:, 1]
     slice_u = u_num[slice_node_tags, 0]  # only u component of (u, v)
-    H = np.amax(slice_y)
+    H = np.amax(slice_y) - np.amin(slice_y)
 
     arg_sorted_tags = np.argsort(slice_y)
     slice_u = slice_u[arg_sorted_tags]
@@ -143,6 +143,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm, mo
     gmsh.view.option.setNumber(tag_v, "VectorType", 6)
     gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
     gmsh.view.option.setNumber(tag_v, "DrawPoints", 0)
+    gmsh.view.option.setNumber(tag_v, "Sampling", 5)
     gmsh.view.option.setNumber(tag_v, "NormalRaise", v_normal_raise)
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
     # for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:

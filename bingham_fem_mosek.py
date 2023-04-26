@@ -61,9 +61,9 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
     # Impose u = ..., where needed
     idxs_with_u = 2 * sim.nodes_with_u + 0
     bound_key_var = np.full(idxs_with_u.size, mosek.boundkey.fx)
-    bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
+    # bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
     # bound_value = np.sin(np.pi * sim.coords[sim.nodes_with_u, 0] / 1.)**2
-    # bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
+    bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
     task.putvarboundlist(idxs_with_u, bound_key_var, bound_value, bound_value)
 
     return
@@ -155,7 +155,8 @@ def set_strong_divergence_free(sim: Simulation_2D):
     phi_indices[:, :, :, 1] = 2 * phi_indices[:, :, :, 1] + 1  # v_idx
 
     dphi = get_dphi(sim, at_v=True)  # (ne, ng, nsf, 2)
-    dphi /= sim.determinants[:, np.newaxis, np.newaxis, np.newaxis]
+    # dphi /= sim.determinants[:, np.newaxis, np.newaxis, np.newaxis]
+    dphi /= 2 * sim.ng_loc  # so that dual variables correspond to pressure
 
     # Construct sparse matrix, and sum duplicates
     rows, cols, vals = gauss_indices.flatten(), phi_indices.flatten(), dphi.flatten()
