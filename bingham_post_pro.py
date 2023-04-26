@@ -32,7 +32,7 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
         nElem=n_intervals, random_seed=-1, fix_interface=False, save=False
     )
     sim_1D.set_y(slice_y)
-    plot_solution_1D(sim=sim_1D, u_nodes=slice_u)
+    plot_solution_1D(sim=sim_1D, u_num=slice_u)
     return
 
 
