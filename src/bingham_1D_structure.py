@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from cvxopt import matrix, solvers
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
@@ -48,7 +47,7 @@ class Simulation_1D:
         self.Bn = self.tau_zero * self.H / (self.K * self.V)
         self.y_zero = self.tau_zero / self.f
 
-        self.n_iterations = 0
+        self.iteration = 0
         self.degree = params['degree']
         self.n_elem = params['n_elem']
 

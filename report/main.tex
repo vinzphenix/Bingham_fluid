@@ -32,11 +32,13 @@ In both yielded and unyielded regions, the stress tensor is continuous (\textcol
 Throughout this study, we will consider low Reynolds numbers, so that we can neglect the inertia terms on the left of equation \eqref{eq:momentum}. We will also consider that no external force is applied, $\mathbf{f}=\mathbf{0}$.
 
 Let us also recall the following velocity gradient decomposition,
+%\begin{empheqboxed}
 \begin{align}
     \nabla \mathbf{u} &= \mathbf{D} + \mathbf{W}\\
     \mathbf{D} &= \frac{1}{2} \left(\nabla \mathbf{u} + \nabla^T \mathbf{u}\right)\\
     \mathbf{\Omega} &= \frac{1}{2} \left(\nabla \mathbf{u} - \nabla^T \mathbf{u}\right)
 \end{align}
+%\end{empheqboxed}
 
 where
 \begin{itemize}[label=---]
@@ -93,14 +95,15 @@ On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function
 \end{equation}
 
 The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $J(\vv)$ \cite{Saramito, Bleyer}:
+\begin{empheqboxed}
 \begin{equation}
     \begin{aligned}
-        \uu &= \argmin_{\vv \in \mathcal{V}} J(\vv)\\
-        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|2 \mathbf{D}(\vv)\|^2 \;\dd \xx + \tau_0 \int_{\Omega} \|2 \mathbf{D}(\vv)\| \;\dd\xx - \int_{\Omega} \ff\cdot \vv \; \dd\xx  %\int_{\Omega} p \cdot \nabla \cdot (\vv)
+        \uu &= \argmin_{\vv \in \mathcal{V}} J(\vv)\\[8pt]
+        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|2 \mathbf{D}(\vv)\|^2 \;\dd \xx + \tau_0 \int_{\Omega} \|2 \mathbf{D}(\vv)\| \;\dd\xx - \int_{\Omega} \ff\cdot \vv \; \dd\xx \\[8pt]
+        &\text{where} \qquad \mathcal{V} = \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{U}_{\Gamma} \;\text{on}\; \partial \Omega\}
     \end{aligned}\label{eq:minimize}
 \end{equation}
-
-where $\mathcal{V} = \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{U}_{\Gamma} \;\text{on}\; \partial \Omega\}$
+\end{empheqboxed}
 
 We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$. Note that we added the incompressibility constraint in the objective through its lagrange multiplier $-p$:
 \begin{align}

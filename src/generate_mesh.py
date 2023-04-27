@@ -53,6 +53,9 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     s1 = factory.addPlaneSurface([cl1])
     srfs = [s1]
 
+    p5, p6, p7, p8, p9, p10, p11, p12 = [-1] * 8
+    ldr, lur = [-1] * 2
+
     if fit:
         p5 = factory.addPoint(0., -height / 2., 0., lc)
         p6 = factory.addPoint(+c, -height / 2., 0., lc)
@@ -347,7 +350,7 @@ def create_backward_facing_step(filename, elemSizeRatio):
 
 
 if __name__ == "__main__":
-    path_to_dir = "./mesh/"
+    path_to_dir = "../mesh/"
 
     create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)

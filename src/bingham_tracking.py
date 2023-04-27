@@ -93,7 +93,7 @@ def solve_interface_tracking(sim: Simulation_2D, atol=1e-8, rtol=1e-6, max_it=20
     neighbours_map = get_neighbours_mapping(sim)
 
     # Solve first time with initial mesh
-    u_num = solve_FE_mosek(sim, solver_name='mosek', strong=False)
+    u_num = solve_FE_mosek(sim, strong=False)
 
     while sim.iteration < max_it:
         print("")

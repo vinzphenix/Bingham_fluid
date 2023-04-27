@@ -1,10 +1,9 @@
 from bingham_structure import *
-from mosek import *
 from scipy.sparse import coo_matrix
+import mosek
+
 
 # Define a stream printer to grab output from MOSEK
-
-
 def streamprinter(text):
     sys.stdout.write(text)
     sys.stdout.flush()
@@ -310,8 +309,8 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         # Retrieve solution (only velocity field variables)
         task.onesolutionsummary(mosek.streamtype.log, mosek.soltype.itr)
 
-        p_num = np.array(task.gety(soltype.itr))
-        u_num = np.array(task.getxxslice(soltype.itr, 0, sim.n_velocity_var))
+        p_num = np.array(task.gety(mosek.soltype.itr))
+        u_num = np.array(task.getxxslice(mosek.soltype.itr, 0, sim.n_velocity_var))
         u_num = u_num.reshape((sim.n_node + sim.n_elem * (sim.element == 'mini'), 2))
 
         # if sim.tau_zero > 0.:

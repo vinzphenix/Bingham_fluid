@@ -46,7 +46,7 @@ def plot_interior_point(save=False):
 
     axs[0].set_ylabel(r"$y$", fontsize=13)
     axs[-1].legend(fontsize=13)
-    # plt.savefig("./figures/interior_point_example.svg", format="svg", bbox_inches="tight")
+    # plt.savefig(path + "interior_point_example.svg", format="svg", bbox_inches="tight")
     plt.show()
 
 
@@ -78,13 +78,14 @@ def plot_shape_fct_1D(save=False):
         ax.grid(ls=':')
     
     if save:
-        fig.savefig("./figures/shape_fct_1D.svg", format="svg", bbox_inches='tight')
+        fig.savefig(path + "shape_fct_1D.svg", format="svg", bbox_inches='tight')
     else:
         plt.show()
 
 
 if __name__ == "__main__":
     save_global = True
+    path = "../figures/"
     plt.rcParams["text.usetex"] = save_global
 
     plot_interior_point(save_global)

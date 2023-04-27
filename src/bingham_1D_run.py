@@ -1,5 +1,6 @@
 from bingham_1D_structure import *
 from bingham_1D_post_pro import plot_reconstruction, plot_solution_1D
+from cvxopt import matrix, solvers
 
 
 def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
@@ -125,7 +126,7 @@ def compute_new_targets(t_num, idx_elem_switch):
 def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
     # Set some parameters
-    sim.it, max_it = 0, 20
+    sim.iteration, max_it = 0, 20
     tol_unyielded = 1.e-3
     update_coef = 1.  # 1. for full update, 0.5 for half-update, 0. for no update
 
@@ -133,7 +134,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     u_nodes, s_num, t_num = solve_FE(sim, atol=atol, rtol=rtol)
     y_old, u_old = sim.y.copy(), u_nodes.copy()
 
-    while sim.it < max_it:  # and if sol is C1, break
+    while sim.iteration < max_it:  # and if sol is C1, break
 
         print("")
         mask_strain = np.mean(t_num, axis=1) > tol_unyielded  # mean over the gauss points
@@ -168,7 +169,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
             y_zero_guess *= 1. if sim.dimensions else 2. / sim.H
             moved_y = next_y[node_to_move] if sim.dimensions else 2. / sim.H * next_y[node_to_move]
-            print(f"iteration {sim.it:2d} : {'root of du/dy':>15s} = {y_zero_guess:6.3f}", end="")
+            print(f"iter {sim.iteration:2d} : {'du/dy root':>15s} = {y_zero_guess:6.3f}", end="")
             print(f"   y[{node_to_move:d}] update = {moved_y:6.3f}")
 
         # plot_solution_1D(sim, u_nodes)
@@ -176,12 +177,11 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
         sim.set_y(next_y)
         u_nodes, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
-        sim.it += 1
+        sim.iteration += 1
 
         plot_reconstruction(sim, y_old, u_old, idxs_switch, coefs, sim.y, u_nodes)
         y_old, u_old = sim.y, u_nodes
 
-    sim.n_iterations = sim.it
     return u_nodes
 
 

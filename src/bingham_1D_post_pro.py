@@ -12,9 +12,9 @@ def make_step(array_x, array_y, step):
 def eval_analytical_sol(sim: Simulation_1D, y):
     e0, eta = 2. * sim.y_zero / sim.H, 2. * y / sim.H
 
-    m_bot = (-1. <= eta) & (eta <= -e0)
+    m_bot = eta <= -e0
     m_mid = (-e0 < eta) & (eta < e0)
-    m_top = (e0 <= eta) & (eta <= 1.)
+    m_top = e0 <= eta
 
     u_ana, du_ana = np.zeros(y.size), np.zeros(y.size)
 
@@ -200,8 +200,6 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
 
     for ax, y_pts, phi_ana_pts, phi_pts, phi_ana_dense, phi_dense in zip(*zipped):
         rel_error_nodes = (phi_ana_pts - phi_pts) / np.amax(np.abs(phi_ana_pts))
-        print(phi_ana_dense)
-        print(phi_dense)
         rel_error_dense = (phi_ana_dense - phi_dense) / np.amax(np.abs(phi_ana_dense))
         ax.plot(rel_error_nodes, y_pts, marker="x", ls="", label="Error", color='red')
         x_vals, y_vals = (rel_error_nodes, y_pts) if sim.degree == 1 else (rel_error_dense, y_dense)
@@ -225,8 +223,9 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
 
     fig.tight_layout()
     if sim.save:
-        filename = f"res_P{sim.degree:d}_iteration_{sim.it:02d}"
-        fig.savefig(f"./figures/{filename:s}.svg", format="svg", bbox_inches="tight")
+        path = "../figures/"
+        filename = f"res_P{sim.degree:d}_iteration_{sim.iteration:02d}"
+        fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
     else:
         plt.show()
     return

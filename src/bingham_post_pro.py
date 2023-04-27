@@ -27,12 +27,13 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
         n_intervals = (len(slice_node_tags) - 1) // 2
         deg_along_edge = 2
 
-    sim_1D = Simulation_1D(
-        H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], deg=deg_along_edge,
-        nElem=n_intervals, random_seed=-1, fix_interface=False, save=False
-    )
+    params = dict(H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], degree=deg_along_edge, 
+                  n_elem=n_intervals, random_seed=-1, fix_interface=False,
+                  save=False, plot_density=25, dimensions=True)
+
+    sim_1D = Simulation_1D(params)
     sim_1D.set_y(slice_y)
-    plot_solution_1D(sim=sim_1D, u_num=slice_u)
+    plot_solution_1D(sim=sim_1D, u_nodes=slice_u)
     return
 
 

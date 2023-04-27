@@ -23,6 +23,9 @@
 \usepackage{tikz}
 \usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings}
 
+\usepackage{empheq}
+\usepackage[many]{tcolorbox}
+
 \usepackage{graphicx, wrapfig}
 \usepackage[font=small, skip=3pt, labelfont=bf, labelsep=period, format=hang, margin={5pt, 6pt}]{caption}
 \usepackage{subcaption}
@@ -74,8 +77,15 @@
 \newcommand{\taub}{\boldsymbol{\tau}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
-
-
 \setlength{\parindent}{12 pt}
 \setlength{\parskip}{4 pt}
 %\setlength{\baselineskip}{1.}
+
+\newtcolorbox{empheqboxed}[1][]{colback=gray!20,
+  colframe=white,
+  width=\textwidth,
+  sharpish corners,
+  top=3pt, % default value 2mm
+  bottom=3pt,
+  after=,% <----- remove the default \par
+}

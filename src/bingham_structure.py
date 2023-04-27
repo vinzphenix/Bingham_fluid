@@ -5,9 +5,9 @@ import matplotlib.tri.triangulation as mpl_tri
 import gmsh
 import mosek
 
+
 from tqdm import tqdm
 from time import perf_counter
-from cvxopt import solvers, matrix, spmatrix
 from bingham_1D_run import Simulation_1D, plot_solution_1D
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
@@ -27,7 +27,7 @@ class Simulation_2D:
         self.f = np.array(f)  # body force (pressure gradient)
 
         self.model_name = model_name
-        gmsh.open("./mesh/" + model_name + ".msh")
+        gmsh.open("../mesh/" + model_name + ".msh")
 
         self.element = element
         if element == "th":
@@ -102,22 +102,24 @@ class Simulation_2D:
         node_tags = np.array(node_tags) - 1
         coords = np.array(coords).reshape((-1, 3))[:, :-1]
 
-        # bd_nodes_01, coords_01 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
-        # bd_nodes_02, coords_02 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
-        # bd_nodes_03, coords_03 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # with u
-        bd_nodes_05, coords_05 = gmsh.model.mesh.getNodesForPhysicalGroup(
-            dim=0, tag=5)  # singular pressure
+        # bd_nodes_01, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
+        # bd_nodes_02, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
+        # bd_nodes_03, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # with u
+        bd_nodes_05, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=5)  # inf p
 
-        bd_nodes_11, coords_11 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=1)  # zero u
-        bd_nodes_12, coords_12 = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # zero v
-        bd_nodes_13, coords_13 = gmsh.model.mesh.getNodesForPhysicalGroup(
-            dim=1, tag=3)  # impose non-zero u
+        bd_nodes_11, _  = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=1)  # zero u
+        bd_nodes_12, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # zero v
+        bd_nodes_13, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=3)  # with u
 
-        nodes_zero_u = np.setdiff1d(bd_nodes_11.astype(int), bd_nodes_13.astype(int)) - 1
-        nodes_zero_v = bd_nodes_12.astype(int) - 1
-        nodes_with_u = bd_nodes_13.astype(int) - 1
+        nodes_zero_u = np.array(bd_nodes_11).astype(int) - 1
+        nodes_zero_v = np.array(bd_nodes_12).astype(int) - 1
+        nodes_with_u = np.array(bd_nodes_13).astype(int) - 1
+        
+        # Remove nodes both u = 0, u != 0
+        nodes_zero_u = np.setdiff1d(nodes_zero_u, nodes_with_u)
 
-        nodes_singular_p = bd_nodes_05.astype(int) - 1
+        # Handle nodes where incompressibility is not imposed
+        nodes_singular_p = np.array(bd_nodes_05).astype(int) - 1
         # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
         # nodes_singular_p = np.array([], dtype=int)
 
@@ -205,7 +207,7 @@ class Simulation_2D:
 
     def save_solution(self, u_num, p_num, model_variant):
         
-        res_file_name = f"./res/{self.model_name:s}_{model_variant:s}"
+        res_file_name = f"../res/{self.model_name:s}_{model_variant:s}"
         with open(res_file_name + "_params.txt", 'w') as file:
             file.write(f"{self.K:.6e}\n")
             file.write(f"{self.tau_zero:.6e}\n")

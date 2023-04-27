@@ -7,7 +7,7 @@ from bingham_tracking import solve_interface_tracking
 
 def load_solution(model_name, model_variant):
     
-    res_file_name = f"./res/{model_name:s}_{model_variant:s}"
+    res_file_name = f"../res/{model_name:s}_{model_variant:s}"
 
     with open(res_file_name + "_params.txt", 'r') as file:
         K = float(next(file).strip('\n'))

@@ -1,4 +1,5 @@
 from bingham_structure import *
+from cvxopt import solvers, matrix, spmatrix
 
 
 def set_coo_entries(new_data, new_rows, new_cols, data, rows, cols, idx):
