@@ -6,11 +6,11 @@
 \usepackage{csquotes}
 
 \usepackage{mathtools}
-\usepackage{amsmath, amsfonts}
+\usepackage{amsmath, amsfonts, nccmath}
 \usepackage{physics}
 %\usepackage{amssymb, amsthm, bm}
 %\usepackage{nccmath}
-%\usepackage{xfrac}
+\usepackage{xfrac}
 
 \usepackage{indentfirst}
 \usepackage{enumitem}
@@ -22,7 +22,6 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings}
-
 \usepackage{empheq}
 \usepackage[many]{tcolorbox}
 
@@ -49,10 +48,10 @@
 
 \usepackage[hyphens]{url}
 \usepackage{listings}
-%\usepackage[backend=biber,sorting=none]{biblatex}
-%\addbibresource{main.bib}
 \usepackage[hidelinks]{hyperref}
 \usepackage[noabbrev]{cleveref}
+%\usepackage[backend=biber,sorting=none]{biblatex}
+%\addbibresource{main.bib}
 
 \definecolor{codegreen}{rgb}{0,0.6,0}
 
@@ -73,6 +72,7 @@
 \newcommand{\vv}{\mathbf{v}}
 \newcommand{\uu}{\mathbf{u}}
 \newcommand{\ff}{\mathbf{f}}
+\newcommand{\gam}{\boldsymbol{\dot \gamma}}
 \newcommand{\nn}{\mathbf{\hat n}}
 \newcommand{\taub}{\boldsymbol{\tau}}
 \DeclareMathOperator*{\argmin}{arg\,min}
@@ -81,11 +81,12 @@
 \setlength{\parskip}{4 pt}
 %\setlength{\baselineskip}{1.}
 
-\newtcolorbox{empheqboxed}[1][]{colback=gray!20,
+\newtcolorbox{empheqboxed}[1][]{
+  colback=gray!20,
   colframe=white,
   width=\textwidth,
   sharpish corners,
-  top=3pt, % default value 2mm
+  top=4pt, % default value 2mm
   bottom=3pt,
-  after=,% <----- remove the default \par
+  %after=,% <----- remove the default \par
 }

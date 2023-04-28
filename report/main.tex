@@ -6,6 +6,7 @@
 \author{\textsc{DEGROOFF} Vincent}
 \date{\today}
 
+
 \begin{document}
  
 \maketitle
@@ -15,76 +16,118 @@
 \chapter{Governing equations}
 
 \section{General notions of continuum mechanics}
-Let $\Omega \in \mathbf{R}^3$ denote the domain of interest, $\mathbf{u}$ be the fluid velocity, and $\boldsymbol{\sigma}=-p\mathbf{I}+\boldsymbol{\tau}$ be the stress tensor with its deviatoric contribution $\boldsymbol\tau$.
+Let $\Omega \in \mathbb{R}^3$ denote the domain of interest and $\Gamma=\partial \Omega$ its boundary. Let $\mathbf{u}$ be the fluid velocity, and $\boldsymbol{\sigma}=-p\mathbf{I}+\boldsymbol{\tau}$ be the stress tensor with its deviatoric contribution $\boldsymbol\tau$.
 
-Let us recall the mass and momentum conservation equations, with body forces $\mathbf{f}$:
+Let us recall the mass and momentum conservation equations, with body forces $\mathbf{f}$, expressed in an Eulerian reference frame:
 \begin{align}
-    \nabla \cdot \mathbf{u} &= 0\label{eq:mass}\\
-    \rho \left(\pdv{\mathbf{u}}{t} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}\label{eq:momentum}
+    \nabla \cdot \mathbf{u} &= 0\\
+    \rho \left(\pdv{\mathbf{u}}{t} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}
 \end{align}
 
-In both yielded and unyielded regions, the stress tensor is continuous (\textcolor{red}{seems obvious, in the yielded zones, but what about the solid part ?}). At the interface, the conservation of mass and momentum read as follows, where $[\![ . ]\!]$ refers to the difference of the fields across the interface and $\mathbf{u^*}$ to the interface velocity:
-\begin{align}
-    [\![ \rho (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} ]\!] &= 0 \label{eq:interface_mass}\\
-    [\![ \rho \mathbf{u} (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} + \mathbf{\hat n} \cdot \sigma ]\!] &= 0 \label{eq:interface_momentum}
-\end{align}
+%In both yielded and unyielded regions, the stress tensor is continuous (\textcolor{red}{seems obvious, in the yielded zones, but what about the solid part ?}). At the interface, the conservation of mass and momentum read as follows, where $[\![ . ]\!]$ refers to the difference of the fields across the interface and $\mathbf{u^*}$ to the interface velocity:
+% \begin{align}
+%     [\![ \rho (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} ]\!] &= 0 \label{eq:interface_mass}\\
+%     [\![ \rho \mathbf{u} (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} + \mathbf{\hat n} \cdot \sigma ]\!] &= 0 \label{eq:interface_momentum}
+% \end{align}
 
-Throughout this study, we will consider low Reynolds numbers, so that we can neglect the inertia terms on the left of equation \eqref{eq:momentum}. We will also consider that no external force is applied, $\mathbf{f}=\mathbf{0}$.
+Throughout this study, we will consider low Reynolds numbers, i.e. flows that are dominated by viscous forces. We will thus neglect the inertia terms on the left of equation \eqref{eq:momentum}. The resulting equations are the well known Stokes equations, where we look for velocity and pressure fields $(\uu,p)$ solution of
+\begin{empheqboxed}
+    \begin{align}
+        0 &= -\nabla p + \nabla \cdot \boldsymbol \tau(\uu) + \mathbf{f} &&\text{in} \; \Omega \label{eq:momentum} \\[2pt]
+        0 &= \nabla \cdot \uu &&\text{in}\; \Omega \label{eq:mass}\\[6pt]
+        \uu &= \uu_{D} &&\text{on}\; \Gamma_{D} \label{eq:Dirichlet}\\[2pt]
+        \boldsymbol \sigma \cdot \nn &= \mathbf{g} &&\text{on}\; \Gamma_{N} \label{eq:Neumann}
+    \end{align}
+\end{empheqboxed}
+where $\Gamma_{D}$ and $\Gamma_{N}$ refer to the partitions of $\partial \Omega$ where Dirichlet and Neumann boundary conditions are applied. $\uu_{D}$ and $\mathbf{g}$ are given beforehand. One could also decide to impose only the normal velocity along with the tangential stress, or the tangential velocity along with the normal stress.
 
-Let us also recall the following velocity gradient decomposition,
-%\begin{empheqboxed}
-\begin{align}
-    \nabla \mathbf{u} &= \mathbf{D} + \mathbf{W}\\
-    \mathbf{D} &= \frac{1}{2} \left(\nabla \mathbf{u} + \nabla^T \mathbf{u}\right)\\
-    \mathbf{\Omega} &= \frac{1}{2} \left(\nabla \mathbf{u} - \nabla^T \mathbf{u}\right)
-\end{align}
-%\end{empheqboxed}
+Before looking for a closure equation for the shear stress tensor, let us first recall the velocity gradient decomposition,
+\begin{empheqboxed}
+    \begin{align}
+        \nabla \mathbf{u} &= \mathbf{D} + \mathbf{W}\\[4pt]
+        \mathbf{D} &= \frac{1}{2} \left(\nabla \mathbf{u} + \nabla^T \mathbf{u}\right) = \frac{1}{2} \gam\\[4pt]
+        \mathbf{W} &= \frac{1}{2} \left(\nabla \mathbf{u} - \nabla^T \mathbf{u}\right)
+    \end{align}
+\end{empheqboxed}
 
-where
+To be exhaustive:
 \begin{itemize}[label=---]
     \item $\mathbf{D}$ is the strain-rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
-    \item $\mathbf{\Omega}$ is the spin tensor that indicates the axis around which the flow is locally rotating.
+    \item $\mathbf{W}$ is the spin tensor that indicates the axis around which the flow is locally rotating.
 \end{itemize} 
 
 \section{Constitutive equations of Bingham fluids}
 
-Bingham fluids is a subset of non-Newtonian fluids. They behave either as solid or liquids depending on the shear stress they undergo. In low-stress regions, we have an \textit{unyielded} zone, while in high-stress regions, we have a \textit{yielded} zone.
+Newtonian fluid behavior is the most simple one can find in fluid mechanics because it assumes that the fluid deformation, or strain rate, is is directly proportional to the shear stress it undergoes. It is very accurate for many liquids and gases like air, water, oil, alcohol, glycerine, etc. However, this model cannot characterize a variety of well known substances from blood to toothpaste to ketchup to name a few.
 
-?Introduce with 1D behavior.?
+Such fluids can be described as Generalized Newtonian \cite{Geophysical}. This model extends Newtonian fluids with a nonlinear constitutive law between the stress $\tau_{ij}$ and strain rate $\dot\gamma_{ij}$:
+\begin{equation}
+    \tau_{ij} = \mu(\dot \gamma, T, \phi) \dot \gamma_{ij}
+    \label{eq:power-law}
+\end{equation}
+where $\mu$, $\dot \gamma$, $T$ and $\phi$ respectively refer to the fluid viscosity, the scalar strain rate, the temperature and the particle concentration (e.g. polymer chains in dilute solutions).
 
-The constitutive law of Bingham fluids reads as follows in the general framework of 2D and 3D flows:
+The simplest example are the Power-law Fluids, that assume $\mu(\dot\gamma) = K \dot \gamma^{n-1}$, with the consistency $K$ and index $n$. This can already describe
+\begin{itemize}[label=---, topsep=0pt]
+    \setlength{\itemsep}{0pt}
+    \item\textit{Shear thinning} fluids with viscosity inversely proportional to strain rate $(n<1)$. For example, Ketchup or blood flow much more easily with higher strain rates.
+    \item\textit{Shear thickening} or \textit{Dilatant} fluids with viscosity proportional to strain rate $(n>1)$. A typical example is the mixture of cornstarch and water, called Oobleck, that appears liquid at rest, but that becomes viscous enough to walk on it if struck hard enough.
+    \item \textit{Newtonian} fluids of course when $n=1$.
+\end{itemize}
+
+A little bit more general is the Herschel-Bulkley Model that extends the Power-law model with a yield stress $\tau_0$ under which the fluid does not deform: it is \textit{unyielded}, $\dot\gamma=0$. Above that threshold, the fluid becomes \textit{yielded} and follows the Power-law model. Bingham fluids correspond to the special case of $n=1$. The constitutive law of the Herschel-Bulkley Model reads as follows
+\begin{equation}
+    \begin{aligned}
+        \dot \gamma_{ij} &= 0 & \text{if} \quad \tau \leq \tau_0\\
+        \tau_{ij} &= \left(K \dot \gamma^{n-1} + \frac{\tau_0}{\dot \gamma}\right) \gamma_{ij} & \text{if} \quad \tau \geq \tau_0\\
+    \end{aligned}
+    \label{eq:herschel}
+\end{equation}
+where $\dot \gamma$ and $\tau$ are the matrix norms of $\gam$ and $\boldsymbol\tau$, more precisely the square root of the second invariant of traceless tensors:
 \begin{align}
-    \mathbf{D} &= \mathbf{0} & \text{if} \quad \|\boldsymbol\tau\| < \tau_0 \label{eq:tensor_unyielded_v0}\\
-    \boldsymbol{\tau} &= 2\mu \mathbf{D} + \tau_0 \frac{\mathbf{D}}{\|\mathbf{D}\|} & \text{if} \quad  \|\boldsymbol\tau\| \geq \tau_0 \label{eq:tensor_yielded_v0}
+    \begin{split}
+        I_2(\mathbf{A}) &\coloneqq \frac{1}{2} \left[\Tr(\mathbf{A}^2) - \big(\Tr(\mathbf{A})\big)^2\right]
+    \end{split}
+    \quad \implies
+    \begin{split}
+        \dot \gamma &\coloneqq \sqrt{I_2(\gam)} = \sqrt{\frac{1}{2} \, \gam : \gam} = \sqrt{2 \mathbf{D} : \mathbf{D}}\\
+        \tau &\coloneqq \sqrt{I_2(\boldsymbol\tau)} = \sqrt{\frac{1}{2} \, \boldsymbol\tau : \boldsymbol\tau}
+    \end{split}
+    %\|\mathbf{D}\| & \coloneqq \sqrt{I_2} = \sqrt{\frac{1}{2} \, \boldsymbol D \boldsymbol: \boldsymbol D}
 \end{align}
 
-This can also be expressed the other way around:
-\begin{align}
-    \|\boldsymbol\tau\| &< \tau_0 & \text{if} \quad \mathbf{D(\uu)} = \mathbf{0} \label{eq:tensor_unyielded}\\
-    \boldsymbol{\tau} &= 2\mu \mathbf{D} + \tau_0 \frac{\mathbf{D}}{\|\mathbf{D}\|} & \text{if} \quad  \mathbf{D(\uu)} \neq \mathbf{0} \label{eq:tensor_yielded}
-\end{align}
+Since we will focus on Bingham fluids in this study, let us reformulate model \eqref{eq:herschel} for $n=1$, with a tensor notation:
+\begin{empheqboxed}
+    \begin{align}
+        \|\boldsymbol\tau\| &< \tau_0 & \text{if} \quad \gam = \mathbf{0} \label{eq:tensor_unyielded}\\
+        \boldsymbol{\tau} &= \left(\mu + \frac{\tau_0}{\dot \gamma}\right) \gam & \text{if} \quad  \gam \neq \mathbf{0} \label{eq:tensor_yielded}
+    \end{align}
+\end{empheqboxed}
 
-where the matrix norm is the square root of the second invariant of a traceless tensor:
-\begin{align}
-    I_2(\mathbf{A}) &\coloneqq \frac{1}{2} \left[\Tr(\mathbf{A}^2) - \big(\Tr(\mathbf{A})\big)^2\right]\\
-    \|\mathbf{A}\| & \coloneqq \sqrt{I_2} = \sqrt{\frac{1}{2} \, \boldsymbol A \boldsymbol: \boldsymbol A}
-\end{align}
+\begin{figure}[!t]
+    \centering
+    \includesvg[width=\textwidth]{../figures/fluid_classification.svg}
+    \caption{Non-Newtonian fluid models.}
+    \label{fig:fluid-classification}
+\end{figure}
 
-?Figure?
 
 \section{Weak formulation}
-Let us first multiply \autoref{eq:momentum} by a test function $\mathbf{v}$ that is zero on $\partial \Omega$ and integrate it over $\Omega$. Then, let us use integration by parts. Finally use the Divergence theorem.
+In order to solve \cref{eq:momentum,eq:mass} with the finite element method, one can express them under its weak form. This is done by multiplying the equations of the strong form by velocity and pressure test functions.
+
 \begin{equation}
     \begin{aligned}
         0 &= {\color{blue}-\nabla p} + {\color{red} \nabla \cdot \taub(\uu)} + \ff\\
-        &= {\color{blue} \int_{\Omega} - \vv \cdot \nabla p \;\dd \xx} + {\color{red} \int_{\Omega} \vv \cdot (\nabla \cdot \taub (\uu)) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff  \;\dd \xx\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\Omega} \nabla \cdot (p\vv)} + {\color{red} \int_{\Omega} \nabla \cdot (\taub \cdot \vv) - \int_{\Omega}  \taub (\uu) : \nabla^\top \vv} + \int_{\Omega} \vv \cdot \ff\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\partial \Omega} p \vv \cdot \nn} + {\color{red} \int_{\partial\Omega} (\taub \cdot \vv) \cdot \nn - \int_{\Omega}  \taub (\uu) : \big(\mathbf{D}(\vv) + \mathbf{\Omega}(\vv)\big)^\top} + \int_{\Omega} \vv \cdot \ff\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd \xx} - {\color{red} \int_{\Omega}  \taub (\uu) : \mathbf{D}(\vv) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff \;\dd \xx\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd \xx} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd \xx} + \int_{\Omega} \vv \cdot \ff \;\dd \xx
+        &= {\color{blue} \int_{\Omega} - \vv \cdot \nabla p \;\dd x} + {\color{red} \int_{\Omega} \vv \cdot (\nabla \cdot \taub) \;\dd x} + \int_{\Omega} \ff \cdot \vv  \;\dd x\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\Omega} \nabla \cdot (p\vv)} + {\color{red} \int_{\Omega} \nabla \cdot (\taub \cdot \vv) - \int_{\Omega}  \taub (\uu) : \nabla^\top \vv} + \int_{\Omega} \ff \cdot \vv\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\partial \Omega} p \vv \cdot \nn} + {\color{red} \int_{\partial\Omega} (\taub \cdot \vv) \cdot \nn - \int_{\Omega}  \taub (\uu) : \big(\mathbf{D}(\vv) + \mathbf{\Omega}(\vv)\big)^\top} + \int_{\Omega} \ff \cdot \vv \\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \taub (\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + \int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s\\
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x \int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s
     \end{aligned}\label{eq:weak_formulation}
 \end{equation}
-being valid $\forall \vv \in H^1_0(\Omega)^d$.
+that must hold $\forall \; \vv \in H^1(\Omega)^d$ such that $\vv = \mathbf{0} \text{ on } \Gamma_D$.
+
+In \cref{eq:weak_formulation}, we initially multiplied \autoref{eq:momentum} by a test function $\mathbf{v}$ that is zero on $\Gamma_D$, then and integrated it over $\Omega$. Afterwards, we integrated by parts, and finally used the Divergence theorem.
 
 On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function $q$.
 \begin{equation}
@@ -94,18 +137,38 @@ On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function
     \label{eq:weak_formulation_p}
 \end{equation}
 
-The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $J(\vv)$ \cite{Saramito, Bleyer}:
+
+\section{Energy functional}
+
+The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $J(\vv)$ \cite{Saramito, Bleyer}. As viscous forces dominate the physics of the problem, we can assume that viscous dissipation is the only source of internal energy. As in linear elasticity for solids, the infinitesimal work of internal stresses in the deformation is
+\begin{equation}
+    \begin{aligned}
+        W_{\textrm{internal}}(D_{ij}) &= \int_{0}^{D_{ij}} \sigma_{ij} \:\dd D_{ij}'\\
+        &= \int -p\delta_{ij} \:\dd D_{ij}' + \int 2\mu D_{ij}' \:\dd D_{ij}' + {\color{gray} 2} \int \frac{ \: \tau_0 D_{ij}'}{{\color{gray} 2} \sqrt{\frac{1}{2} D_{kl}'D_{kl}'}} \:\dd D_{ij}'\\
+        &= -p D_{ii} + \mu D_{ij} D_{ij} + {\color{gray} 2} \tau_0 \sqrt{\frac{1}{2} D_{ij} D_{ij}}\\
+        &= -p \nabla \cdot \uu + 2\mu \|\mathbf{D}\|^2 + 2\tau_0 \|\mathbf{D}\|\\
+        W_{\textrm{internal}}(\uu) &= -p \nabla \cdot \uu + \frac{\mu}{2} \|\gam(\uu)\|^2 + \tau_0 \|\gam(\uu)\|
+    \end{aligned}
+    \label{eq:energy_density}
+\end{equation}
+
+Notice that we were able to get rid of the twofold definition of the constitutive law of Bingham fluids. In fact, the stresses under the yield point $\tau_0$ do not generate any work due to the absence of deformation.
+
+The total energy of the system $J$ is the work of internal forces diminished by the work of external forces $\int_{\Omega} \ff \cdot \uu + \int_{\Gamma_N} (\boldsymbol \sigma \cdot \nn) \cdot \vv$. We can now reformulate \cref{eq:mass,eq:momentum,eq:Dirichlet,eq:Neumann} as the solution of the optimization problem \eqref{eq:minimize}.
 \begin{empheqboxed}
 \begin{equation}
     \begin{aligned}
         \uu &= \argmin_{\vv \in \mathcal{V}} J(\vv)\\[8pt]
-        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|2 \mathbf{D}(\vv)\|^2 \;\dd \xx + \tau_0 \int_{\Omega} \|2 \mathbf{D}(\vv)\| \;\dd\xx - \int_{\Omega} \ff\cdot \vv \; \dd\xx \\[8pt]
-        &\text{where} \qquad \mathcal{V} = \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{U}_{\Gamma} \;\text{on}\; \partial \Omega\}
+        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|\gam(\vv)\|^2 \;\dd x + \tau_0 \int_{\Omega} \|\gam(\vv)\| \;\dd x - \int_{\Omega} \ff\cdot \vv \; \dd x - \int_{\Gamma_N} \mathbf{g} \cdot \vv \;\dd s\\[8pt]
+        \mathcal{V} &= \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{u}_{D} \;\text{on}\; \Gamma_D \}
     \end{aligned}\label{eq:minimize}
 \end{equation}
 \end{empheqboxed}
 
-We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$. Note that we added the incompressibility constraint in the objective through its lagrange multiplier $-p$:
+In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}.
+
+We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$.
+
 \begin{align}
     J(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{\mu}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
     &\qquad - (p + \epsilon q) \nabla \cdot (\uu + \epsilon \vv) - \mathbf{f}\cdot(\uu + \epsilon \vv) \: \dd \xx\\[8pt]
@@ -118,12 +181,12 @@ We can show that the weak formulation and the energy minimization problem are eq
 
 It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{eq:gateau_2} cancel out for every perturbation fields $\vv$ and $q$. Those are precisely the expressions of the weak formulation we derived in \eqref{eq:weak_formulation} and \eqref{eq:weak_formulation_p}.
 
-\chapter{1D solution using SOCP}
+\chapter{1D solution using conic optimization}
 
 \section{Introduction}
 To start, we will study the well know Poiseuille flow: the fluid is pushed forward by a constant pressure gradient in a channel between two infinitely long plates. This flow is of course a bit boring since it is stationary and fully developed. But it has the merit of being simple to introduce the optimization method in a one-dimensional framework.
 
-We consider $\Omega = [-h/2, h/2]$ that represents a transversal 1D slice of the channel whose width is $h$. We also have that the velocity field reduces to $\mathbf{u} = u(y)\,\ex$, since the flow is $x$ independent and incompressible. The pressure gradient $-\Delta p/\Delta x$ is called $G$, and the fluid does not slip at the wall. Furthermore, the symmetry of the problem implies that the shear stress profile satisfies $\tau_{xy}(-y) = -\tau_{xy}(y)$.
+We consider $\Omega = [-h/2, h/2]$ that represents a transversal 1D slice of the channel whose width is $h$. We also have that the velocity field reduces to $\mathbf{u} = u(y)\,\ex$, since the flow is $x$ independent and incompressible. The pressure gradient $-\Delta p/\Delta x$ is imposed and considered as a body force $f$. The fluid obviously does not slip at the wall. Furthermore, the symmetry of the problem implies that the shear stress profile satisfies $\tau_{xy}(-y) = -\tau_{xy}(y)$.
 
 %In our 1D case, the interface must have zero velocity $\mathbf{u^*} = \mathbf{0}$, and must be parallel to the flow with $\mathbf{\hat n} = \ey$, both due to the hypothesis of stationarity. 
 %Knowing that, equation \eqref{eq:interface_mass} becomes trivial, and equation \eqref{eq:interface_momentum} enforces continuity of the stress tensor across the interface(s).
@@ -131,7 +194,7 @@ We consider $\Omega = [-h/2, h/2]$ that represents a transversal 1D slice of the
 \section{Analytic solution}
 We can now solve for $u(y)$. With our hypothesis, the conservation of momentum \eqref{eq:momentum} has boiled down to a scalar equation:
 \begin{align}
-    0 = G + \pdv{\tau_{xy}}{y} \qquad \implies \qquad \tau_{xy} = -G y \qquad \text{since } \tau_{xy}(0)=0
+    0 = f + \pdv{\tau_{xy}}{y} \qquad \implies \qquad \tau_{xy} = -f y \qquad \text{since } \tau_{xy}(0)=0
     \label{eq:tau_xy}
 \end{align}
 
@@ -155,28 +218,28 @@ The expression of $\tau_{xy}$ can be obtained from the general expression of the
 
 The threshold shear-stress is reached at $y=\pm y_0$ when 
 \begin{align}
-    \tau_{xy}(\pm y_0) = \mp G \, y_0 = \mp \tau_0 \iff y_0 = \frac{\tau_0}{G} \label{eq:threshold}
+    \tau_{xy}(\pm y_0) = \mp f \, y_0 = \mp \tau_0 \iff y_0 = \frac{\tau_0}{f} \label{eq:threshold}
 \end{align}
 
-In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state when $\frac{\tau_0}{G} \geq \frac{h}{2}$. In that case, its velocity is zero everywhere to satisfy boundary conditions: the fluid is said to be in the \textit{arrested state} \cite{Saramito}.
+In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state when $\frac{\tau_0}{f} \geq \frac{h}{2}$. In that case, its velocity is zero everywhere to satisfy boundary conditions: the fluid is said to be in the \textit{arrested state} \cite{Saramito}.
 
 In the lower zone $[-\frac{h}{2}, -y_0]$, we find the velocity profile $u_3(y)$ by integration equations \eqref{eq:tau_xy} and \eqref{eq:tau_xy_cases}:
 \begin{align}
-    \int_{-\frac{h}{2}}^y \mu \pdv{u}{y} + \tau_0 &= \int_{-\frac{h}{2}}^y -Gy\\
-    u_3(y) &= -\frac{\tau_0}{\mu} \left(\frac{h}{2}+y\right) + \frac{G}{2\mu} \, \left(\left(\frac{h}{2}\right)^2 - y^2\right)
+    \int_{-\frac{h}{2}}^y \mu \pdv{u}{y} + \tau_0 &= \int_{-\frac{h}{2}}^y -f y\\
+    u_3(y) &= -\frac{\tau_0}{\mu} \left(\frac{h}{2}+y\right) + \frac{f}{2\mu} \, \left(\left(\frac{h}{2}\right)^2 - y^2\right)
 \end{align}
 
 The continuity of the velocity field allows us to find the velocity of the plug:
 \begin{align}
     u_2 &= u_3(-y_0) = %-\frac{\tau_0}{\mu} (h+y_0) + \frac{1}{2\mu} \pdv{p}{x} \, (h^2 - y_0^2)\\
-    \frac{G}{8\mu} \left(h - 2y_0\right)^2
+    \frac{f}{8\mu} \left(h - 2y_0\right)^2
 \end{align}
 
 The procedure is very similar for the upper zone $[y_0, h/2]$.
 
 Let us define the non-dimensional coordinate $\eta$, the reference velocity $U_{\infty}$ as the maximum velocity of a classical Poiseuille flow and the Bingham number $Bn$ that relates the yield and viscous stresses.
 \begin{align}
-    \eta=\frac{2y}{h} \qquad U_{\infty}= \frac{G h^2}{8\mu} \qquad Bn=\frac{\tau_0 h}{\mu U_{\infty}}=\frac{8\tau_0}{G h} \qquad \eta_0 = \frac{2y_0}{h} = \frac{Bn}{4}
+    \eta=\frac{2y}{h} \qquad U_{\infty}= \frac{f h^2}{8\mu} \qquad Bn=\frac{\tau_0 h}{\mu U_{\infty}}=\frac{8\tau_0}{f h} \qquad \eta_0 = \frac{2y_0}{h} = \frac{Bn}{4}
 \end{align}
 
 The velocity profile can then be expressed as follows, in the presence of a yielded region, i.e. when $\eta_0 < 1 \iff Bn < 4$:
@@ -221,7 +284,7 @@ We will consider both linear and quadratic shape functions. They are expressed o
 
 The strain-rate tensor with a unidirectional flow $u(y)$ only contains the off-diagonal component,
 \begin{equation}
-    D_{xy}^h(y) = \frac{1}{2} \pdv{u^h}{y} \quad \text{where} \quad \left(\pdv{u^h}{y}\right)_{\Omega_i} = \sum_{j=1}^{n} U_j \dv{\phi_j}{y}
+    D_{12}^h(y) = \frac{1}{2} \pdv{u^h}{y} \quad \text{where} \quad \left(\pdv{u^h}{y}\right)_{\Omega_i} = \sum_{j=1}^{n} U_j \dv{\phi_j}{y}
 \end{equation}
 
 The minimization function $J$ of \autoref{eq:minimize} becomes:
@@ -242,13 +305,15 @@ In short, one should solve problem \eqref{eq:problem_1D_nonlinear} hereunder
     \end{aligned}\label{eq:problem_1D_nonlinear}
 \end{equation}
 
-However, this problem cannot be solve straightforwardly with classical optimization techniques such as gradient descent or Newton's method as it contains a non-differentiable term $|\pdv{u^h}{y}|$. Next section will introduce a suitable method, known as second order cone programming or SOCP.
+However, this problem cannot be solve straightforwardly with classical optimization techniques such as gradient descent or Newton's method as it contains a non-differentiable term $|\pdv{u^h}{y}|$. Next section will introduce a suitable method, known as conic optimization.
 
-\section{Second order cone programming in a nutshell}
+One could argue that absolute values can be transformed in multiple linear terms in this case. However, this is no longer true as we go to higher dimensions since the tensor norm will become the square root of multiple squared terms. 
+
+\section{Conic optimization in a nutshell}
 %CITE NOTES OPTI GLINERUR
 This theory extends linear programming which is restricted to linear cost and linear constraints, by allowing specific nonlinear inequality constraints. For example, $\sqrt{x^2+y^2} \leq z$ is expressed as $(x,y,z) \succeq_{L^3} 0$ or $(x,y,z) \in L^3$, where the Lorentz cone $L^3$ is precisely the set of points $(x,y,z)$ satisfying the nonlinear constraint.
 
-A cone is a subset of a vector space that is closed under linear combinations with positive coefficients. Additional properties can upgrade a cone to a \textit{proper} cone, the only ones we care about in SOCP. These proper cones $K\subseteq \mathbb{R}^n$ satisfy the following properties:
+A cone is a subset of a vector space that is closed under linear combinations with positive coefficients. Additional properties can upgrade a cone to a \textit{proper} cone, the only ones we care about in conic optimization. These proper cones $K\subseteq \mathbb{R}^n$ satisfy the following properties:
 \begin{enumerate}
     \item $a \succeq_K 0 \implies \lambda a \succeq_K 0 \quad \forall \lambda \in \mathbb{R}^+$ (cone)
     \item $a \succeq_K 0 \text{ and } b \succeq_K 0 \implies a + b \succeq_K 0$ (closed under addition)
@@ -272,7 +337,7 @@ Last but not least, self-concordance (s.c.) is preserved through
     \item linear change of variables: let $x \mapsto f(x)$ be a s.c. functions, then $y \mapsto f(A y + b)$ is also a s.c. function.
 \end{itemize}
 
-The most common proper cones, with their associated s.c. barrier. are listed in \autoref{tab:coefficients}.
+The most common proper cones, with their associated s.c. barrier. are listed in \autoref{tab:coefficients}. It may not seem very useful to be limited to such a short list of cones, but a whole zoo of nonlinear constraints can be reformulated to fit in any of these five cones.
 \begin{table}
     \centering
     \begin{tabularx}{\textwidth}{@{\extracolsep{\stretch{1}}}*{2}{c}@{}}
@@ -291,7 +356,7 @@ The most common proper cones, with their associated s.c. barrier. are listed in 
          & $g(x, y, z) = -\log(x^{2\alpha} y^{2-2\alpha} - z^2) - \log(x) - \log(y)$\\[2 pt]
         \bottomrule
     \end{tabularx}
-    \caption{Cone list.}
+    \caption{Most frequent proper cones used in conic programming.}
      \label{tab:coefficients}
 \end{table}
 %In the case of the Lorentz cone $L^3=\{(x,y,z) \vert \sqrt{x^2+y^2} \leq z\}$, the s.c. barrier is $g(x) = -\log(z^2- x^2 - y^2)$. For linear constraints $a^\top x \geq b$, the s.c. barrier is $g(x) = -\log(a^\top x - b)$. Many more cones exists, and there are tables of conic cones with their associated barrier.
@@ -311,8 +376,7 @@ Let us take a basic example in 2 dimensions.
 \end{aligned}
 \end{equation*}
 
-\vspace{-18pt}
-\begin{figure}[hb]
+\begin{figure}[h]
     \centering
     \includesvg[width=\textwidth]{../figures/interior_point_example.svg}
     \caption{Solution of the basic example using the interior point method}
@@ -323,9 +387,8 @@ In practice, no one computes the $x^*_{\mu}$ on the \textit{central path} becaus
 
 For a precision $\epsilon$ s.t. $c^\top x - c^\top x^* < \epsilon$, a solution $x$ is obtained in $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations with the \textit{short-step algorithm} briefly described here above. $\nu = \sum_{i} \nu_i$, with the barrier parameter $\nu_i$, in a sense related to the \textit{steepness} of the constraint $i$. The initial value x must be close enough to the central path. This can be done with damped Newton steps from any admissible $x \in X$ CITE.
 
-
 \section{Finite element solution}
-With our recent knowledge in SOCP, we can reformulate problem \eqref{eq:problem_1D_nonlinear} in terms of conic constraints:
+With our recent knowledge in conic programming, we can reformulate problem \eqref{eq:problem_1D_nonlinear} in terms of second order cones only (SOCP).
 \begin{equation}
     \begin{aligned}
         %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{\mu}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
@@ -361,7 +424,7 @@ At this stage, the finite element solution will be relevant only when the interf
 
 Going back to the constitutive law of bingham fluids, one can see that the strain rate at the interface is continuous and equal to $0$. However, there is a jump in its derivative, $\pdv[2]{u}{y}$, which is of course zero in the solid plug and $>0$ in the yielded regions as can be seen in \cref{fig:results_1D_P1,fig:results_1D_P2}.
 
-Initially, with a random mesh, it is almost certain that the interface (a point) is represented on the mesh with a node.
+Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node.
 
 %\nocite{*}
 %\printbibliography

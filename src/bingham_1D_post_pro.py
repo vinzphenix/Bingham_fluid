@@ -1,4 +1,6 @@
 from bingham_1D_structure import *
+plt.rcParams['font.family'] = 'serif'
+plt.rcParams["text.usetex"] = True
 
 lw, alp = 5., 0.5  # setting to display analytical solution
 al = 0.3  # setting for the error plot
@@ -91,7 +93,7 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
     sy, sdu = (1., 1.) if sim.dimensions else (2. / sim.H, sim.H / sim.V)
 
     # 2: y_discrete, 3: y_gauss, 5: du_discrete, 6: du_gauss
-    res1 = eval_velocity_strain(sim, y_bfr, u_bfr)  
+    res1 = eval_velocity_strain(sim, y_bfr, u_bfr)
     axs[0].plot(du_ana_fit, y_ana * sy, label="Analytical", color="C0", alpha=alp, lw=lw)
     axs[0].plot(*make_step(res1[5], res1[2] * sy, 2), '-o', color='C1', ms=5, label='numerical')
     axs[0].plot(res1[6], sy * res1[3], 'x', color='C1', ms=8)
@@ -112,7 +114,7 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
         axs[0].plot(dudy_approx * sdu, y_array * sy, '--k', ms=8)
         axs[0].plot(res1[6][idxs_gauss], sy * res1[3][idxs_gauss], 'xk')
         axs[0].plot([0.], [y_guess], 'D', color='C3', ms=7)
-        
+
         for ax in axs:
             ax.axhline(y_guess, color='C2', alpha=alp, ls=':', lw=1.5)
 
@@ -124,7 +126,6 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
     mask = res1[2] != res2[2]
     axs[0].plot(res1[5][mask], sy * res1[2][mask], 'o', color='C2', ms=5)
     axs[1].plot(res2[5][mask], sy * res2[2][mask], 'o', color='C2', ms=5)
-
 
     axs[0].set_ylabel(r"$y$", fontsize=ftSz2)
     for ax, title_name in zip(axs, ['Before update', 'After update']):
@@ -160,9 +161,8 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
             this_y[:] /= sim.H / 2.
 
     # FIGURE
-    plt.rcParams["text.usetex"] = sim.save
-    # figsize = (9.5, 5.75)
-    figsize = (12., 8.)
+    # plt.rcParams["text.usetex"] = sim.save
+    figsize = (9.5, 5.75) if sim.save else (12., 8.)
     fig, axs = plt.subplots(2, 3, figsize=figsize, sharey="all")
 
     ax = axs[0, 0]
@@ -223,7 +223,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes):
 
     fig.tight_layout()
     if sim.save:
-        path = "../figures/"
+        path = "./figures/"
         filename = f"res_P{sim.degree:d}_iteration_{sim.iteration:02d}"
         fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
     else:

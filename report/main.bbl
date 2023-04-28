@@ -1,5 +1,11 @@
 \begin{thebibliography}{1}
 
+\bibitem{Geophysical}
+Neil Balmforth and Richard Craster.
+\newblock {\em Geophysical Aspects of Non-Newtonian Fluid Mechanics}, volume
+  582, pages 34--51.
+\newblock Springer, 01 2008.
+
 \bibitem{Bleyer}
 Jeremy Bleyer, Mathilde Maillard, Patrick {de Buhan}, and Philippe Coussot.
 \newblock Efficient numerical computations of yield stress fluid flows using
