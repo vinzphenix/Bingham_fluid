@@ -13,6 +13,7 @@ from bingham_1D_run import Simulation_1D, plot_solution_1D
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
 
+# Bubble function
 def PHI(xi, eta): return 27. * xi * eta * (1. - xi - eta)
 def DPHI_DXI(xi, eta): return -27. * xi * eta + 27. * eta * (1. - xi - eta)
 def DPHI_DETA(xi, eta): return -27. * xi * eta + 27. * xi * (1. - xi - eta)
@@ -49,7 +50,7 @@ class Simulation_2D:
         res = self.get_nodes_info()
         self.node_tags, self.coords = res[0:2]
         self.nodes_zero_u, self.nodes_zero_v, self.nodes_with_u = res[2:5]
-        self.nodes_singular_p, = res[5:]
+        self.nodes_singular_p, self.nodes_corner, self.nodes_boundary = res[5:]
         self.n_node = len(self.node_tags)
 
         if self.element == "mini":  # Add the index of bubble nodes
@@ -58,15 +59,18 @@ class Simulation_2D:
             self.nsf += 1
 
         res = self.get_shape_fcts_info()
-        self.weights, self.weights_q = res[:2]
-        self.v_shape_functions, self.dv_shape_functions_at_v = res[2:4]
-        self.q_shape_functions, self.dv_shape_functions_at_q = res[4:6]
-        self.inverse_jacobians, self.determinants = res[6:8]
+        self.weights, self.weights_q, self.uvw = res[:3]
+        self.v_shape_functions, self.dv_shape_functions_at_v = res[3:5]
+        self.q_shape_functions, self.dv_shape_functions_at_q = res[5:7]
+        self.inverse_jacobians, self.determinants = res[7:9]
 
         self.ng_loc, self.ng_loc_q = len(self.weights), len(self.weights_q)
         self.ng_all = self.n_elem * self.ng_loc
 
         self.primary_nodes = self.get_primary_nodes()
+
+        self.n2e_map, self.n2e_st = self.get_node_elem_map()
+        self.n2n_map, self.n2n_st = self.get_node_node_map()
 
         # variables :  (u, v) at every node --- bounds on |.|^2 and |.|^1 at every gauss_pt
         self.n_velocity_var = 2 * (self.n_node + self.n_elem * (element == "mini"))
@@ -76,8 +80,8 @@ class Simulation_2D:
         return
 
     def get_elements_info(self):
-        elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(2, -1)
-        elem_type = elem_types[0]
+        elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(2, -1)  # type: ignore
+        elem_type = elem_types[0] # type: ignore
         elem_tags = elem_tags[0]
         n_elem = len(elem_tags)
 
@@ -102,6 +106,9 @@ class Simulation_2D:
         node_tags = np.array(node_tags) - 1
         coords = np.array(coords).reshape((-1, 3))[:, :-1]
 
+        corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
+        bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
+
         # bd_nodes_01, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
         # bd_nodes_02, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
         # bd_nodes_03, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # with u
@@ -123,7 +130,14 @@ class Simulation_2D:
         # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
         # nodes_singular_p = np.array([], dtype=int)
 
-        return node_tags, coords, nodes_zero_u, nodes_zero_v, nodes_with_u, nodes_singular_p
+        corner_nodes = np.array(corner_nodes).astype(int) - 1
+        bd_nodes = np.array(bd_nodes).astype(int) - 1
+
+        return (
+            node_tags, coords, 
+            nodes_zero_u, nodes_zero_v, nodes_with_u, 
+            nodes_singular_p, corner_nodes, bd_nodes
+        )
 
     def get_shape_fcts_info(self):
         n_local_node_v = self.n_local_node
@@ -156,6 +170,7 @@ class Simulation_2D:
         _, sf, _ = gmsh.model.mesh.getBasisFunctions(_3_nodes_tri, uvw_space_q, 'Lagrange')
         q_shape_functions = np.array(sf).reshape((ng_loc_q, n_local_node_q))
 
+        uvw = np.array(uvw_space_v).reshape(ng_loc_v, 3)
         if self.element == "mini":  # MINI
             # Eval bubble and bubble derivatives at gauss pts of space V
             xi_eta_eval = np.array(uvw_space_v).reshape(ng_loc_v, 3)[:, :-1].T
@@ -175,7 +190,7 @@ class Simulation_2D:
             )
 
         # jacobian is constant over the triangle
-        elem_center = np.array([1., 1., 1.]) / 3.
+        elem_center = np.array([1., 1., 0.]) / 3.
         jacobians, determinants, _ = gmsh.model.mesh.getJacobians(self.elem_type, elem_center)
         jacobians = np.array(jacobians).reshape((self.n_elem, 3, 3))
         jacobians = np.swapaxes(jacobians[:, :-1, :-1], 1, 2)
@@ -191,7 +206,7 @@ class Simulation_2D:
         inv_jac[:, 1, 1] = +jacobians[:, 0, 0]
 
         return (
-            weights_v, weights_q,
+            weights_v, weights_q, uvw,
             v_shape_functions, dv_shape_functions_at_v,
             q_shape_functions, dv_shape_functions_at_q,
             inv_jac, determinants
@@ -204,6 +219,54 @@ class Simulation_2D:
             node_is_vertex_list[idx_local_nodes[:3]] = 1
         primary_nodes = np.argwhere(node_is_vertex_list).flatten()
         return primary_nodes
+    
+    def update_transformation(self, elements):
+        for elem in elements:
+            elem_center = np.array([1., 1., 0.]) / 3.
+            jacobian, determinant, _ = gmsh.model.mesh.getJacobian(self.elem_tags[elem], elem_center)
+            jacobian = np.array(jacobian).reshape((3, 3))
+            
+            self.inverse_jacobians[elem, 0, 0] = +jacobian[1, 1]
+            self.inverse_jacobians[elem, 0, 1] = -jacobian[1, 0]
+            self.inverse_jacobians[elem, 1, 0] = -jacobian[0, 1]
+            self.inverse_jacobians[elem, 1, 1] = +jacobian[0, 0]
+
+            self.determinants[elem] = determinant[0]
+        return
+    
+    def get_node_elem_map(self):
+
+        node_elem_pairs = np.c_[
+            self.elem_node_tags[:, :3].flatten(),
+            np.repeat(np.arange(self.n_elem), 3)
+        ]
+
+        pairs = node_elem_pairs[np.argsort(node_elem_pairs[:, 0])]
+        
+        # node_elem_st = np.r_[0, 1 + np.where(pairs[:-1, 0] != pairs[1:, 0])[0]]
+        # not working due to higher order nodes with smaller index than primary nodes
+        node_elem_st = np.cumsum(np.r_[0, np.bincount(pairs[:, 0])])
+        node_elem_map = pairs[:, 1]
+
+        return node_elem_map, node_elem_st
+    
+    def get_node_node_map(self):
+        
+        # Double direction (org-dst and dst-org) is needed only because of
+        # boundary nodes, connected through one element only (two in the bulk)
+        node_node_pairs = np.c_[
+            [self.elem_node_tags[:, 0], self.elem_node_tags[:, 1]],
+            [self.elem_node_tags[:, 1], self.elem_node_tags[:, 0]],
+            [self.elem_node_tags[:, 1], self.elem_node_tags[:, 2]],
+            [self.elem_node_tags[:, 2], self.elem_node_tags[:, 1]],
+            [self.elem_node_tags[:, 2], self.elem_node_tags[:, 0]],
+            [self.elem_node_tags[:, 0], self.elem_node_tags[:, 2]],
+        ].T
+        pairs = np.unique(node_node_pairs, axis=0)
+        node_node_st = np.cumsum(np.r_[0, np.bincount(pairs[:, 0])])
+        node_node_map = pairs[:, 1]
+
+        return node_node_map, node_node_st
 
     def save_solution(self, u_num, p_num, model_variant):
         

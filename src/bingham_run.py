@@ -47,12 +47,25 @@ def get_analytical_poiseuille(sim: Simulation_2D):
     return np.c_[U_inf * u_analytical, np.zeros_like(u_analytical)]
 
 
+def dummy():
+    u_nodes = np.zeros((sim.n_node, 2))
+    u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
+    u_nodes[:, 1] = 0 * sim.coords[:, 0] * (1. + sim.coords[:, 1])
+    # x_centered = sim.coords[:, 0] - np.mean(sim.coords[:, 0])
+    # y_centered = sim.coords[:, 1] - np.mean(sim.coords[:, 1])
+    # u_nodes[:, 0] = +x_centered**2-y_centered**2
+    # u_nodes[:, 1] = -2*x_centered*y_centered
+    p_field = np.zeros(sim.primary_nodes.size - sim.nodes_singular_p.size)
+    t_num = np.zeros((sim.n_elem, sim.ng_loc))
+    return u_nodes, p_field, t_num
+    
+
 if __name__ == "__main__":
 
     if len(sys.argv) == 3 and sys.argv[1] == "-mode":
         mode = int(sys.argv[2])
     else:
-        mode = 1
+        mode = 3
 
     # 1: load previous,
     # 2: solve problem iterative,
@@ -67,37 +80,31 @@ if __name__ == "__main__":
         # parameters, u_nodes, p_field = load_solution("cylinder", "")
         # parameters, u_nodes, p_field = load_solution("cavity", "")
         # parameters, u_nodes, p_field = load_solution("bfs", "")
-        pass
     elif mode in [2, 3, 4]:
-        parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
+        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
         # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="rectangle")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rectangle")
+        parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
         # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
         # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cavity")
         # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
-        pass
     else:
         raise ValueError
 
     sim = Simulation_2D(**parameters)
-    print(sim.n_node)
 
-    if mode == 1:
-        # _, u_nodes_1, p_field_1 = load_solution("rectangle", "weak_cross")
-        # _, u_nodes_2, p_field_2 = load_solution("rectangle", "strong_cross")
-        u_nodes = u_nodes - get_analytical_poiseuille(sim)
-        # p_field = p_field_1
+    # if mode == 1:
+    #     # _, u_nodes_1, p_field_1 = load_solution("rectangle", "weak_cross")
+    #     # _, u_nodes_2, p_field_2 = load_solution("rectangle", "strong_cross")
+    #     u_nodes = u_nodes - get_analytical_poiseuille(sim)
+    #     # p_field = p_field_1
 
     if mode == 2:  # Solve the problem: ITERATE
-        u_nodes = solve_interface_tracking(sim, atol=1e-8, rtol=1e-6)
+        u_nodes, p_field, t_num = solve_interface_tracking(sim)
 
     elif mode == 3:  # Solve problem: ONE SHOT
-        # for legacy only
-        # u_nodes_slow = solve_FE_sparse(sim, solver_name='mosek', strong=False)
-        # sim.save_solution(u_nodes, simu_nb=-1)
 
-        u_nodes_weak, p_field_weak = solve_FE_mosek(sim, strong=False)
+        u_nodes_weak, p_field_weak, t_num = solve_FE_mosek(sim, strong=False)
         # sim.save_solution(u_nodes_weak, p_field_weak, model_variant='weak')
 
         # u_nodes_strong, p_field_strong = solve_FE_mosek(sim, strong=True)
@@ -105,18 +112,10 @@ if __name__ == "__main__":
 
         u_nodes, p_field = u_nodes_weak, p_field_weak
 
-    elif mode == 4:  # DUMMY solution to debug
-        u_nodes = np.zeros((sim.n_node, 2))
-        u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
-        u_nodes[:, 1] = 0 * sim.coords[:, 0] * (1. + sim.coords[:, 1])
-        # x_centered = sim.coords[:, 0] - np.mean(sim.coords[:, 0])
-        # y_centered = sim.coords[:, 1] - np.mean(sim.coords[:, 1])
-        # u_nodes[:, 0] = +x_centered**2-y_centered**2
-        # u_nodes[:, 1] = -2*x_centered*y_centered
-        p_field = np.zeros(sim.primary_nodes.size - sim.nodes_singular_p.size)
+    else:  # DUMMY solution to debug
+        u_nodes, p_field, t_num = dummy()
 
-    plot_solution_2D(u_nodes, p_field, sim)
-    plot_1D_slice(u_nodes, sim)
+    # plot_solution_2D(u_nodes, p_field, t_num, sim)
+    # plot_1D_slice(u_nodes, sim)
 
     gmsh.finalize()
-    # python3 bingham_run.py -mode 3

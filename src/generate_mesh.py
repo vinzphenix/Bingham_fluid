@@ -157,13 +157,15 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     return
 
 
-def create_cylinder(filename, elemSizeRatio):
+def create_cylinder(filename, elemSizeRatio, radial=False):
     gmsh.initialize()
     gmsh.model.add("cylinder")
 
     width, height = 3., 2.
-    radius = height / 10.
-    rect = gmsh.model.occ.add_rectangle(0., -height / 2., 0., width, height, 0)
+    radius = height / 5. if radial else height / 10.
+    bottom = 0. if radial else -height / 2.
+
+    rect = gmsh.model.occ.add_rectangle(0., bottom, 0., width, height, 0)
     disk1 = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
     res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1)])
     # disk2 = gmsh.model.occ.add_disk(width, 0., 0., radius, radius, 1001)
@@ -171,24 +173,37 @@ def create_cylinder(filename, elemSizeRatio):
 
     gmsh.model.occ.synchronize()
 
-    tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
-    tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=2, name="v_zero")
-    tag = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
+    if radial:
+        tag = gmsh.model.addPhysicalGroup(0, [1, 2], tag=1, name="u_zero")
+        tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5, 6], tag=2, name="v_zero")
+        tag = gmsh.model.addPhysicalGroup(0, [3, 4], tag=3, name="u_one")
 
-    tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
-    tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
-    # tag = gmsh.model.addPhysicalGroup(1, [2, 5], tag=2, name="v_zero")
-    tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [2]
-    tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
+        tag = gmsh.model.addPhysicalGroup(1, [1], tag=1, name="u_zero")
+        tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5, 6], tag=2, name="v_zero")
+        tag = gmsh.model.addPhysicalGroup(1, [3], tag=3, name="u_one")  # [2]
+        tag = gmsh.model.addPhysicalGroup(1, [5], tag=4, name="cut")
 
-    tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
+        tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
 
-    # gmsh.model.mesh.set_size_callback(lambda *args: elemSizeRatio * width)
-    gmsh.model.mesh.setSize([(0, 1)], elemSizeRatio * height)
-    gmsh.model.mesh.setSize([(0, 2)], elemSizeRatio * height)
-    gmsh.model.mesh.setSize([(0, 3)], elemSizeRatio * height)
-    gmsh.model.mesh.setSize([(0, 4)], elemSizeRatio * height)
-    gmsh.model.mesh.setSize([(0, 5)], elemSizeRatio * height * 0.2)
+    else:
+        tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
+        tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+        tag = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
+
+        tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
+        tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
+        # tag = gmsh.model.addPhysicalGroup(1, [2, 5], tag=2, name="v_zero")
+        tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [2]
+        tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
+
+        tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
+
+    pts_rect = [3, 4, 5, 6] if radial else [1, 2, 3, 4]
+    pts_cyld = [1, 2] if radial else [5]
+    for pt in pts_rect:
+        gmsh.model.mesh.setSize([(0, pt)], elemSizeRatio * height)
+    for pt in pts_cyld:
+        gmsh.model.mesh.setSize([(0, pt)], elemSizeRatio * height * 0.2)
 
     gmsh.model.occ.synchronize()
     gmsh.model.mesh.generate(2)
@@ -352,10 +367,10 @@ def create_backward_facing_step(filename, elemSizeRatio):
 if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
-    create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
-    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
+    # create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
+    create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./12., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
 
-    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50.)
+    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./20., radial=False)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./50., cut=False)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./35.)

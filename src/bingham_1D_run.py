@@ -94,7 +94,7 @@ def compute_new_targets(t_num, idx_elem_switch):
     y_zero_guesses = np.empty(idx_elem_switch.shape[0])
     strains = np.empty(idx_elem_switch.shape[0])
     coefs = np.empty((idx_elem_switch.shape[0], 2))
-
+    
     for loop, (i, direction) in enumerate(idx_elem_switch):  # for each interface
 
         matrix, vector = np.ones((n_pts, 2)), np.empty(n_pts)
@@ -110,7 +110,7 @@ def compute_new_targets(t_num, idx_elem_switch):
             vector[sim.nG:] = t_num[i + direction]
         elif sim.degree == 1:
             display_warning("Cannot reconstruct linear approximation with only one value")
-            return np.nan * y_zero_guesses
+            return np.nan * y_zero_guesses[:], strains, coefs
         else:
             # cut the system with its current values as no other available
             matrix = matrix[:sim.nG]
@@ -127,12 +127,14 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
     # Set some parameters
     sim.iteration, max_it = 0, 20
-    tol_unyielded = 1.e-3
+    tol_unyielded = 1.e-5
     update_coef = 1.  # 1. for full update, 0.5 for half-update, 0. for no update
 
     # Solve first time with initial mesh
     u_nodes, s_num, t_num = solve_FE(sim, atol=atol, rtol=rtol)
     y_old, u_old = sim.y.copy(), u_nodes.copy()
+
+    plot_solution_1D(sim, u_nodes, extra_name="first", window="First Iteration")
 
     while sim.iteration < max_it:  # and if sol is C1, break
 
@@ -145,14 +147,14 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
         idxs_switch_dw = np.c_[idxs_switch_dw, -np.ones_like(idxs_switch_dw)]
         idxs_switch_up = np.c_[idxs_switch_up, +np.ones_like(idxs_switch_up)]
         idxs_switch = np.r_[idxs_switch_dw, idxs_switch_up]
-        if len(idxs_switch) == 0:
+        if len(idxs_switch) != 2:
             display_warning("No rigid region found")
             return u_nodes
 
         y_zero_guesses, strain_interfaces, coefs = compute_new_targets(t_num, idxs_switch)
 
         # if check_sol_C1(u_nodes, idxs_switch, tol=1e-6):
-        if np.all(np.abs(strain_interfaces) < 1e-6):
+        if np.all(np.abs(strain_interfaces) < tol_unyielded):
             break
 
         if np.any(np.isnan(y_zero_guesses)):
@@ -187,11 +189,18 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 
 if __name__ == "__main__":
 
-    params = dict(H=1., K=1., tau_zero=0.2, f=1., degree=2, n_elem=7,
-                  random_seed=3, fix_interface=True,
-                  save=False, plot_density=25, dimensions=False)
+    params = dict(
+        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=5,
+        random_seed=3, fix_interface=False,
+        save=False, plot_density=25, dimensions=True
+    )
 
     sim = Simulation_1D(params)
+    
+    # y_tmp = np.array([-0.5, -0.4, -0.2, -0.02, 0.45, 0.5])
+    # sim.set_y(y_tmp)
+    # sim.y[3] = -sim.y[2]
+    # sim.set_y(sim.y)
 
     # Solve the problem ITERATE
     u_num = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
@@ -199,4 +208,4 @@ if __name__ == "__main__":
     # Solve problem ONE SHOT
     # u_num, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
 
-    plot_solution_1D(sim, u_num)
+    plot_solution_1D(sim, u_num, extra_name="last", window="Final solution")

@@ -310,8 +310,24 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         task.onesolutionsummary(mosek.streamtype.log, mosek.soltype.itr)
 
         p_num = np.array(task.gety(mosek.soltype.itr))
-        u_num = np.array(task.getxxslice(mosek.soltype.itr, 0, sim.n_velocity_var))
+        
+        i_start, i_end = 0, sim.n_velocity_var
+        u_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))
         u_num = u_num.reshape((sim.n_node + sim.n_elem * (sim.element == 'mini'), 2))
+
+        i_start, i_end = sim.n_var - sim.ng_all, sim.n_var
+        t_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))
+        t_num = t_num.reshape((sim.n_elem, sim.ng_loc))
+
+        # map = {}
+        # for i, tag in enumerate(sim.elem_tags):
+        #     map[tag] = i
+        #     print(f"{tag:d} --> {i:d}")
+        # print(t_num[map[36]])
+        # print(t_num[map[91]])
+        # print(t_num[map[38]])
+        # print(t_num[map[39]])
+        # print(t_num[map[77]])
 
         # if sim.tau_zero > 0.:
         #     idx_st, idx_fn = n_velocity_var + sim.ng_all, n_velocity_var + 2 * sim.ng_all
@@ -321,7 +337,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         #     print(yield_bounds[-6 * sim.ng_loc:].reshape((6, sim.ng_loc)))
         #     print(sim.elem_node_tags[-6:] + 1)
 
-    return u_num, p_num
+    return u_num, p_num, t_num
 
 
 #########################################
