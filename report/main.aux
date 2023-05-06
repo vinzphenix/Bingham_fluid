@@ -19,10 +19,12 @@
 \gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
+\providecommand \oddpage@label [2]{}
 \babel@aux{USenglish}{}
 \@writefile{toc}{\contentsline {chapter}{\numberline {1}Governing equations}{2}{chapter.1}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
 \@writefile{toc}{\contentsline {section}{\numberline {1.1}General notions of continuum mechanics}{2}{section.1.1}\protected@file@percent }
 \newlabel{eq:momentum}{{1.3}{2}{General notions of continuum mechanics}{equation.1.1.3}{}}
 \newlabel{eq:momentum@cref}{{[equation][3][1]1.3}{[1][2][]2}}
@@ -66,6 +68,7 @@
 \@writefile{toc}{\contentsline {chapter}{\numberline {2}1D solution using conic optimization}{7}{chapter.2}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
 \@writefile{toc}{\contentsline {section}{\numberline {2.1}Introduction}{7}{section.2.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {2.2}Analytic solution}{7}{section.2.2}\protected@file@percent }
 \newlabel{eq:tau_xy}{{2.1}{7}{Analytic solution}{equation.2.2.1}{}}
@@ -93,19 +96,55 @@
 \newlabel{fig:interior_pt}{{2.3}{12}{Solution of the basic example using the interior point method\relax }{figure.caption.5}{}}
 \newlabel{fig:interior_pt@cref}{{[figure][3][2]2.3}{[1][11][]12}}
 \@writefile{toc}{\contentsline {section}{\numberline {2.5}Finite element solution}{12}{section.2.5}\protected@file@percent }
+\newlabel{sec:fem_1D}{{2.5}{12}{Finite element solution}{section.2.5}{}}
+\newlabel{sec:fem_1D@cref}{{[section][5][2]2.5}{[1][12][]12}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2.4}{\ignorespaces FE solution of the Poiseuille flow with $P1$ elements. The unyielded zone is shaded in grey. The error is shown at the nodes for $u(y)$ and at the element center for the strain and shear.\relax }}{13}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:results_1D_P1}{{2.4}{13}{FE solution of the Poiseuille flow with $P1$ elements. The unyielded zone is shaded in grey. The error is shown at the nodes for $u(y)$ and at the element center for the strain and shear.\relax }{figure.caption.6}{}}
 \newlabel{fig:results_1D_P1@cref}{{[figure][4][2]2.4}{[1][12][]13}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2.5}{\ignorespaces FE solution of the Poiseuille flow with $P2$ elements. The unyielded zone is shaded in grey. The error is computed on the whole domain $\Omega $.\relax }}{13}{figure.caption.7}\protected@file@percent }
 \newlabel{fig:results_1D_P2}{{2.5}{13}{FE solution of the Poiseuille flow with $P2$ elements. The unyielded zone is shaded in grey. The error is computed on the whole domain $\Omega $.\relax }{figure.caption.7}{}}
 \newlabel{fig:results_1D_P2@cref}{{[figure][5][2]2.5}{[1][12][]13}}
-\bibstyle{plain}
-\bibdata{main.bib}
 \@writefile{toc}{\contentsline {chapter}{\numberline {3}Interface tracking}{14}{chapter.3}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Interface-tracking algorithm in 1 dimension.\relax }}{15}{algocf.1}\protected@file@percent }
+\newlabel{alg:tacking_1d}{{1}{15}{Interface tracking}{algocf.1}{}}
+\newlabel{alg:tacking_1d@cref}{{[algorithm][1][]1}{[1][14][]15}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.\relax }}{16}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:tracking_1D_P1_steps}{{3.1}{16}{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.\relax }{figure.caption.9}{}}
+\newlabel{fig:tracking_1D_P1_steps@cref}{{[figure][1][3]3.1}{[1][14][]16}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.\relax }}{17}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:tracking_1D_P1}{{3.2}{17}{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.\relax }{figure.caption.10}{}}
+\newlabel{fig:tracking_1D_P1@cref}{{[figure][2][3]3.2}{[1][14][]17}}
+\newlabel{subfig:tracking_1D_P2_step_1}{{\caption@xref {subfig:tracking_1D_P2_step_1}{ on input line 508}}{18}{Interface tracking}{figure.caption.11}{}}
+\newlabel{subfig:tracking_1D_P2_step_1@cref}{{[chapter][3][]3}{[1][14][]18}}
+\newlabel{sub@subfig:tracking_1D_P2_step_1}{{}{18}{Interface tracking}{figure.caption.11}{}}
+\newlabel{sub@subfig:tracking_1D_P2_step_1@cref}{{[chapter][3][]3}{[1][14][]18}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.\relax }}{18}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:tracking_1D_P2_steps}{{3.3}{18}{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.\relax }{figure.caption.11}{}}
+\newlabel{fig:tracking_1D_P2_steps@cref}{{[figure][3][3]3.3}{[1][14][]18}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.\relax }}{19}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:tracking_1D_P2}{{3.4}{19}{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.\relax }{figure.caption.12}{}}
+\newlabel{fig:tracking_1D_P2@cref}{{[figure][4][3]3.4}{[1][14][]19}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}2D problem}{20}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Equations}{20}{section.4.1}\protected@file@percent }
+\bibstyle{plain}
+\bibdata{main.bib}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Shape functions used for the pressure and velocity fields in 2-dimensions.\relax }}{21}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:shape_functions_2d}{{4.1}{21}{Shape functions used for the pressure and velocity fields in 2-dimensions.\relax }{figure.caption.13}{}}
+\newlabel{fig:shape_functions_2d@cref}{{[figure][1][4]4.1}{[1][20][]21}}
 \bibcite{Geophysical}{1}
 \bibcite{Bleyer}{2}
 \bibcite{Saramito}{3}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Curvilinear coordinates}{24}{appendix.A}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\newlabel{appendix:curvilinear}{{A}{24}{Curvilinear coordinates}{appendix.A}{}}
+\newlabel{appendix:curvilinear@cref}{{[appendix][1][2147483647]A}{[1][24][]24}}
 \gdef\svg@ink@ver@settings{{\m@ne }{inkscape}{1}}
-\gdef \@abspage@last{16}
+\gdef \@abspage@last{25}

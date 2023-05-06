@@ -8,9 +8,10 @@
 \usepackage{mathtools}
 \usepackage{amsmath, amsfonts, nccmath}
 \usepackage{physics}
+\usepackage[ruled]{algorithm2e}
 %\usepackage{amssymb, amsthm, bm}
 %\usepackage{nccmath}
-\usepackage{xfrac}
+%\usepackage{xfrac}
 
 \usepackage{indentfirst}
 \usepackage{enumitem}
@@ -21,9 +22,10 @@
 
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings}
+\usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings,shapes}
 \usepackage{empheq}
 \usepackage[many]{tcolorbox}
+%\usepackage{asymptote}
 
 \usepackage{graphicx, wrapfig}
 \usepackage[font=small, skip=3pt, labelfont=bf, labelsep=period, format=hang, margin={5pt, 6pt}]{caption}
@@ -36,7 +38,8 @@
 \restylefloat{table}
 \usepackage[section]{placeins}
 \usepackage{multicol}
-\usepackage{svg}
+\usepackage[inkscapearea=page]{svg}
+\usepackage{adjustbox}
 \usepackage{pdfpages}
 \usepackage[bottom]{footmisc}
 
@@ -76,6 +79,14 @@
 \newcommand{\nn}{\mathbf{\hat n}}
 \newcommand{\taub}{\boldsymbol{\tau}}
 \DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\minimize}{minimize}
+
+%\SetKwFor{For}{for (}{) $\lbrace$}{$\rbrace$}
+\SetKw{Return}{return}
+\SetKwComment{tcp}{//}{}
+\SetKwFor{For}{for}{do}{endfor}
+% \SetArgSty{textup}
+
 
 \setlength{\parindent}{12 pt}
 \setlength{\parskip}{4 pt}

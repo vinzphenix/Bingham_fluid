@@ -140,7 +140,7 @@ On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function
 
 \section{Energy functional}
 
-The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $J(\vv)$ \cite{Saramito, Bleyer}. As viscous forces dominate the physics of the problem, we can assume that viscous dissipation is the only source of internal energy. As in linear elasticity for solids, the infinitesimal work of internal stresses in the deformation is
+The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $\mathcal{J}(\vv)$ \cite{Saramito, Bleyer}. As viscous forces dominate the physics of the problem, we can assume that viscous dissipation is the only source of internal energy. As in linear elasticity for solids, the infinitesimal work of internal stresses in the deformation is
 \begin{equation}
     \begin{aligned}
         W_{\textrm{internal}}(D_{ij}) &= \int_{0}^{D_{ij}} \sigma_{ij} \:\dd D_{ij}'\\
@@ -158,25 +158,25 @@ The total energy of the system $J$ is the work of internal forces diminished by 
 \begin{empheqboxed}
 \begin{equation}
     \begin{aligned}
-        \uu &= \argmin_{\vv \in \mathcal{V}} J(\vv)\\[8pt]
-        J(\vv) &= \frac{\mu}{2}\int_{\Omega} \|\gam(\vv)\|^2 \;\dd x + \tau_0 \int_{\Omega} \|\gam(\vv)\| \;\dd x - \int_{\Omega} \ff\cdot \vv \; \dd x - \int_{\Gamma_N} \mathbf{g} \cdot \vv \;\dd s\\[8pt]
+        \uu &= \argmin_{\vv \in \mathcal{V}} \mathcal{J}(\vv)\\[8pt]
+        \mathcal{J}(\vv) &= \frac{\mu}{2}\int_{\Omega} \|\gam(\vv)\|^2 \;\dd x + \tau_0 \int_{\Omega} \|\gam(\vv)\| \;\dd x - \int_{\Omega} \ff\cdot \vv \; \dd x - \int_{\Gamma_N} \mathbf{g} \cdot \vv \;\dd s\\[8pt]
         \mathcal{V} &= \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{u}_{D} \;\text{on}\; \Gamma_D \}
     \end{aligned}\label{eq:minimize}
 \end{equation}
 \end{empheqboxed}
 
-In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}.
+In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}. Furthermore, in this study, only homogeneous Neumann boundary conditions will be considered. The boundary integral will therefore be neglected from now on.
 
 We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$.
 
 \begin{align}
-    J(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{\mu}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
+    \mathcal{J}(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{\mu}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
     &\qquad - (p + \epsilon q) \nabla \cdot (\uu + \epsilon \vv) - \mathbf{f}\cdot(\uu + \epsilon \vv) \: \dd \xx\\[8pt]
     \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 &= \frac{1}{2} 2\mathbf{D}(\uu + \epsilon \vv) : 2\mathbf{D}(\uu + \epsilon \vv) \nonumber \\
     &= 2 \mathbf{D}(\uu):\mathbf{D}(\uu) + 4\epsilon \mathbf{D}(\uu):\mathbf{D}(\vv) + 2\epsilon^2 \mathbf{D}(\vv):\mathbf{D}(\vv)\\[8pt]
-    \left. \dv{J(\uu + \epsilon \vv, p)}{\epsilon}\right\vert_{\epsilon=0} &= \int_{\Omega} \frac{\mu}{2}   4\mathbf{D}(\uu):\mathbf{D}(\vv) + \tau_0 \frac{4\mathbf{D}(\uu):\mathbf{D}(\vv)}{2\sqrt{2\mathbf{D}(\uu):\mathbf{D}(\uu)}} - p\nabla\cdot(\vv) - \mathbf{f}\cdot(\vv) \: \dd \xx\nonumber\\
+    \left. \dv{\mathcal{J}(\uu + \epsilon \vv, p)}{\epsilon}\right\vert_{\epsilon=0} &= \int_{\Omega} \frac{\mu}{2}   4\mathbf{D}(\uu):\mathbf{D}(\vv) + \tau_0 \frac{4\mathbf{D}(\uu):\mathbf{D}(\vv)}{2\sqrt{2\mathbf{D}(\uu):\mathbf{D}(\uu)}} - p\nabla\cdot(\vv) - \mathbf{f}\cdot(\vv) \: \dd \xx\nonumber\\
     &= \int_{\Omega} \left(2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|}\right) \mathbf{D}(\uu):\mathbf{D}(\vv) - p\nabla\cdot \vv - \mathbf{f} \cdot \vv \label{eq:gateau_1} \\[8pt]
-    \left. \dv{J(\uu, p+\epsilon q)}{\epsilon}\right\vert_{\epsilon=0} &= -\int_{\Omega}q \nabla \cdot \uu  \label{eq:gateau_2}
+    \left. \dv{\mathcal{J}(\uu, p+\epsilon q)}{\epsilon}\right\vert_{\epsilon=0} &= -\int_{\Omega}q \nabla \cdot \uu  \label{eq:gateau_2}
 \end{align}
 
 It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{eq:gateau_2} cancel out for every perturbation fields $\vv$ and $q$. Those are precisely the expressions of the weak formulation we derived in \eqref{eq:weak_formulation} and \eqref{eq:weak_formulation_p}.
@@ -188,7 +188,7 @@ To start, we will study the well know Poiseuille flow: the fluid is pushed forwa
 
 We consider $\Omega = [-h/2, h/2]$ that represents a transversal 1D slice of the channel whose width is $h$. We also have that the velocity field reduces to $\mathbf{u} = u(y)\,\ex$, since the flow is $x$ independent and incompressible. The pressure gradient $-\Delta p/\Delta x$ is imposed and considered as a body force $f$. The fluid obviously does not slip at the wall. Furthermore, the symmetry of the problem implies that the shear stress profile satisfies $\tau_{xy}(-y) = -\tau_{xy}(y)$.
 
-%In our 1D case, the interface must have zero velocity $\mathbf{u^*} = \mathbf{0}$, and must be parallel to the flow with $\mathbf{\hat n} = \ey$, both due to the hypothesis of stationarity. 
+%In our 1D case, the interface must have zero velocity $\mathbf{u^*} = \mathbf{0}$, and must be parallel to the flow with $\mathbf{\hat n} = \ey$, both due to the hypothesis of stationary flow. 
 %Knowing that, equation \eqref{eq:interface_mass} becomes trivial, and equation \eqref{eq:interface_momentum} enforces continuity of the stress tensor across the interface(s).
 
 \section{Analytic solution}
@@ -253,10 +253,10 @@ The velocity profile can then be expressed as follows, in the presence of a yiel
 
 \section{Finite element formulation}
 
-Let us first define the mesh $\Omega=[-h/2, h/2]$ that is made of $n$ elements $\Omega_i=[y_{i-1}, y_i]$, $i=1, \dots, N$, and $N+1$ nodal values $(y_i)$. The velocity profile $u(y)$ is approximated by sum of shape functions $\phi_i$ weighted by their associated nodal value $U_i$. These shape functions have a compact support around their associated node, and satisfy $\phi_i(x_j) = \delta_{ij}$.
+Let us first define the mesh $\Omega=[-h/2, h/2]$ that is made of $n$ elements $\Omega_i=[y_{i-1}, y_i]$, $i=1, \dots, N$, and $N+1$ nodal values $(y_i)$. The velocity profile $u(y)$ is approximated by sum of shape functions $\phi_i$ weighted by their associated nodal value $U_i$. These shape functions have a compact support around their associated node, and satisfy $\phi_j(x_k) = \delta_{jk}$.
 
 \begin{equation}
-        u^h(y) = \sum_{i=0}^N U_i \phi_i(y)
+        u^h(y) = \sum_{j=0}^N U_j \phi_j(y)
 \end{equation}
 
 We will consider both linear and quadratic shape functions. They are expressed on a reference element $\hat \Omega = [-1, 1]$ and numbered with local node index $j=1,\dots,n$ in \autoref{eq:shape_1D} and \autoref{fig:shape_fct_1D}.
@@ -290,7 +290,7 @@ The strain-rate tensor with a unidirectional flow $u(y)$ only contains the off-d
 The minimization function $J$ of \autoref{eq:minimize} becomes:
 \begin{equation}
 \begin{aligned}
-    J(u^h) &= \int_{\Omega} \left[ \frac{\mu}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
+    \mathcal{J}(u^h) &= \int_{\Omega} \left[ \frac{\mu}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
     &= \sum_{i=1}^N \int_{\Omega_i} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{\Omega_i} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{\Omega_i} - f u^h\vert_{\Omega_i} \; \right] \dd y\\
     &= \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
 \end{aligned}
@@ -300,7 +300,7 @@ where we used Gauss-Legendre quadrature of appropriate order with weights $\omeg
 In short, one should solve problem \eqref{eq:problem_1D_nonlinear} hereunder
 \begin{equation}
     \begin{aligned}
-        \textrm{minimize} \qquad & J(u^h)\\
+        \textrm{minimize} \qquad & \mathcal{J}(u^h)\\
         \textrm{s.t.} \qquad & u^h(y=-h) = u^h(y=h) = 0
     \end{aligned}\label{eq:problem_1D_nonlinear}
 \end{equation}
@@ -310,7 +310,7 @@ However, this problem cannot be solve straightforwardly with classical optimizat
 One could argue that absolute values can be transformed in multiple linear terms in this case. However, this is no longer true as we go to higher dimensions since the tensor norm will become the square root of multiple squared terms. 
 
 \section{Conic optimization in a nutshell}
-%CITE NOTES OPTI GLINERUR
+%CITE NOTES OPTIMIZATION master1
 This theory extends linear programming which is restricted to linear cost and linear constraints, by allowing specific nonlinear inequality constraints. For example, $\sqrt{x^2+y^2} \leq z$ is expressed as $(x,y,z) \succeq_{L^3} 0$ or $(x,y,z) \in L^3$, where the Lorentz cone $L^3$ is precisely the set of points $(x,y,z)$ satisfying the nonlinear constraint.
 
 A cone is a subset of a vector space that is closed under linear combinations with positive coefficients. Additional properties can upgrade a cone to a \textit{proper} cone, the only ones we care about in conic optimization. These proper cones $K\subseteq \mathbb{R}^n$ satisfy the following properties:
@@ -376,7 +376,7 @@ Let us take a basic example in 2 dimensions.
 \end{aligned}
 \end{equation*}
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includesvg[width=\textwidth]{../figures/interior_point_example.svg}
     \caption{Solution of the basic example using the interior point method}
@@ -388,18 +388,21 @@ In practice, no one computes the $x^*_{\mu}$ on the \textit{central path} becaus
 For a precision $\epsilon$ s.t. $c^\top x - c^\top x^* < \epsilon$, a solution $x$ is obtained in $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations with the \textit{short-step algorithm} briefly described here above. $\nu = \sum_{i} \nu_i$, with the barrier parameter $\nu_i$, in a sense related to the \textit{steepness} of the constraint $i$. The initial value x must be close enough to the central path. This can be done with damped Newton steps from any admissible $x \in X$ CITE.
 
 \section{Finite element solution}
+\label{sec:fem_1D}
 With our recent knowledge in conic programming, we can reformulate problem \eqref{eq:problem_1D_nonlinear} in terms of second order cones only (SOCP).
-\begin{equation}
-    \begin{aligned}
-        %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{\mu}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
-        \min_{s, t, U} \qquad &\sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2} \, S_{i, g} + \tau_0 \, T_{i,g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}\\
-        %\left(\pdv{u^h}{y}\right)^2_{y=y_g}
-        %\left|\pdv{u^h}{y}\right|_{y=y_g}
-        \textrm{s.t.} \qquad & \left(\pdv{u^h}{y}\right)^2_{y=y_g} \leq S_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[\left(\pdv{u^h}{y}\right)^2_{y=y_g}, S_{i,g}, \frac{1}{2}\right] \in L_R^{1+2} \quad \forall i \:\forall g\\
-    \qquad & \left|\pdv{u^h}{y}\right|_{y=y_g} \leq T_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[ \left|\pdv{u^h}{y}\right|_{y=y_g}, T_{i,g}\right] \in L^{1+1} \quad \forall i \:\forall g\\
-        \qquad & U_0 = U_N = 0
-    \end{aligned}
-\end{equation}
+\begin{empheqboxed}
+    \begin{equation}
+        \begin{aligned}
+            %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{\mu}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
+            \minimize_{U_j, S_{i, g}, T_{i, g}} \qquad &\sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2} \, S_{i, g} + \tau_0 \, T_{i,g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}\\
+            %\left(\pdv{u^h}{y}\right)^2_{y=y_g}
+            %\left|\pdv{u^h}{y}\right|_{y=y_g}
+            \textrm{s.t.} \qquad & \left(\pdv{u^h}{y}\right)^2_{y=y_g} \leq S_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[S_{i,g}, \frac{1}{2}, \left(\pdv{u^h}{y}\right)^2_{y=y_g}\right] \in L_R^{3} \quad \forall i \:\forall g\\
+            \qquad & \left|\pdv{u^h}{y}\right|_{y=y_g} \leq T_{i,g} \quad \forall i \:\forall g \qquad\;\;\: \iff \qquad \left[ T_{i,g}, \left|\pdv{u^h}{y}\right|_{y=y_g}\right] \in L^{2} \quad \forall i \:\forall g\\
+            \qquad & U_0 = U_N = 0
+        \end{aligned}
+    \end{equation}
+\end{empheqboxed}
 
 We minimize this problem over the nodal velocities $U$, and the newly added $S$ and $T$ variables. Even if the inequalities may confuse at first glance, they are valid from a modelling standpoint. They are always verified as equalities at the optimum. We can show it by contradiction. Let us assume that $\left(\pdv{u^h}{y}\right)^2 < S_{i,g}$ for a specific index $i,g$ at the optimum. Then the cost can be reduced by decreasing $S_{i,g}$ by $\epsilon > 0$, keeping all other variables unchanged: we are not at the optimum. % fool the solver
 
@@ -422,15 +425,231 @@ At this stage, the finite element solution will be relevant only when the interf
 
 \chapter{Interface tracking}
 
-Going back to the constitutive law of bingham fluids, one can see that the strain rate at the interface is continuous and equal to $0$. However, there is a jump in its derivative, $\pdv[2]{u}{y}$, which is of course zero in the solid plug and $>0$ in the yielded regions as can be seen in \cref{fig:results_1D_P1,fig:results_1D_P2}.
+INTRODUCE CONCEPT interface tracking
 
-Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node.
+Going back to the constitutive law of bingham fluids, one can see that the strain rate at the interface is continuous and equal to $0$. There is actually a discontinuity, but it only appears in the second derivative of the velocity:
+\begin{itemize}[label=---, topsep=0pt]
+    \setlength{\itemsep}{0pt}
+    \item $\partial_{yy} u = 0$ in the solid plug as $\partial_y=0$ over a whole nonempty interval.
+    \item and $\partial_{yy} u > 0$ as for a Newtonian Poiseuille flow.
+\end{itemize}    
+This is what we observed in \cref{fig:results_1D_P1,fig:results_1D_P2}.
+
+We will therefore use this continuity of the strain field as a termination criteria for the tracking algorithm. Sadly, P1-elements for the velocity only provide piecewise discontinuous strains. Therefore, we reconstruct an continuous strain field as a linear approximation of the finite element solution at the Gauss points. This approximation is one-sided at each interface as we should only take the information from the yielded regions.
+
+TALK ABOUT SUPER-CONVERGENCE.
+
+The procedure is described in \cref{alg:tacking_1d}.
+
+%Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node. We can however still compute the solution with the finite element code described in \cref{sec:fem_1D}. The nodes will be moved progressively until the continuity of the strain field is ensured.
+
+\begin{algorithm}[t]
+    \caption{Interface-tracking algorithm in 1 dimension.}
+    \label{alg:tacking_1d}
+    optimalMesh $\gets$ false\;
+    $\mathcal{M} \gets $ initial mesh with nodes $y_i$\;
+    \While{\textsf{not optimalMesh}}{
+        Minimize the energy functional $\mathcal{J}$ with $\mathcal{M}$ and retrieve the solutions $U_j, T_{i,g}$\;
+        $\mathcal{I} \gets$ set of current interfaces (node shared between yielded and unyielded elements)\;
+        \If{$\mathcal{I} = \emptyset$}{
+            break \tcp*{Mesh should be finer to have unyielded elements}
+        }
+        \ForAll {$k \in \mathcal{I}$}{
+            $\ell_k \gets$ one-sided linear approximation function of the strain close to $y_k$\;
+            \If{$\ell_k(y_k) \neq 0$} {
+                optimalMesh $\gets$ false \tcp*{since $\partial_y u$ is not continuous at the interface}
+                $y_k\gets \text{root} (\ell_k(y))$ \tcp*{update $\mathcal{M}$}
+            }
+        }
+    }
+    \Return $U_j$ 
+\end{algorithm}
+
+The algorithm is illustrated in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}. The strain field $\partial_y u$ is shown at each iteration with with its corresponding mesh. The complete overview of the solution is provided for the first and last iterations, for both P1 and P2 elements, in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}.
+
+Surprisingly the convergence is faster for P1 elements (piecewise constant strains). This can be easily explained by a flaw in \cref{alg:tacking_1d}: the reconstruction is made over all the Gauss points of elements near the current interface. However, one of these gauss point can be inside the unyielded region (as in \cref{subfig:tracking_1D_P2_step_1}). In that case, the reconstruction is deteriorated because it uses information from the wrong side, leading to a slower convergence.
+
+%%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  start  %%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[b]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P1_iteration_01.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P1_iteration_02.svg}
+        %\caption{From second to third iteration.}
+    \end{subfigure}
+    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.}
+    \label{fig:tracking_1D_P1_steps}
+\end{figure}
+
+\begin{figure}[b]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P1_first.svg}
+        \caption{Initial mesh.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P1_last.svg}
+        \caption{Final mesh.}
+    \end{subfigure}
+    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.}
+    \label{fig:tracking_1D_P1}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  end  %%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  start  %%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[b]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P2_iteration_01.svg}
+        \label{subfig:tracking_1D_P2_step_1}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P2_iteration_02.svg}
+        %\caption{From second to third iteration.}
+    \end{subfigure}
+    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.}
+    \label{fig:tracking_1D_P2_steps}
+\end{figure}
+
+\begin{figure}[b]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P2_first.svg}
+        \caption{Initial mesh.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/res_P2_last.svg}
+        \caption{Final mesh.}
+    \end{subfigure}
+    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.}
+    \label{fig:tracking_1D_P2}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  end  %%%%%%%%%%%%%%%%%%%%%%
+
+
+\chapter{2D problem}
+
+\section{Equations}
+
+It is well known that velocity-pressure fields discretized with P1-P0 and P1-P1 elements do not provide stable discretizations of the Stokes equations, or equivalently of incompressible linear elasticity REF. A first option is to enrich the velocity space with a bubble function: this is the MINI element. A second option is to use P2 elements for the velocity field. Both methods were implemented in our case. 
+
+The shape functions involved are represented graphically in %\cref{fig:shape_functions_2d}. 
+Again, the finite element approximation velocity field $\vv^h$ reads as
+\begin{align}
+    \vv^h(x, y) &= \sum_{j} \mathbf{V}_j \: \phi_j(x, y)
+\end{align}
+
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P1.svg}
+        \caption{Lagrange P1}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_bubble.svg}
+        \caption{Bubble enriched Lagrange}
+    \end{subfigure}
+    \begin{subfigure}[b]{\textwidth}
+        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P2.svg}
+        \caption{Lagrange P2}
+    \end{subfigure}
+    \caption{Shape functions used for the pressure and velocity fields in 2-dimensions.}
+    \label{fig:shape_functions_2d}
+\end{figure} 
+
+To express the deformation norm $\|\gam\|$ needed in the functional, we need the velocity gradient:
+\begin{align}
+    \nabla \vv &= 
+    \begin{bmatrix}
+        \pdv{u}{x} & \pdv{u}{y}\\
+        \pdv{v}{x} & \pdv{v}{y}\\
+    \end{bmatrix}\\
+    \implies \quad \|\gam(u, v)\|_{\text{Cart}}^2 &= 2 \left(\pdv{u}{x}\right)^2 + \left(\pdv{u}{y} + 2\pdv{v}{x}\right)^2 + \left(\pdv{v}{y}\right)^2
+\end{align}
+
+Each of these partial derivatives are computed as a sum of shape functions derivatives. These spatial derivatives in the physical domain $(x,y)$ are themselves computed from derivatives in the parametric domain $(\xi, \eta)$ through the Jacobian of the transformation.
+\begin{align}
+    \pdv{u^h_i}{x_j} &= \sum_k U_k \pdv{\phi_k}{x_j} \qquad i=1,2 \quad j=1,2\\
+    \left(\nabla_\xx \: \phi\right)_{\text{Cart}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}}\\
+    \dv{\boldsymbol \xi}{\mathbf{x}} &= \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)^{-1} = 
+    \begin{bmatrix}
+        \pdv{x}{\xi} & \pdv{x}{\eta}\\
+        \pdv{y}{\xi} & \pdv{y}{\eta}\\
+    \end{bmatrix}^{-1}
+\end{align}
+
+The functional of the approximate field $\vv^h$ is recalled below, along with the incompressibility constraint, where $\psi$ denotes the pressure linear shape function, attached to every primary node.
+\begin{align}
+    \mathcal{J}(u^h, v^h) &= \int_{\Omega} \frac{\mu}{2} \|\gam(u^h, v^h)\|^2 + \tau_0 \|\gam(u^h, v^h)\| - \mathbf{f} \cdot \vv^h \; \dd x\\
+    0 &= \int_{\Omega} \psi_l \; \nabla \cdot \vv^h \qquad \forall \quad \psi_l
+\end{align}
+
+The minimization problem can for Cartesian coordinate systems is given hereunder while cylindrical and polar coordinates are detailed in \cref{appendix:curvilinear}.
+\begin{empheqboxed}
+    \begin{equation}
+        \begin{aligned}
+            \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} &\qquad \sum_{i}\sum_{g} \omega_g \left[\frac{\mu}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \vert_{\xx_g} \right] \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g}\\
+            \textrm{s.t.} &\qquad \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L_R^5 && \forall i, g\\
+            &\qquad \left(T_{i,g}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L^4 && \forall i, g\\
+            &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) && \forall\; l\\
+            &\qquad \mathbf{V}_{j} = \mathbf{u}_{D} && \forall\; \mathbf{V}_{j} \in \Gamma_D
+        \end{aligned}
+    \end{equation}
+\end{empheqboxed}
 
 %\nocite{*}
 %\printbibliography
 
 \bibliographystyle{plain}
 \bibliography{main.bib}
+
+
+\appendix
+\chapter{Curvilinear coordinates}
+\label{appendix:curvilinear}
+
+In axisymmetric cylindrical coordinates, the solution only depends on the radial and axial coordinates $r, z$. We also assume that the velocity field has no tangential component.
+
+\begin{align}
+    \begin{bmatrix}
+        x(r, \theta=0, z) \\
+        y(r, \theta=0, z) \\
+        z(r, \theta=0, z) \\
+    \end{bmatrix} &=
+    \begin{bmatrix}
+        r \\
+        0 \\
+        z
+    \end{bmatrix}\\
+    \uu(r, z) &= u_r(r, z) \mathbf{e}_r + u_z(r, z) \mathbf{e}_z\\
+    \left(\nabla \: \phi\right)_{\text{Cyl}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, z)}\\
+    \nabla \cdot \vv &= \pdv{u_r}{r} + \frac{u_r}{r} + \pdv{u_z}{z}\\
+    \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r}\bigg)^2 + 2\bigg(\pdv{u_z}{r}\bigg)^2 + \bigg(\pdv{u_r}{z} + \pdv{u_z}{r}\bigg)^2
+\end{align}
+
+Polar coordinates provide quite similar equations. Here again, we assume axisymmetry and the absence of azimuthal velocity.
+\begin{align}
+    \begin{bmatrix}
+        x(r, \theta, \varphi=0) \\
+        y(r, \theta, \varphi=0) \\
+        z(r, \theta, \varphi=0)
+    \end{bmatrix} &=
+    \begin{bmatrix}
+        r \sin{\theta} \\
+        0\\
+        r \cos{\theta} \\
+    \end{bmatrix}\\
+    \uu(r, z) &= u_r(r, \theta) \mathbf{e}_r + u_\theta(r, \theta) \mathbf{e}_\theta\\
+    \left(\nabla \: \phi\right)_{\text{Pol}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, \theta)} \\
+    \nabla \cdot \vv &= \frac{1}{r^2}\pdv{(r^2 u_r)}{r} + \frac{1}{r\sin\theta} \pdv{(u_\theta \sin \theta)}{\theta}\\
+    \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{1}{r}\pdv{u_\theta}{\theta} + \frac{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r} + \cot \theta \frac{u_\theta}{r}\bigg)^2 \nonumber\\
+    &+ \bigg(\frac{1}{r}\pdv{u_r}{\theta} \pdv{u_\theta}{r} - \frac{u_\theta}{r}\bigg)^2
+\end{align}
 
 \end{document}
 

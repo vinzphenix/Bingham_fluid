@@ -11,3 +11,6 @@
 \contentsline {section}{\numberline {2.4}Conic optimization in a nutshell}{10}{section.2.4}%
 \contentsline {section}{\numberline {2.5}Finite element solution}{12}{section.2.5}%
 \contentsline {chapter}{\numberline {3}Interface tracking}{14}{chapter.3}%
+\contentsline {chapter}{\numberline {4}2D problem}{20}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Equations}{20}{section.4.1}%
+\contentsline {chapter}{\numberline {A}Curvilinear coordinates}{24}{appendix.A}%
