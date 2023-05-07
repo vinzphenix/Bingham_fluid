@@ -89,8 +89,6 @@ from bingham_post_pro import plot_solution_2D
 #     return interface_nodes
 
 
-
-
 # def move_along_edges(sim: Simulation_2D, interface_nodes, diamond_map, reconstructed):
 #     new_coords = sim.coords[interface_nodes].copy()
 #     data = []
@@ -129,22 +127,23 @@ from bingham_post_pro import plot_solution_2D
 
 # diamond_map = get_diamond_mapping(sim)
 
+# strain_norm = np.zeros(sim.n_elem)
+# neighbours_map, elem_to_edge, edge_to_node = get_neighbours_mapping(sim)
+# node_to_elem = get_diamond_mapping(sim)
 
-    # strain_norm = np.zeros(sim.n_elem)
-    # neighbours_map, elem_to_edge, edge_to_node = get_neighbours_mapping(sim)
-    # node_to_elem = get_diamond_mapping(sim)
 
+def find_nodes_interface(sim: Simulation_2D, t_num):
 
-def find_nodes_interface(sim: Simulation_2D, t_num, tol):
-
-    solid_elements, = np.where(np.all(t_num < tol, axis=1))
+    # solid_elements, = np.where(np.all(t_num < sim.tol_yield, axis=1))
+    solid_elements, = np.where(~sim.is_yielded(t_num))  # at least 2 out of 3
     solid_nodes = np.unique(sim.elem_node_tags[solid_elements, :3])
     mask_interface = np.empty_like(solid_nodes)
 
     for idx, node in enumerate(solid_nodes):
         elems = sim.n2e_map[sim.n2e_st[node]:sim.n2e_st[node + 1]]
         diamond_strains = t_num[elems]
-        if np.any(diamond_strains > tol):
+        # if np.any(diamond_strains > sim.tol_yield):
+        if np.any(sim.is_yielded(diamond_strains)):  # any elem has less than 2
             mask_interface[idx] = True
         else:
             mask_interface[idx] = False
@@ -153,12 +152,14 @@ def find_nodes_interface(sim: Simulation_2D, t_num, tol):
     return interface_nodes
 
 
-def build_approximation(sim: Simulation_2D, node, t_num, tol):
+def build_approximation(sim: Simulation_2D, node, t_num):
     # Use strain information at all elements around 'node' to create a linear approximation
 
+    # WARINING (no longer valid with new criteria)
     # At least one element is unyielded, i.e. not used for reconstruction
     # max_size = sim.ng_loc * (len(diamond_map[node]) - 1)
-    max_pts_used = sim.ng_loc * (sim.n2e_st[node + 1] - sim.n2e_st[node] - 1)
+
+    max_pts_used = sim.ng_loc * (sim.n2e_st[node + 1] - sim.n2e_st[node])
     matrix = np.zeros((max_pts_used, 4))
     row = 0
 
@@ -173,7 +174,7 @@ def build_approximation(sim: Simulation_2D, node, t_num, tol):
         # for each gauss point of this element
         for g, (xi, eta, _) in enumerate(sim.uvw):
 
-            if t_num[elem, g] > tol:  # if information is useful
+            if t_num[elem, g] > sim.tol_yield:  # if information is useful
                 gauss_coords = np.dot(np.array([1. - xi - eta, xi, eta]), corners_coords)
                 matrix[row, :] = np.r_[1., gauss_coords, t_num[elem, g]]
                 row += 1
@@ -197,7 +198,7 @@ def compute_target(sim: Simulation_2D, node, coefs):
         target = sim.coords[node]
 
     elif node in sim.nodes_boundary:
-        target = np.array([0., 0]) * np.nan
+        target = sim.coords[node]
         neighbours = sim.n2n_map[sim.n2n_st[node]: sim.n2n_st[node + 1]]
 
         for neigh in np.intersect1d(neighbours, sim.nodes_boundary):
@@ -239,81 +240,90 @@ def update_mesh(sim: Simulation_2D, interface_nodes, new_coords):
     if sim.element == "th":
         for elem in elements:
             for j in range(3):
-                local_node = sim.elem_node_tags[elem, 3 + j] + 1
+                local_node = sim.elem_node_tags[elem, 3 + j]
                 local_coords = (sim.coords[sim.elem_node_tags[elem, j]] +
                                 sim.coords[sim.elem_node_tags[elem, (j + 1) % 3]]) / 2.
-                gmsh.model.mesh.set_node(local_node, np.r_[local_coords, 0.], [0., 0.])
+                gmsh.model.mesh.set_node(local_node + 1, np.r_[local_coords, 0.], [0., 0.])
+                sim.coords[local_node] = local_coords
 
     gmsh.model.set_current(gmsh.model.get_current())
     sim.update_transformation(elements)  # update jacobians...
     return
 
 
-def reconstruct(sim: Simulation_2D, t_num, interface_nodes, tol):
+def eval_approx_diamond(sim: Simulation_2D, node, coefs, dic_node_approx):
+    # # diamond_nodes = np.unique(sim.elem_node_tags[diamond_map[node], :3])
+    neighbours = sim.n2n_map[sim.n2n_st[node]: sim.n2n_st[node + 1]]
+    for diamond_node in np.r_[neighbours, node]:
+        x_node, y_node = sim.coords[diamond_node]
+        strain_apxm = np.dot(coefs, np.array([1., x_node, y_node]))
+        dic_node_approx.setdefault(diamond_node, []).append(strain_apxm)
+        # print(f"\t{diamond_node+1} : {strain_apxm}")
+    return
 
-    reconstructed_strain = {}
-    data = []
 
-    issues = []
+def reconstruct(sim: Simulation_2D, t_num, interface_nodes):
+
+    # Mapping from node to list of approximated strain values
+    # Each value of the list corresponds to the approximation
+    # around a specific interface node
+    dic_node_approx = {}
+
+    nodes_unchanged = []
     new_coords = sim.coords[interface_nodes].copy()
+    coefs = np.empty((interface_nodes.size, 3))
 
     # for each node at interface
     for idx, node in enumerate(interface_nodes):
         # print(f"Node {node+1:d}")
 
-        matrix = build_approximation(sim, node, t_num, tol)
+        matrix = build_approximation(sim, node, t_num)
 
         if 3 <= matrix.shape[0]:  # system has a solution
             A, b = matrix[:, :3], matrix[:, 3]  # matrix, vector
-            coefs = np.linalg.solve(np.dot(A.T, A), np.dot(A.T, b))  # z = a + bx + cy
-
-            # # diamond_nodes = np.unique(sim.elem_node_tags[diamond_map[node], :3])
-            # neighbours = sim.n2n_map[sim.n2n_st[node]: sim.n2n_st[node + 1]]
-            # for diamond_node in np.r_[neighbours, node]:
-            #     x_node, y_node = sim.coords[diamond_node]
-            #     strain_apxm = np.dot(coefs, np.array([1., x_node, y_node]))
-            #     reconstructed_strain.setdefault(diamond_node, []).append(strain_apxm)
-            #     # print(f"\t{diamond_node+1} : {strain_apxm}")
-
-            target = compute_target(sim, node, coefs)
+            coefs[idx, :] = np.linalg.solve(np.dot(A.T, A), np.dot(A.T, b))  # z = a + bx + cy
+            # Evaluate linear approximation at all nodes of the diamond
+            eval_approx_diamond(sim, node, coefs[idx], dic_node_approx)
+            target = compute_target(sim, node, coefs[idx])
             new_coords[idx] = target
-
-            # data += [*target, 0., 0.]
-            # print(f"\t ({sim.coords[node][0]:5.2f}, {sim.coords[node][1]:5.2f})")
-            # print(f"\t ({target[0]:5.2f}, {target[1]:5.2f})")
         else:
-            issues.append(node)
+            nodes_unchanged.append(node)
 
-    if len(issues) > 0:
+    if len(nodes_unchanged) > 0:
         msg = """
         Not enough information to move some 'interface nodes'.
         They are surrounded by many unyielded elements,
         and are likely to become such during next iteration
         """
-        print(msg, np.array(issues) + 1, "\n")
+        print(msg, np.array(nodes_unchanged) + 1, "\n")
 
-    # sim.tmp_data = data
-    # avg_strain = dict((key, np.mean(strains)) for key, strains in reconstructed_strain.items())
-    # return avg_strain
-
-    update_mesh(sim, interface_nodes, new_coords)
-    return
+    node_strain_rec = dict((key, np.mean(strains)) for key, strains in dic_node_approx.items())
+    return new_coords, node_strain_rec, coefs
 
 
-def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_unyielded=1.e-3):
+def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3):
 
     # Solve first time with initial mesh
     u_num, p_num, t_num = solve_FE_mosek(sim, strong=False)
 
     while sim.iteration < max_it:
 
-        interface_nodes = find_nodes_interface(sim, t_num, tol_unyielded)
-        reconstruct(sim, t_num, interface_nodes, tol_unyielded)
+        interface_nodes = find_nodes_interface(sim, t_num)
+        new_coords, strain_rec, coefs = reconstruct(sim, t_num, interface_nodes)
 
-        plot_solution_2D(u_num, p_num, t_num, sim, rec=True)
+        extra = [interface_nodes, new_coords, strain_rec, coefs]
+        plot_solution_2D(u_num, p_num, t_num, sim, extra)
 
+        # Check if nodes moved enough to require new 'fem solve'
+        delta = np.linalg.norm(sim.coords[interface_nodes] - new_coords, axis=1)
+        if np.amax(delta) < tol_delta:
+            break
+
+        # Change node positions, jacobians...
+        update_mesh(sim, interface_nodes, new_coords)
+
+        # Solve the problem, slightly modified
         u_num, p_num, t_num = solve_FE_mosek(sim, strong=False)
-        plot_solution_2D(u_num, p_num, t_num, sim)
 
         sim.iteration += 1
 

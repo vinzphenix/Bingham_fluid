@@ -157,7 +157,7 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     return
 
 
-def create_cylinder(filename, elemSizeRatio, radial=False):
+def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
     gmsh.initialize()
     gmsh.model.add("cylinder")
 
@@ -166,43 +166,56 @@ def create_cylinder(filename, elemSizeRatio, radial=False):
     bottom = 0. if radial else -height / 2.
 
     rect = gmsh.model.occ.add_rectangle(0., bottom, 0., width, height, 0)
-    disk1 = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
-    res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1)])
-    # disk2 = gmsh.model.occ.add_disk(width, 0., 0., radius, radius, 1001)
-    # res_cut = gmsh.model.occ.cut([(2, rect)], [(2, disk1), (2, disk2)], tag=1)
+    if sharp:
+        tool = gmsh.model.occ.add_rectangle(
+            width / 2. - radius / 2., -radius / 2., 0., radius, radius, 1000
+        )
+    else:
+        tool = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
+    res_cut = gmsh.model.occ.cut([(2, rect)], [(2, tool)])
 
     gmsh.model.occ.synchronize()
 
     if radial:
-        tag = gmsh.model.addPhysicalGroup(0, [1, 2], tag=1, name="u_zero")
-        tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5, 6], tag=2, name="v_zero")
-        tag = gmsh.model.addPhysicalGroup(0, [3, 4], tag=3, name="u_one")
-
-        tag = gmsh.model.addPhysicalGroup(1, [1], tag=1, name="u_zero")
-        tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5, 6], tag=2, name="v_zero")
-        tag = gmsh.model.addPhysicalGroup(1, [3], tag=3, name="u_one")  # [2]
-        tag = gmsh.model.addPhysicalGroup(1, [5], tag=4, name="cut")
-
-        tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
-
+        if sharp:
+            pts_rect = [1, 2, 3, 4]
+            pts_tool = [5, 6, 7, 8]
+            u_zero_pts, v_zero_pts, u_with_pts = [5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], []
+            u_zero_lns, v_zero_lns, u_with_lns = [5, 6, 7], [1, 2, 3, 4, 5, 6, 7, 8], []
+            cut_lns, bulk = [3], [0]
+        else:
+            pts_rect = [3, 4, 5, 6]
+            pts_tool = [1, 2]
+            u_zero_pts, v_zero_pts, u_with_pts = [1, 2], [1, 2, 3, 4, 5, 6], [3, 4]
+            u_zero_lns, v_zero_lns, u_with_lns = [1], [1, 2, 3, 4, 5, 6], [3]
+            cut_lns, bulk = [5], [0]
     else:
-        tag = gmsh.model.addPhysicalGroup(0, [5], tag=1, name="u_zero")
-        tag = gmsh.model.addPhysicalGroup(0, [1, 2, 3, 4, 5], tag=2, name="v_zero")
-        tag = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
+        if sharp:
+            pts_rect = [1, 2, 3, 4]
+            pts_tool = [5, 6, 7, 8]
+            u_zero_pts, v_zero_pts, u_with_pts = [5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], []
+            u_zero_lns, v_zero_lns, u_with_lns = [5, 6, 7, 8], [1, 2, 3, 4, 5, 6, 7, 8], []
+            cut_lns, bulk = [3], [0]
+        else:
+            pts_rect = [1, 2, 3, 4]
+            pts_tool = [5]
+            u_zero_pts, v_zero_pts, u_with_pts = [5], [1, 2, 3, 4, 5], []
+            u_zero_lns, v_zero_lns, u_with_lns = [5], [1, 2, 3, 4, 5], []
+            cut_lns, bulk = [3], [0]
 
-        tag = gmsh.model.addPhysicalGroup(1, [5], tag=1, name="u_zero")
-        tag = gmsh.model.addPhysicalGroup(1, [1, 2, 3, 4, 5], tag=2, name="v_zero")
-        # tag = gmsh.model.addPhysicalGroup(1, [2, 5], tag=2, name="v_zero")
-        tag = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")  # [2]
-        tag = gmsh.model.addPhysicalGroup(1, [3], tag=4, name="cut")
+    tag = gmsh.model.addPhysicalGroup(0, u_zero_pts, tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(0, v_zero_pts, tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(0, u_with_pts, tag=3, name="u_one")
+    tag = gmsh.model.addPhysicalGroup(1, u_zero_lns, tag=1, name="u_zero")
+    tag = gmsh.model.addPhysicalGroup(1, v_zero_lns, tag=2, name="v_zero")
+    tag = gmsh.model.addPhysicalGroup(1, u_with_lns, tag=3, name="u_one")  # [2]
+    tag = gmsh.model.addPhysicalGroup(1, cut_lns, tag=4, name="cut")
+    tag = gmsh.model.addPhysicalGroup(2, bulk, tag=-1, name="bulk")
 
-        tag = gmsh.model.addPhysicalGroup(2, [0], tag=-1, name="bulk")
 
-    pts_rect = [3, 4, 5, 6] if radial else [1, 2, 3, 4]
-    pts_cyld = [1, 2] if radial else [5]
     for pt in pts_rect:
         gmsh.model.mesh.setSize([(0, pt)], elemSizeRatio * height)
-    for pt in pts_cyld:
+    for pt in pts_tool:
         gmsh.model.mesh.setSize([(0, pt)], elemSizeRatio * height * 0.2)
 
     gmsh.model.occ.synchronize()
@@ -368,9 +381,9 @@ if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
     # create_split_rectangle(path_to_dir + "test.msh", width=3., height=2., elemSizeRatio=1./25., y_zero=0., cut=False)
-    create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./12., y_zero=0., cut=False)
+    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0., cut=True)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
 
-    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./20., radial=False)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./50., cut=False)
+    create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./30., radial=False, sharp=True)
+    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./40., cut=False)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./35.)

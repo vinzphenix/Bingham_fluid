@@ -41,6 +41,7 @@ class Simulation_2D:
             raise ValueError(f"Element '{element:s}' not implemented. Choose 'mini' or 'th'")
 
         self.iteration = 0
+        self.tol_yield = 1.e-4
 
         res = self.get_elements_info()
         self.elem_type, self.elem_tags, self.elem_node_tags, self.local_node_coords = res
@@ -50,7 +51,7 @@ class Simulation_2D:
         res = self.get_nodes_info()
         self.node_tags, self.coords = res[0:2]
         self.nodes_zero_u, self.nodes_zero_v, self.nodes_with_u = res[2:5]
-        self.nodes_singular_p, self.nodes_corner, self.nodes_boundary = res[5:]
+        self.nodes_singular_p, self.nodes_corner, self.nodes_boundary, self.nodes_cut = res[5:]
         self.n_node = len(self.node_tags)
 
         if self.element == "mini":  # Add the index of bubble nodes
@@ -108,6 +109,8 @@ class Simulation_2D:
 
         corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
         bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
+        cut_nodes, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
+
 
         # bd_nodes_01, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
         # bd_nodes_02, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
@@ -136,7 +139,7 @@ class Simulation_2D:
         return (
             node_tags, coords, 
             nodes_zero_u, nodes_zero_v, nodes_with_u, 
-            nodes_singular_p, corner_nodes, bd_nodes
+            nodes_singular_p, corner_nodes, bd_nodes, cut_nodes
         )
 
     def get_shape_fcts_info(self):
@@ -267,8 +270,14 @@ class Simulation_2D:
         node_node_map = pairs[:, 1]
 
         return node_node_map, node_node_st
+    
+    def is_yielded(self, strains):
+        # strains is a matrix with each gauss point value
+        # 0 or 1 ->   yielded
+        # 2 or 3 -> unyielded
+        return np.sum(strains < self.tol_yield, axis=1) < 2
 
-    def save_solution(self, u_num, p_num, model_variant):
+    def save_solution(self, u_num, p_num, t_num, model_variant):
         
         res_file_name = f"../res/{self.model_name:s}_{model_variant:s}"
         with open(res_file_name + "_params.txt", 'w') as file:
@@ -279,5 +288,6 @@ class Simulation_2D:
         
         np.savetxt(res_file_name + "_velocity.txt", u_num, fmt="%.6e")
         np.savetxt(res_file_name + "_pressure.txt", p_num, fmt="%.6e")
+        np.savetxt(res_file_name + "_strain.txt", t_num, fmt="%.6e")
 
         return

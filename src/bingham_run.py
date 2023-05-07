@@ -17,9 +17,10 @@ def load_solution(model_name, model_variant):
     
     u_num = np.loadtxt(res_file_name + "_velocity.txt")
     p_num = np.loadtxt(res_file_name + "_pressure.txt")
+    t_num = np.loadtxt(res_file_name + "_strain.txt")
     dic_params = dict(K=K, tau_zero=tau_zero, f=f, element=element, model_name=model_name)
 
-    return dic_params, u_num, p_num
+    return dic_params, u_num, p_num, t_num
 
 
 def get_analytical_poiseuille(sim: Simulation_2D):
@@ -61,61 +62,48 @@ def dummy():
     
 
 if __name__ == "__main__":
+    
+    # 1: solve problem oneshot,
+    # 2: solve problem iterative,
+    # 3: load previous,
+    # 4: dummy solver debug
 
     if len(sys.argv) == 3 and sys.argv[1] == "-mode":
         mode = int(sys.argv[2])
+        if not (1 <= mode <= 4):
+            print("'mode' should be an integer from 1 to 4")
+            exit(1)
     else:
-        mode = 3
-
-    # 1: load previous,
-    # 2: solve problem iterative,
-    # 3: solve problem oneshot,
-    # 4: dummy solver debug
+        mode = 1
 
     gmsh.initialize()
 
-    if mode == 1:
-        # parameters, u_nodes, p_field = load_solution("test", "")
-        parameters, u_nodes, p_field = load_solution("rectangle", "weak")
-        # parameters, u_nodes, p_field = load_solution("cylinder", "")
-        # parameters, u_nodes, p_field = load_solution("cavity", "")
-        # parameters, u_nodes, p_field = load_solution("bfs", "")
-    elif mode in [2, 3, 4]:
-        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
-        # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="rectangle")
-        parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
-        # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
-        # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cavity")
-        # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
-    else:
-        raise ValueError
+    # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
+    # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="rectangle")
+    # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
+    # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
+    parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
+    # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cavity")
+    # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
 
     sim = Simulation_2D(**parameters)
 
-    # if mode == 1:
-    #     # _, u_nodes_1, p_field_1 = load_solution("rectangle", "weak_cross")
-    #     # _, u_nodes_2, p_field_2 = load_solution("rectangle", "strong_cross")
-    #     u_nodes = u_nodes - get_analytical_poiseuille(sim)
-    #     # p_field = p_field_1
+    if mode == 1:  # Solve problem: ONE SHOT
+        u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
+        # sim.save_solution(u_nodes_weak, p_field_weak, t_num, model_variant='weak')
 
-    if mode == 2:  # Solve the problem: ITERATE
-        u_nodes, p_field, t_num = solve_interface_tracking(sim)
+    elif mode == 2:  # Solve the problem: ITERATE
+        u_field, p_field, d_field = solve_interface_tracking(sim, max_it=5, tol_delta=1.e-3)
 
-    elif mode == 3:  # Solve problem: ONE SHOT
-
-        u_nodes_weak, p_field_weak, t_num = solve_FE_mosek(sim, strong=False)
-        # sim.save_solution(u_nodes_weak, p_field_weak, model_variant='weak')
-
-        # u_nodes_strong, p_field_strong = solve_FE_mosek(sim, strong=True)
-        # sim.save_solution(u_nodes_strong, p_field_strong, model_variant='strong_f')
-
-        u_nodes, p_field = u_nodes_weak, p_field_weak
+    elif mode == 3:  # Load solution from disk
+        model, variant = "test", ""
+        parameters, u_field, p_field, d_field = load_solution(model, variant)
+        sim = Simulation_2D(**parameters)
 
     else:  # DUMMY solution to debug
-        u_nodes, p_field, t_num = dummy()
+        u_field, p_field, d_field = dummy()
 
-    # plot_solution_2D(u_nodes, p_field, t_num, sim)
-    # plot_1D_slice(u_nodes, sim)
+    plot_solution_2D(u_field, p_field, d_field, sim)
+    plot_1D_slice(u_field, sim)
 
     gmsh.finalize()

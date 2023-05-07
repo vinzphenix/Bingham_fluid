@@ -72,3 +72,8 @@ build/
 # Hidden files
 __pycache__/
 .vscode
+
+
+# output files from xmesh demos
+**/png/**
+**/pdf/**

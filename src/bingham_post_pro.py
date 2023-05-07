@@ -38,8 +38,8 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
     if sim.model_name[:4] not in ["rect", "test"]:
         return
 
-    slice_node_tags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
-    slice_node_tags = np.array(slice_node_tags).astype(int) - 1
+    # slice_node_tags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
+    slice_node_tags = np.array(sim.nodes_cut).astype(int) - 1
 
     slice_xy = sim.coords[slice_node_tags]
     slice_y = slice_xy[:, 1]
@@ -108,8 +108,10 @@ def add_streamlines(sim: Simulation_2D):
     return tags_streamlines
 
 
-def add_unstrained_zone(sim: Simulation_2D, strain_norm_avg, model_name, tol=1e-3):
-    mask = strain_norm_avg <= tol
+def add_unstrained_zone(sim: Simulation_2D, t_num, model_name):
+    # mask = np.all(t_num < sim.tol_yield, axis=1)
+    mask = np.where(~sim.is_yielded(t_num))
+    strain_norm_avg = np.mean(t_num, axis=1)
     percentile_95 = -np.partition(-strain_norm_avg, sim.n_elem//20)[sim.n_elem//20]
     tag_unstrained = gmsh.view.add("Unstrained_zone", tag=6)
 
@@ -210,24 +212,49 @@ def add_pressure_view(sim: Simulation_2D, p_num, model_name):
     return [tag_pressure]
 
 
-# def add_rec(sim: Simulation_2D):
-#     data = []
-#     n = len(sim.rec)
-#     for node, val in sim.rec.items():
-#         data += [*sim.coords[node], 0., val]
+def add_reconstruction(sim: Simulation_2D, model_name, extra):
+    interface_nodes, new_coords, strain_rec, coefs_matrix = extra
+    
+    data_1 = []
+    n = len(strain_rec)
+    for node, val in strain_rec.items():
+        data_1 += [*sim.coords[node], 0., val]
 
-#     view_rec = gmsh.view.add("Rec", tag=10)
-#     gmsh.view.addListData(tag=view_rec, dataType="SP", numEle=n, data=data)
-#     # gmsh.view.option.setNumber(view_rec, 'RaiseZ', 1.)
-#     gmsh.view.option.setNumber(view_rec, 'PointSize', 15.)
+    view_rec = gmsh.view.add("Reconstruction", 10)
+    gmsh.view.addListData(tag=view_rec, dataType="SP", numEle=n, data=data_1)
+    gmsh.view.option.setNumber(view_rec, 'PointSize', 10.)
 
-#     view_tar = gmsh.view.add("Targets", tag=11)
-#     data = np.array(sim.tmp_data)
-#     gmsh.view.addListData(tag=view_tar, dataType="SP", numEle=len(data)//4, data=data)
-#     gmsh.view.option.setNumber(view_tar, 'PointSize', 15.)
-#     gmsh.view.option.setNumber(view_tar, 'ColormapNumber', 9)
+    n = interface_nodes.size
+    data_2 = np.zeros((n, 3 + 3 + 2))
+    data_2[:, [0, 2]] = sim.coords[interface_nodes]
+    data_2[:, [1, 3]] = new_coords
+    data_2[:, 7] = np.linalg.norm(sim.coords[interface_nodes] - new_coords, axis=1)
+    view_targets = gmsh.view.add("Targets", tag=11)
+    gmsh.view.addListData(tag=view_targets, dataType="SL", numEle=n, data=data_2.flatten())
+    gmsh.view.option.setNumber(view_targets, 'LineWidth', 3.)
 
-#     return
+    view_zero_approx = gmsh.view.add("Approximation", 12)
+    for step, (node, coefs) in enumerate(zip(interface_nodes, coefs_matrix)):
+        neighbours = sim.n2n_map[sim.n2n_st[node]: sim.n2n_st[node+1]]
+        diamond_nodes = np.r_[node, neighbours]
+
+        data_3 = np.c_[np.ones(diamond_nodes.size), sim.coords[diamond_nodes]]
+        data_3 = np.dot(data_3, coefs)
+        gmsh.view.addHomogeneousModelData(
+            view_zero_approx, step, model_name, "NodeData",
+            diamond_nodes + 1, data_3, numComponents=1
+        )
+
+    gmsh.view.option.setNumber(view_zero_approx, 'LineWidth', 3.)
+    gmsh.view.option.setNumber(view_zero_approx, 'NbIso', 3)
+    gmsh.view.option.setNumber(view_zero_approx, 'IntervalsType', 0)
+    gmsh.view.option.setNumber(view_zero_approx, 'RangeType', 2)
+    gmsh.view.option.setNumber(view_zero_approx, 'CustomMin', -1.)
+    gmsh.view.option.setNumber(view_zero_approx, 'CustomMax', 1.)
+    gmsh.view.option.setNumber(view_zero_approx, 'ColormapNumber', 0)
+    gmsh.view.option.setNumber(view_zero_approx, 'ShowScale', 0)
+
+    return
 
 
 def add_gauss_points(sim: Simulation_2D, t_num):
@@ -261,7 +288,7 @@ def add_gauss_points(sim: Simulation_2D, t_num):
     return [view_gauss_1, view_gauss_2]
 
 
-def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, rec=False):
+def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
 
     gmsh.fltk.initialize()
     model_name = gmsh.model.list()[0]
@@ -276,10 +303,8 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, rec=False):
     #         sim.primary_nodes + 1, data, time=j, numComponents=1
     #     )
 
+    strain_norm = np.mean(t_num, axis=1)  # filled with |2D| (cst / elem)
     strain_tensor = np.zeros((sim.n_elem, sim.n_local_node, 9))
-    # strain_norm = np.zeros(sim.n_elem)
-    # compute_strain_per_elem(sim, u_num, strain_norm)  # filled with |D| (cst / elem)
-    strain_norm = np.mean(t_num, axis=1)
     compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) matrix
 
     if sim.degree == 3:  # remove bubble stuff
@@ -288,14 +313,14 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, rec=False):
         u_num = u_num[:sim.n_node]
 
     tags_velocities = add_velocity_views(sim, u_num, strain_tensor, strain_norm, model_name)
-    tags_unstrained = add_unstrained_zone(sim, strain_norm, model_name, tol=1e-4)
+    tags_unstrained = add_unstrained_zone(sim, t_num, model_name)
     tags_pressure = add_pressure_view(sim, p_num, model_name)
     # tags_steamlines = add_streamlines(sim)
     tags_gauss = add_gauss_points(sim, t_num)
-    # if rec:
-    #     add_rec(sim)
+    if extra is not None:
+        add_reconstruction(sim, model_name, extra)
 
-    for tag in tags_velocities[:] + tags_pressure:
+    for tag in tags_velocities[:] + tags_pressure + tags_gauss:
         gmsh.view.option.setNumber(tag, "Visible", 0)
 
     # gmsh.option.set_number("Mesh.SurfaceEdges", 0)
@@ -312,6 +337,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, rec=False):
     #     gmsh.plugin.set_number('CutParametric', option="View", value=1)
     #     gmsh.plugin.run('CutParametric')
     
+    gmsh.view.combine(what="steps", how="Approximation")
     gmsh.fltk.run()
     gmsh.fltk.finalize()
     return
