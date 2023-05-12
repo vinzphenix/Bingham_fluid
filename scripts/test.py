@@ -611,6 +611,24 @@ def main6():
     print(f"Elapsed time = {(end-start)*1e3:.3f} ms")
 
 
+def main():
+    s = """
+    -0,00164 0,45633
+    -0,00899 0,54819
+    -0,02371 0,57831
+    -0,02862 0,64608
+    -0,02535 0,72289
+    -0,01881 0,82681
+    0,00082 0,96988
+    -0,01226 0,90512
+    0,14309 0,98343
+    0,39002 0,98946
+    """
+    l = s.replace(',', ".").split(" ")
+    l = [float(li.strip()) for li in l if li.strip() != ""]
+    for li in l:
+        print(li, end=' ')
+    print("")
 
 if __name__ == "__main__":
 
@@ -619,5 +637,5 @@ if __name__ == "__main__":
     # main3()
     # main4()
     # main5()
-    main6()
-    
+    # main6()
+    main()

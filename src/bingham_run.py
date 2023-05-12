@@ -18,9 +18,11 @@ def load_solution(model_name, model_variant):
     u_num = np.loadtxt(res_file_name + "_velocity.txt")
     p_num = np.loadtxt(res_file_name + "_pressure.txt")
     t_num = np.loadtxt(res_file_name + "_strain.txt")
+    coords = np.loadtxt(res_file_name + "_coords.txt")
+
     dic_params = dict(K=K, tau_zero=tau_zero, f=f, element=element, model_name=model_name)
 
-    return dic_params, u_num, p_num, t_num
+    return dic_params, u_num, p_num, t_num, coords
 
 
 def get_analytical_poiseuille(sim: Simulation_2D):
@@ -74,31 +76,33 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 1
+        mode = 2
 
     gmsh.initialize()
+    gmsh.option.set_number("General.Verbosity", 2)
 
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="mini", model_name="test")
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="rectangle")
     # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
-    parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
-    # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cavity")
+    # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
+    parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
 
-    sim = Simulation_2D(**parameters)
+    sim = Simulation_2D(parameters)
 
     if mode == 1:  # Solve problem: ONE SHOT
         u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
-        # sim.save_solution(u_nodes_weak, p_field_weak, t_num, model_variant='weak')
+        sim.save_solution(u_field, p_field, d_field, model_variant='oneshot')
 
     elif mode == 2:  # Solve the problem: ITERATE
-        u_field, p_field, d_field = solve_interface_tracking(sim, max_it=5, tol_delta=1.e-3)
+        u_field, p_field, d_field = solve_interface_tracking(sim, max_it=5, tol_delta=1.e-3, deg=1)
+        sim.save_solution(u_field, p_field, d_field, model_variant=f'{sim.tau_zero:.0f}')
 
     elif mode == 3:  # Load solution from disk
-        model, variant = "test", ""
-        parameters, u_field, p_field, d_field = load_solution(model, variant)
-        sim = Simulation_2D(**parameters)
+        model, variant = "cavity", "0"
+        parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
+        sim = Simulation_2D(parameters, new_coords=coords)
 
     else:  # DUMMY solution to debug
         u_field, p_field, d_field = dummy()

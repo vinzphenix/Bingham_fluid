@@ -168,7 +168,7 @@ def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
     rect = gmsh.model.occ.add_rectangle(0., bottom, 0., width, height, 0)
     if sharp:
         tool = gmsh.model.occ.add_rectangle(
-            width / 2. - radius / 2., -radius / 2., 0., radius, radius, 1000
+            width / 2. - radius / 4., -radius / 2., 0., radius/2., radius, 1000
         )
     else:
         tool = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
@@ -237,7 +237,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
 
     width, height = 1., 1.
     lc = elemSizeRatio * width
-    refinement_factor_surface = 2.
+    refinement_factor_surface = 4.
 
     c = width / 2. if cut else width
 
@@ -384,6 +384,6 @@ if __name__ == "__main__":
     # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0., cut=True)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
 
-    create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./30., radial=False, sharp=True)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./40., cut=False)
-    # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./35.)
+    # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50., radial=False, sharp=True)
+    create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., cut=False)
+    # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)

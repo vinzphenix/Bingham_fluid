@@ -22,24 +22,28 @@ def DPHI_DETA(xi, eta): return -27. * xi * eta + 27. * xi * (1. - xi - eta)
 class Simulation_2D:
     np.set_printoptions(precision=4)
 
-    def __init__(self, K, tau_zero, f, element, model_name):
-        self.K = K  # Viscosity
-        self.tau_zero = tau_zero  # yield stress
-        self.f = np.array(f)  # body force (pressure gradient)
+    def __init__(self, parameters: dict, new_coords=None):
+        self.K = parameters['K']  # Viscosity
+        self.tau_zero = parameters['tau_zero']  # yield stress
+        self.f = np.array(parameters['f'])  # body force (pressure gradient)
 
-        self.model_name = model_name
-        gmsh.open("../mesh/" + model_name + ".msh")
+        self.model_name = parameters['model_name']
+        gmsh.open("../mesh/" + self.model_name + ".msh")
 
-        self.element = element
-        if element == "th":
+        self.element = parameters['element']
+        if self.element == "th":
             gmsh.model.mesh.setOrder(2)
             self.degree = 2
-        elif element == "mini":
+        elif self.element == "mini":
             gmsh.model.mesh.setOrder(1)
             self.degree = 3
         else:
-            raise ValueError(f"Element '{element:s}' not implemented. Choose 'mini' or 'th'")
+            raise ValueError(f"Element '{self.element:s}' not implemented. Choose 'mini' or 'th'")
 
+        if new_coords is not None:
+            self.set_all_nodes(new_coords)
+
+        self.run_time = 0.
         self.iteration = 0
         self.tol_yield = 1.e-4
 
@@ -74,8 +78,8 @@ class Simulation_2D:
         self.n2n_map, self.n2n_st = self.get_node_node_map()
 
         # variables :  (u, v) at every node --- bounds on |.|^2 and |.|^1 at every gauss_pt
-        self.n_velocity_var = 2 * (self.n_node + self.n_elem * (element == "mini"))
-        self.n_bound_var = self.ng_all + self.ng_all * (tau_zero > 0.)
+        self.n_velocity_var = 2 * (self.n_node + self.n_elem * (self.element == "mini"))
+        self.n_bound_var = self.ng_all + self.ng_all * (self.tau_zero > 0.)
         self.n_var = self.n_velocity_var + self.n_bound_var
 
         return
@@ -83,7 +87,7 @@ class Simulation_2D:
     def get_elements_info(self):
         elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(2, -1)  # type: ignore
         elem_type = elem_types[0] # type: ignore
-        elem_tags = elem_tags[0]
+        elem_tags = np.array(elem_tags[0])
         n_elem = len(elem_tags)
 
         element_props = gmsh.model.mesh.getElementProperties(elem_type)
@@ -107,11 +111,6 @@ class Simulation_2D:
         node_tags = np.array(node_tags) - 1
         coords = np.array(coords).reshape((-1, 3))[:, :-1]
 
-        corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
-        bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
-        cut_nodes, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
-
-
         # bd_nodes_01, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
         # bd_nodes_02, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
         # bd_nodes_03, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # with u
@@ -133,8 +132,13 @@ class Simulation_2D:
         # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
         # nodes_singular_p = np.array([], dtype=int)
 
+        corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
+        bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
+        cut_nodes, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
+
         corner_nodes = np.array(corner_nodes).astype(int) - 1
         bd_nodes = np.array(bd_nodes).astype(int) - 1
+        cut_nodes = np.array(cut_nodes).astype(int) - 1
 
         return (
             node_tags, coords, 
@@ -271,11 +275,36 @@ class Simulation_2D:
 
         return node_node_map, node_node_st
     
+    def get_edges(self, elems):
+        edges = np.c_[
+            [self.elem_node_tags[elems, 0], self.elem_node_tags[elems, 1]],
+            [self.elem_node_tags[elems, 1], self.elem_node_tags[elems, 2]],
+            [self.elem_node_tags[elems, 2], self.elem_node_tags[elems, 0]],
+        ].T
+        edges = np.sort(edges, axis=1)
+        return np.unique(edges, axis=0)
+
+    
     def is_yielded(self, strains):
         # strains is a matrix with each gauss point value
         # 0 or 1 ->   yielded
         # 2 or 3 -> unyielded
-        return np.sum(strains < self.tol_yield, axis=1) < 2
+        return np.sum(strains < self.tol_yield, axis=1) < 3
+
+    def get_support_approx(self, node):
+        neighs = self.n2n_map[self.n2n_st[node]: self.n2n_st[node + 1]]
+        elems = [self.n2e_map[self.n2e_st[neigh]: self.n2e_st[neigh + 1]] for neigh in neighs]
+        elems = np.unique(np.concatenate(elems))
+        return elems
+
+
+    def set_all_nodes(self, new_coords):
+        n_node = new_coords.shape[0]
+        new_coords = np.c_[new_coords, np.zeros(n_node)]
+        for node in range(n_node):
+            gmsh.model.mesh.setNode(node + 1, new_coords[node], [0., 0.])
+        return
+
 
     def save_solution(self, u_num, p_num, t_num, model_variant):
         
@@ -285,9 +314,11 @@ class Simulation_2D:
             file.write(f"{self.tau_zero:.6e}\n")
             file.write(f"{self.f[0]:.6e} {self.f[1]:.6e}\n")
             file.write(f"{self.element:s}\n")
+            file.write(f"{self.run_time:.6e}\n")
         
         np.savetxt(res_file_name + "_velocity.txt", u_num, fmt="%.6e")
         np.savetxt(res_file_name + "_pressure.txt", p_num, fmt="%.6e")
         np.savetxt(res_file_name + "_strain.txt", t_num, fmt="%.6e")
+        np.savetxt(res_file_name + "_coords.txt", self.coords, fmt="%.6e")
 
         return

@@ -190,7 +190,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 if __name__ == "__main__":
 
     params = dict(
-        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=5,
+        H=1., K=1., tau_zero=0.25, f=1., degree=2, n_elem=5,
         random_seed=3, fix_interface=False,
         save=False, plot_density=25, dimensions=True
     )

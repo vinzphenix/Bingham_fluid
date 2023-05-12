@@ -179,8 +179,12 @@ gmsh.model.mesh.generate(2)
 mesh = Mesh()
 x = mesh.x.copy()
 omega = np.pi / 2
+
 f = levelset_f(x)
 f_old = np.ones_like(f)
+print(f)
+print(f_old)
+
 front_old = np.full(f.shape[0], False)
 x, f, front, _, _ = move_front(mesh, x, f_old, f, front_old)
 fig = plt.figure(figsize=(6, 6))
@@ -200,6 +204,7 @@ fig_phases(x_next, mesh.el, f_next, "pdf/fig5.pdf")
 
 gmsh.fltk.run()
 
+# exit(0)
 for i in range(200):
     print(i)
     f_old = f

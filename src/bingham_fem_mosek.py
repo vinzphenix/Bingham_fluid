@@ -35,7 +35,7 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
     # vals[np.abs(vals) < 1e-14] = 0.
     vals = vals.flatten()
 
-    sparse_cost = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))
+    sparse_cost = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))  # type: ignore
     sparse_cost.sum_duplicates()
     cols, vals = sparse_cost.col, sparse_cost.data
     cost[cols] = -vals
@@ -60,9 +60,9 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
     # Impose u = ..., where needed
     idxs_with_u = 2 * sim.nodes_with_u + 0
     bound_key_var = np.full(idxs_with_u.size, mosek.boundkey.fx)
-    # bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
+    bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
     # bound_value = np.sin(np.pi * sim.coords[sim.nodes_with_u, 0] / 1.)**2
-    bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
+    # bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
     task.putvarboundlist(idxs_with_u, bound_key_var, bound_value, bound_value)
 
     return
@@ -197,6 +197,12 @@ def get_affine_expressions(sim: Simulation_2D, n_local_afe: int):
     dphi = get_dphi(sim, at_v=True)  # (ne, ng, nsf, 2)
     dphi /= sim.determinants[:, np.newaxis, np.newaxis, np.newaxis]
 
+    idxs_zero = np.where(sim.determinants < 1.e-8)[0]
+    if idxs_zero.size > 0:
+        print("\nElements with negative jacobian !!!")
+        print(sim.coords[sim.elem_node_tags[idxs_zero, 0]])
+        print("")
+
     n_global_afe = sim.n_elem * sim.ng_loc * n_local_afe
     F_rows = np.arange(n_global_afe)
     F_rows.resize((sim.n_elem, sim.ng_loc, n_local_afe))  # in-place
@@ -273,6 +279,8 @@ def impose_conic_constraints(sim: Simulation_2D, task: mosek.Task):
 
 
 def solve_FE_mosek(sim: Simulation_2D, strong=False):
+
+    print("\n====================   MOSEK OPTIMIZATION LOG - start   ====================")
     with mosek.Task() as task:
 
         # Attach a log stream printer to the task
@@ -305,12 +313,15 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         end_time = perf_counter()
         print(f"\nTime to BUILD conic optimization = {end_build_time-start_build_time:.2f} s")
         print(f"Time to SOLVE conic optimization = {end_time-start_time:.2f} s\n")
+        sim.run_time = end_time - start_time
 
         # Retrieve solution (only velocity field variables)
         task.onesolutionsummary(mosek.streamtype.log, mosek.soltype.itr)
+        max_d_viol_var = task.getsolutioninfo(mosek.soltype.itr)[8]
+        # print(max_d_viol_var)
 
         p_num = np.array(task.gety(mosek.soltype.itr))
-        
+
         i_start, i_end = 0, sim.n_velocity_var
         u_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))
         u_num = u_num.reshape((sim.n_node + sim.n_elem * (sim.element == 'mini'), 2))
@@ -319,23 +330,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         t_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))
         t_num = t_num.reshape((sim.n_elem, sim.ng_loc))
 
-        # map = {}
-        # for i, tag in enumerate(sim.elem_tags):
-        #     map[tag] = i
-        #     print(f"{tag:d} --> {i:d}")
-        # print(t_num[map[36]])
-        # print(t_num[map[91]])
-        # print(t_num[map[38]])
-        # print(t_num[map[39]])
-        # print(t_num[map[77]])
-
-        # if sim.tau_zero > 0.:
-        #     idx_st, idx_fn = n_velocity_var + sim.ng_all, n_velocity_var + 2 * sim.ng_all
-        #     yield_bounds = np.array(task.getxxslice(soltype.itr, idx_st, idx_fn))
-        #     print(yield_bounds[:6 * sim.ng_loc].reshape((6, sim.ng_loc)))
-        #     print(sim.elem_node_tags[:6] + 1)
-        #     print(yield_bounds[-6 * sim.ng_loc:].reshape((6, sim.ng_loc)))
-        #     print(sim.elem_node_tags[-6:] + 1)
+    print("\n====================   MOSEK OPTIMIZATION LOG - end  ====================\n")
 
     return u_num, p_num, t_num
 
@@ -347,8 +342,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
     # vals[np.abs(vals) < 1e-14] = 0.  # remove (almost) zero entries
     # np.savetxt("./mosek_array.txt", coo_matrix((vals, (rows, cols))).todense().T, fmt='%8.3g')
 
-
-    # impose_conic_constraints    
+    # impose_conic_constraints
     # # print("\n\n")
     # mat = spmatrix(F_vals.flatten(), F_rows.flatten(), F_cols.flatten())
     # for i1 in range(4*3):
