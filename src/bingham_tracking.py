@@ -127,7 +127,7 @@ def update_mesh(sim: Simulation_2D, nodes_to_move, new_coords, nodes_to_relax, i
                 local_node = sim.elem_node_tags[elem, 3 + j]
                 local_coords = (sim.coords[sim.elem_node_tags[elem, j]] +
                                 sim.coords[sim.elem_node_tags[elem, (j + 1) % 3]]) / 2.
-                gmsh.model.mesh.set_node(local_node + 1, np.r_[local_coords, 0.], [0., 0.])
+                gmsh.model.mesh.setNode(local_node + 1, np.r_[local_coords, 0.], [0., 0.])
                 sim.coords[local_node] = local_coords
 
     gmsh.model.set_current(gmsh.model.get_current())
