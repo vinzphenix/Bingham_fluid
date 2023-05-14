@@ -384,6 +384,7 @@ def create_open_cavity(filename, elemSizeRatio):
     tag_v_zero = gmsh.model.addPhysicalGroup(1, lines_v_zero, tag=2, name="v_zero")
     tag_u_set = gmsh.model.addPhysicalGroup(1, lines_u_one, tag=3, name="u_one")
     tag_cut = gmsh.model.addPhysicalGroup(1, lines_cut, tag=4, name="cut")
+    tag_neumann = gmsh.model.addPhysicalGroup(1, lines, tag=5, name="neumann")
 
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
@@ -455,11 +456,11 @@ def create_backward_facing_step(filename, elemSizeRatio):
 if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
-    create_split_rectangle(path_to_dir + "test.msh", width=3., height=1., elemSizeRatio=1./10., y_zero=0., cut=False)
-    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0., cut=True)
+    # create_split_rectangle(path_to_dir + "test.msh", width=3., height=1., elemSizeRatio=1./10., y_zero=0., cut=False)
+    # create_split_rectangle(path_to_dir + "rectangle.msh", width=3., height=2., elemSizeRatio=1./20., y_zero=0., cut=False)
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2., elemSizeRatio=1./15., y_zero=0.3, cut=False)
 
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50., radial=False, sharp=True)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., cut=False)
-    # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
+    create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)

@@ -1,5 +1,6 @@
 from bingham_structure import *
-# from bingham_tracking import compute_strain_per_elem, compute_gradient_at_nodes
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
 
 
 def eval_velocity_gradient(u_local, dphi_local):
@@ -66,6 +67,102 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
     sim_1D.set_y(slice_y)
     plot_solution_1D(sim=sim_1D, u_nodes=slice_u)
     return
+
+
+def compute_streamfunction(sim: Simulation_2D, u_num):
+
+    ###############################  -  Mass matrix  -  ###############################
+    dphi_loc = sim.dv_shape_functions_at_v  # size (ng_v, nsf, 2)
+    inv_jac = sim.inverse_jacobians
+    mass_matrices = np.einsum(
+        'g,gkm,imn,ion,gjo,i->ikj',
+        sim.weights, dphi_loc, inv_jac, inv_jac, dphi_loc, 1. / sim.determinants
+    )  # size (ne, nsf, nsf)
+    rows = sim.elem_node_tags[:, :, np.newaxis].repeat(sim.nsf, axis=2)
+    cols = sim.elem_node_tags[:, np.newaxis, :].repeat(sim.nsf, axis=1)
+    rows = rows.flatten()
+    cols = cols.flatten()
+    mass_matrices = mass_matrices.flatten()
+    
+    mass_matrices[rows == 0] = 0.
+    mass_matrices[(rows == 0) & (cols == 0)] = 1.
+    mass_matrix = csr_matrix((mass_matrices, (rows, cols)), shape=(sim.n_node, sim.n_node))
+
+    #############################  -  Vorticity source  -  ############################
+    phi = sim.v_shape_functions
+    rotated_v = u_num[sim.elem_node_tags]
+    rotated_v[:, :, 0] *= -1.
+    rotated_v[:, :, :] = rotated_v[:, :, ::-1]
+    source = np.einsum(
+        'g,ijn,gjm,imn,gk->ik',
+        sim.weights, rotated_v, dphi_loc, inv_jac, phi
+    )  # size (ne, nsf)
+    source = source.flatten()
+    rows = sim.elem_node_tags.flatten()
+    cols = np.zeros(sim.elem_node_tags.size, dtype=int)
+    rhs_vorticity = csr_matrix((source, (rows, cols)), shape=(sim.n_node, 1))
+    rhs_vorticity = rhs_vorticity.toarray().flatten()
+
+    #############################  -  Boundary source  -  #############################
+    # Pff... easier to deal with Dirichlet conditions
+    gmsh.model.mesh.createEdges()
+    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
+    edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
+    edge_node_tags = np.array(edge_node_tags).astype(int) - 1
+    edge_node_tags = edge_node_tags.reshape((-1, n_pts))
+    n_edge = edge_node_tags.shape[0]
+
+    coords_org = sim.coords[edge_node_tags[:, 0]]
+    coords_dst = sim.coords[edge_node_tags[:, 1]]
+    length = np.linalg.norm(coords_dst - coords_org, axis=1)
+    tangent = -(coords_dst - coords_org) / length[:, None]
+
+    uvw = 0.5 + 0.5 * np.array([-1. / np.sqrt(3), 1. / np.sqrt(3)])
+    ng_edge = len(uvw)
+    integral_rule = "Gauss" + str(2 * (sim.element == "mini") + 4 * (sim.element == "th"))
+    uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
+    ng_edge = len(weights_edge)
+    _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
+    sf_edge = np.array(sf).reshape((ng_edge, -1))
+
+    edge_v = u_num[edge_node_tags]
+    source_boundary = np.einsum(
+        'g,ijn,gj,in,gk,i->ik',
+        weights_edge, edge_v, sf_edge, tangent, sf_edge, length / 2.
+    )  # size (ne, nsf)
+
+    source_boundary = source_boundary.flatten()
+    rows = edge_node_tags.flatten()
+    cols = np.zeros(edge_node_tags.size, dtype=int)
+    rhs_boundary = csr_matrix((source_boundary, (rows, cols)), shape=(sim.n_node, 1))
+    rhs_boundary = rhs_boundary.toarray().flatten()
+
+    #############################  -  System solve  -  #############################
+    rhs = rhs_vorticity + rhs_boundary
+    rhs[0] = 0.
+    psi = spsolve(mass_matrix, rhs)
+
+    # from scipy.sparse.csgraph import reverse_cuthill_mckee
+    # perm = reverse_cuthill_mckee(mass_matrix, symmetric_mode=True)
+    # plt.spy(mass_matrix.todense()[np.ix_(perm, perm)])
+    # plt.show()
+
+    return psi
+
+
+def add_streamfunction(sim: Simulation_2D, u_num):
+
+    psi = compute_streamfunction(sim, u_num)
+
+    tag_psi = gmsh.view.add("Streamfunction", tag=-1)
+    gmsh.view.addHomogeneousModelData(
+        tag_psi, 0, sim.model_name, "NodeData",
+        sim.node_tags + 1, psi, numComponents=1
+    )
+    gmsh.view.option.set_number(tag_psi, "NbIso", 20)
+    gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
+    
+    return [tag_psi]
 
 
 def add_streamlines(sim: Simulation_2D, u_num, tag_v):
@@ -200,7 +297,8 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
     gmsh.view.option.setNumber(tag_v, "DrawPoints", 0)
     # gmsh.view.option.setNumber(tag_v, "Sampling", 5)
-    gmsh.view.option.setNumber(tag_v, "NormalRaise", v_normal_raise)
+    # gmsh.view.option.setNumber(tag_v, "NormalRaise", v_normal_raise)
+    gmsh.view.option.setNumber(tag_v, "ArrowSizeMax", 120)
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
     # for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:
     #     gmsh.view.option.setNumber(tag, "AdaptVisualizationGrid", 1)
@@ -355,9 +453,10 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
     tags_unstrained = add_unstrained_zone(sim, t_num)
     tags_pressure = add_pressure_view(sim, p_num)
     tags_gauss = add_gauss_points(sim, t_num)
-    tags_steamlines = add_streamlines(sim, u_num, tags_velocities[0])
+    # tags_steamlines = add_streamlines(sim, u_num, tags_velocities[0])
+    tags_steamlines = add_streamfunction(sim, u_num)
 
-    tags_invisible = tags_velocities[:] + tags_pressure + tags_gauss
+    tags_invisible = tags_velocities[1:] + tags_pressure + tags_gauss
 
     if extra is not None:
         tags_reconstructed = add_reconstruction(sim, extra)
