@@ -311,8 +311,8 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
         plot_solution_2D(u_num, p_num, t_num, sim, extra)
 
         # Check if nodes moved enough to require new 'fem solve'
-        res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
-        if (np.amax(delta) < tol_delta) or (res_input == 'n'):
+        # res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
+        if (np.amax(delta) < tol_delta):  # or (res_input == 'n'):
             break
 
         # Change node positions, jacobians...

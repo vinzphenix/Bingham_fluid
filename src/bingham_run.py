@@ -82,18 +82,17 @@ if __name__ == "__main__":
     gmsh.option.set_number("General.Verbosity", 2)
 
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="test")
-    # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rectangle")
     # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
     
-    beta = np.sin(0.)
-    parameters = dict(
-        K=1., tau_zero=0.0, f=[1*np.cos(beta), 1*np.sin(beta)],
-        element="th", model_name="rectanglerot"
-    )
+    # beta = np.sin(0.)
+    # parameters = dict(
+    #     K=1., tau_zero=0.0, f=[0*np.cos(beta), 0*np.sin(beta)],
+    #     element="th", model_name="rectanglerot"
+    # )
 
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
     # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
-    # parameters = dict(K=1., tau_zero=1., f=[0., 0.], element="th", model_name="cavity")
+    parameters = dict(K=1., tau_zero=1., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
     # parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="th", model_name="opencavity")
 

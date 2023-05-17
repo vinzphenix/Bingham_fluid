@@ -490,10 +490,10 @@ if __name__ == "__main__":
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2.,
     #                        elemSizeRatio=1. / 15., y_zero=0.3, cut=False)
 
-    create_split_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
-                           elemSizeRatio=1. / 15., y_zero=0.0, cut=False, angle=0.*np.pi/6.)
+    # create_split_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
+                        #    elemSizeRatio=1. / 15., y_zero=0.0, cut=False, angle=0.*np.pi/6.)
 
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50., radial=False, sharp=True)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., cut=False)
+    create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
