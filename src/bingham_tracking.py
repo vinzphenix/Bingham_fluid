@@ -284,10 +284,10 @@ def move_front(sim: Simulation_2D, interface_nodes, rec_strains_map):
     return tomove, new_coords
 
 
-def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg: int = 1):
+def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg: int = 1, strong=False):
 
     # Solve first time with initial mesh
-    u_num, p_num, t_num = solve_FE_mosek(sim, strong=False)
+    u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
     init_coords = np.copy(sim.coords)
     moved_once = np.array([], dtype=int)
 

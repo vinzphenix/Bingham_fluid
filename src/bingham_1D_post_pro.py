@@ -172,7 +172,9 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
     # FIGURE
     # plt.rcParams["text.usetex"] = sim.save
     figsize = (9.5, 5.75) if sim.save else (12., 8.)
-    fig, axs = plt.subplots(2, 3, figsize=figsize, sharey="all", num=window)
+    # fig, axs = plt.subplots(2, 3, figsize=figsize, sharey="all", num=window)
+    fig, axs = plt.subplots(1, 2, figsize=(8., 3.75), sharey="all", num=window)
+    axs = axs.reshape((1, 2))
 
     ax = axs[0, 0]
     extra_label = r"" if sim.dimensions else r"/ U_{\infty}"
@@ -193,6 +195,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
     ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
     ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')
 
+    """
     ax = axs[0, 2]
     extra_label = r"\tau_0" if sim.tau_zero > 0. else r"h \partial_x p"
     extra_label = r"" if sim.dimensions else r"\:/\: {:s}".format(extra_label)
@@ -220,6 +223,7 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
         else:
             x_vals, y_vals = rel_error_nodes, y_pts
         ax.plot(x_vals, y_vals, ls="-", color='red', alpha=al)
+    """
 
     for ax in axs.flatten():
         xmin, xmax = ax.get_xbound()
@@ -231,16 +235,17 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
     for ax in axs[:, 0]:
         extra_label = r"" if sim.dimensions else r" / (h/2)"
         ax.set_ylabel(r"$y {:s}$".format(extra_label), fontsize=ftSz2)
-    for ax, phi in zip(axs[1, :], [r'u', r'\partial_y u', r'\tau']):
-        y_pos = sim.H / 2. if sim.dimensions else 1.
-        # ax.vlines(0., -y_pos, y_pos, color='black', alpha=0.5)
-        ax.plot(np.zeros_like(y_discrete), y_discrete, '-_k', lw=1., alpha=0.5)
-        ax.set_xlabel(r"$({:s}^h - {:s}) / {:s}_{{max}}$".format(phi, phi, phi), fontsize=ftSz2)
+    # for ax, phi in zip(axs[1, :], [r'u', r'\partial_y u', r'\tau']):
+    #     y_pos = sim.H / 2. if sim.dimensions else 1.
+    #     # ax.vlines(0., -y_pos, y_pos, color='black', alpha=0.5)
+    #     ax.plot(np.zeros_like(y_discrete), y_discrete, '-_k', lw=1., alpha=0.5)
+    #     ax.set_xlabel(r"$({:s}^h - {:s}) / {:s}_{{max}}$".format(phi, phi, phi), fontsize=ftSz2)
 
     fig.tight_layout()
     if sim.save:
-        path = "./figures/"
-        filename = f"res_P{sim.degree:d}_{extra_name:s}"
+        path = "../figures/"
+        # filename = f"res_P{sim.degree:d}_{extra_name:s}"
+        filename = f"sensibility_1D"
         fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
     else:
         plt.show()

@@ -46,6 +46,7 @@ class Simulation_2D:
         self.run_time = 0.
         self.iteration = 0
         self.tol_yield = 1.e-4
+        self.tag = 0
 
         res = self.get_elements_info()
         self.elem_type, self.elem_tags, self.elem_node_tags, self.local_node_coords = res
@@ -73,6 +74,7 @@ class Simulation_2D:
         self.ng_all = self.n_elem * self.ng_loc
 
         self.primary_nodes = self.get_primary_nodes()
+        # self.nodes_singular_p = np.intersect1d(self.nodes_singular_p, self.primary_nodes)
 
         self.n2e_map, self.n2e_st = self.get_node_elem_map()
         self.n2n_map, self.n2n_st = self.get_node_node_map()
@@ -127,11 +129,6 @@ class Simulation_2D:
         # Remove nodes both u = 0, u != 0
         nodes_zero_u = np.setdiff1d(nodes_zero_u, nodes_with_u)
 
-        # Handle nodes where incompressibility is not imposed
-        nodes_singular_p = np.array(bd_nodes_05).astype(int) - 1
-        # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
-        # nodes_singular_p = np.array([], dtype=int)
-
         corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
         bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
         cut_nodes, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
@@ -139,6 +136,12 @@ class Simulation_2D:
         corner_nodes = np.array(corner_nodes).astype(int) - 1
         bd_nodes = np.array(bd_nodes).astype(int) - 1
         cut_nodes = np.array(cut_nodes).astype(int) - 1
+
+        # Handle nodes where incompressibility is not imposed
+        nodes_singular_p = np.array(bd_nodes_05).astype(int) - 1
+        # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
+        # nodes_singular_p = np.union1d(corner_nodes, bd_nodes)
+        # nodes_singular_p = corner_nodes
 
         return (
             node_tags, coords, 
@@ -220,11 +223,16 @@ class Simulation_2D:
         )
 
     def get_primary_nodes(self):
-        node_is_vertex_list = np.zeros(self.n_node)
-        for i in range(self.n_elem):
-            idx_local_nodes = self.elem_node_tags[i]
-            node_is_vertex_list[idx_local_nodes[:3]] = 1
-        primary_nodes = np.argwhere(node_is_vertex_list).flatten()
+        # node_is_vertex_list = np.zeros(self.n_node)
+        # for i in range(self.n_elem):
+        #     idx_local_nodes = self.elem_node_tags[i]
+        #     node_is_vertex_list[idx_local_nodes[:3]] = 1
+        # primary_nodes = np.argwhere(node_is_vertex_list).flatten()
+
+        primary_nodes = np.unique(self.elem_node_tags[:, :3])
+        # primary_nodes = np.setdiff1d(primary_nodes, self.nodes_boundary)
+        # primary_nodes = np.setdiff1d(primary_nodes, self.nodes_corner)
+
         return primary_nodes
     
     def update_transformation(self, elements):

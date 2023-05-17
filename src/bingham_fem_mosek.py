@@ -9,18 +9,30 @@ def streamprinter(text):
     sys.stdout.flush()
 
 
-def set_objective(sim: Simulation_2D, task: mosek.Task):
+def get_edge_node_tags(sim: Simulation_2D):
 
-    cost = np.zeros(sim.n_var)
+    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
 
-    # Handle objective coefficients of the bounds Sig, Tig
-    wg_det = np.outer(sim.determinants, sim.weights).flatten()
-    cost[sim.n_velocity_var: sim.n_velocity_var + sim.ng_all] = 0.5 * sim.K * wg_det
-    if sim.tau_zero > 0.:
-        cost[-sim.ng_all:] = sim.tau_zero * wg_det
+    dim_tags_physical = gmsh.model.getPhysicalGroups(dim=1)
+    physical_tag_neumann = ""
+    for (dim, tag) in dim_tags_physical:
+        name = gmsh.model.getPhysicalName(dim, tag)
+        if name == "neumann":
+            physical_tag_neumann = tag
 
-    # Handle objective coefficients of the body force terms
-    # -integral (fx, fy) * (u, v)
+    gmsh.model.mesh.createEdges()
+    edge_node_tags = np.zeros((0, n_pts), dtype=int)
+
+    tags = gmsh.model.getEntitiesForPhysicalGroup(1, physical_tag_neumann)
+    for tag in tags:
+        tmp = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag, tag=tag)
+        tmp = np.array(tmp).astype(int) - 1
+        edge_node_tags = np.r_[edge_node_tags, tmp.reshape((-1, n_pts))]
+    
+    return edge_node_tags, line_tag, n_pts
+
+
+def compute_bulk_source(sim: Simulation_2D):
     force = sim.f  # size = (2,)
     phi = sim.v_shape_functions
 
@@ -35,10 +47,68 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
     # vals[np.abs(vals) < 1e-14] = 0.
     vals = vals.flatten()
 
-    sparse_cost = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))  # type: ignore
-    sparse_cost.sum_duplicates()
-    cols, vals = sparse_cost.col, sparse_cost.data
-    cost[cols] = -vals
+    cost_bulk = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))  # type: ignore
+    cost_bulk.sum_duplicates()
+    
+    return cost_bulk.col, cost_bulk.data
+
+
+def compute_boundary_source(sim: Simulation_2D):
+    edge_node_tags, line_tag, n_pts = get_edge_node_tags(sim)
+    n_edge = edge_node_tags.shape[0]
+
+    coords_org = sim.coords[edge_node_tags[:, 0]]
+    coords_dst = sim.coords[edge_node_tags[:, 1]]
+    length = np.linalg.norm(coords_dst - coords_org, axis=1)
+    tangent = (coords_dst - coords_org) / length[:, None]
+    tsfm = np.array([[0, 1], [-1, 0]])
+    normal = np.dot(tsfm[:, :], tangent[:, :].T).T
+
+    integral_rule = "Gauss" + str(1 * (sim.element == "mini") + 2 * (sim.element == "th"))
+    uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
+    ng_edge = len(weights_edge)
+    _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
+    sf_edge = np.array(sf).reshape((ng_edge, -1))
+
+    # values = sigma * n = [-p n + tau * n]
+    pressure = 2. - sim.coords[edge_node_tags, 0]  # p=2 at inflow, p=0 at outflow
+    bd_coefs = np.einsum(
+        'g,ij,id,gj,i->ijd',
+        weights_edge, -pressure, normal, sf_edge, length / 2.
+    )  # size (nedge, nsf, 2)
+    bd_coefs = bd_coefs.flatten()
+
+    rows = np.zeros(2 * edge_node_tags.size, dtype=int)
+    cols = edge_node_tags[:, :, np.newaxis].repeat(2, axis=2)
+    cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # u_idxs
+    cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # v_idxs
+    cols = cols.flatten()
+
+    cost_boundary = coo_matrix((bd_coefs, (rows, cols)), shape=(1, 2*sim.n_node))
+    cost_boundary.sum_duplicates()
+    
+    return cost_boundary.col, cost_boundary.data
+
+
+def set_objective(sim: Simulation_2D, task: mosek.Task):
+
+    cost = np.zeros(sim.n_var)
+
+    # Handle objective coefficients of the bounds Sig, Tig
+    wg_det = np.outer(sim.determinants, sim.weights).flatten()
+    cost[sim.n_velocity_var: sim.n_velocity_var + sim.ng_all] = 0.5 * sim.K * wg_det
+    if sim.tau_zero > 0.:
+        cost[-sim.ng_all:] = sim.tau_zero * wg_det
+
+    # Handle objective coefficients of the body force terms
+    # -integral_{Omega} (fx, fy) * (u, v)
+    cols, vals = compute_bulk_source(sim)
+    cost[cols] -= vals
+
+    # Handle objective coefficients of the Neumann boundary condition
+    # -integral_{Gamma} (gx, gy) * (u, v) ds
+    cols, vals = compute_boundary_source(sim)
+    # cost[cols] -= vals
 
     # Input the objective sense (minimize/maximize)
     task.putobjsense(mosek.objsense.minimize)
@@ -60,9 +130,9 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
     # Impose u = ..., where needed
     idxs_with_u = 2 * sim.nodes_with_u + 0
     bound_key_var = np.full(idxs_with_u.size, mosek.boundkey.fx)
-    bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
+    # bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
     # bound_value = np.sin(np.pi * sim.coords[sim.nodes_with_u, 0] / 1.)**2
-    # bound_value = (1. - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
+    bound_value = (0.25 - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
     task.putvarboundlist(idxs_with_u, bound_key_var, bound_value, bound_value)
 
     return
@@ -177,6 +247,7 @@ def impose_divergence_free(sim: Simulation_2D, task: mosek.Task, strong: bool):
     task.putconboundsliceconst(0, num_con, mosek.boundkey.fx, 0., 0.)
     # task.putatruncatetol(1e-14)
 
+    sim.tmp = [rows, cols, vals]
     return
 
 
@@ -306,6 +377,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         # set solver options
         task.putintparam(mosek.iparam.num_threads, 4)
         task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas, 1.e-12)
+        # task.putdouparam(mosek.dparam.intpnt_co_tol_pfeas, 1.e-12)
 
         # Solve the minimization problem
         start_time = perf_counter()
@@ -317,8 +389,11 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
 
         # Retrieve solution (only velocity field variables)
         task.onesolutionsummary(mosek.streamtype.log, mosek.soltype.itr)
-        max_d_viol_var = task.getsolutioninfo(mosek.soltype.itr)[8]
-        # print(max_d_viol_var)
+        max_d_viol_var = task.getsolutioninfonew(mosek.soltype.itr)[10]
+        max_p_viol_acc = task.getsolutioninfonew(mosek.soltype.itr)[5]
+        p_cost = task.getsolutioninfonew(mosek.soltype.itr)[0]
+        print(f"{p_cost - (-1./12.):.3e}")
+        # print(max_d_viol_var, max_p_viol_acc)
 
         p_num = np.array(task.gety(mosek.soltype.itr))
 

@@ -154,12 +154,13 @@ def add_streamfunction(sim: Simulation_2D, u_num):
 
     psi = compute_streamfunction(sim, u_num)
 
-    tag_psi = gmsh.view.add("Streamfunction", tag=-1)
+    tag_psi = gmsh.view.add("Streamfunction", tag=sim.tag)
+    sim.tag += 1
     gmsh.view.addHomogeneousModelData(
         tag_psi, 0, sim.model_name, "NodeData",
         sim.node_tags + 1, psi, numComponents=1
     )
-    gmsh.view.option.set_number(tag_psi, "NbIso", 20)
+    gmsh.view.option.set_number(tag_psi, "NbIso", 40)
     gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
     
     return [tag_psi]
@@ -230,7 +231,8 @@ def add_unstrained_zone(sim: Simulation_2D, t_num):
     mask = np.where(~sim.is_yielded(t_num))
     strain_norm_avg = np.mean(t_num, axis=1)
     percentile_95 = -np.partition(-strain_norm_avg, sim.n_elem // 20)[sim.n_elem // 20]
-    tag_unstrained = gmsh.view.add("Unstrained_zone", tag=-1)
+    tag_unstrained = gmsh.view.add("Unstrained_zone", tag=sim.tag)
+    sim.tag += 1
 
     if np.any(mask):
         gmsh.view.addHomogeneousModelData(
@@ -258,30 +260,64 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     strain_tensor[:, :, 1] = 0.5 * (strain_tensor[:, :, 1] + strain_tensor[:, :, 3])
     strain_tensor[:, :, 3] = strain_tensor[:, :, 1]
 
+    tag_velocity = gmsh.view.add("Velocity", tag=sim.tag)
+
+    tag_u = gmsh.view.add("Velocity - x", tag=sim.tag+1)
+    tag_v = gmsh.view.add("Velocity - y", tag=sim.tag+2)
+
+    tag_strain_xx = gmsh.view.add("Strain xx", tag=sim.tag+3)
+    tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag+4)
+    tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag+5)
+    
+    tag_strain = gmsh.view.add("Strain tensor", tag=sim.tag+6)
+    tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag+7)
+    tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag+8)
+    tag_divergence = gmsh.view.add("Divergence", tag=sim.tag+9)
+    tags = [
+        tag_velocity, tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy, 
+        tag_strain, tag_strain_norm_avg, tag_vorticity, tag_divergence
+    ]
+    sim.tag += 10
+
+    gmsh.view.addHomogeneousModelData(
+        tag_velocity, 0, sim.model_name, "NodeData",
+        sim.node_tags + 1, velocity, numComponents=3
+    )
+
+    gmsh.view.addHomogeneousModelData(
+        tag_u, 0, sim.model_name, "NodeData",
+        sim.node_tags + 1, u_num[:, 0], numComponents=1
+    )
+    gmsh.view.addHomogeneousModelData(
+        tag_v, 0, sim.model_name, "NodeData",
+        sim.node_tags + 1, u_num[:, 1], numComponents=1
+    )
+
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_xx, 0, sim.model_name, "ElementNodeData",
+        sim.elem_tags, strain_tensor[:, :, 0].flatten(), numComponents=1
+    )
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_xy, 0, sim.model_name, "ElementNodeData",
+        sim.elem_tags, strain_tensor[:, :, 1].flatten(), numComponents=1
+    )
+    gmsh.view.addHomogeneousModelData(
+        tag_strain_yy, 0, sim.model_name, "ElementNodeData",
+        sim.elem_tags, strain_tensor[:, :, 4].flatten(), numComponents=1
+    )
+
     # Rescale because of 3/2 factor in Von Mises expression
     # Von Mises is equivalent up to a factor sqrt(3) to sqrt(1/2 D:D) because trace(D) = 0
     # or to sqrt(3)/2 wrt sqrt(2 D:D) = ||2D||
-    strain_tensor = 2. / np.sqrt(3) * strain_tensor.flatten()
-
-    tag_v = gmsh.view.add("Velocity", tag=-1)
-    tag_strain = gmsh.view.add("Strain tensor", tag=-1)
-    tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=-1)
-    tag_vorticity = gmsh.view.add("Vorticity", tag=-1)
-    tag_divergence = gmsh.view.add("Divergence", tag=-1)
-    tags = [tag_v, tag_strain, tag_strain_norm_avg, tag_vorticity, tag_divergence]
-
-    gmsh.view.addHomogeneousModelData(
-        tag_v, 0, sim.model_name, "NodeData",
-        sim.node_tags + 1, velocity, numComponents=3
-    )
     gmsh.view.addHomogeneousModelData(
         tag_strain, 0, sim.model_name, "ElementNodeData",
-        sim.elem_tags, strain_tensor, numComponents=9
+        sim.elem_tags, 2. / np.sqrt(3) * strain_tensor.flatten(), numComponents=9
     )
     gmsh.view.addHomogeneousModelData(
         tag_strain_norm_avg, 0, sim.model_name, "ElementData",
         sim.elem_tags, strain_norm, numComponents=1
     )
+
     gmsh.view.addHomogeneousModelData(
         tag_vorticity, 0, sim.model_name, "ElementNodeData",
         sim.elem_tags, vorticity, numComponents=1
@@ -293,25 +329,36 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 
     v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
     strain_normal_raise = 0.5 / np.amax(strain_norm)
-    gmsh.view.option.setNumber(tag_v, "VectorType", 6)
-    gmsh.view.option.setNumber(tag_v, "DrawLines", 0)
-    gmsh.view.option.setNumber(tag_v, "DrawPoints", 0)
+    gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
+    gmsh.view.option.setNumber(tag_velocity, "DrawLines", 0)
+    gmsh.view.option.setNumber(tag_velocity, "DrawPoints", 0)
     # gmsh.view.option.setNumber(tag_v, "Sampling", 5)
-    # gmsh.view.option.setNumber(tag_v, "NormalRaise", v_normal_raise)
-    gmsh.view.option.setNumber(tag_v, "ArrowSizeMax", 120)
+    gmsh.view.option.setNumber(tag_velocity, "NormalRaise", v_normal_raise)
+    gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 100)
+    gmsh.view.option.setNumber(tag_velocity, "LineWidth", 0.7)
+    gmsh.view.option.setNumber(tag_velocity, "PointSize", 2.5)
+
+    gmsh.view.option.setNumber(tag_velocity, "ShowScale", 0)
+    for tag in tag_u, tag_v:
+        gmsh.view.option.setNumber(tag, "ShowScale", 1)
+        gmsh.view.option.setNumber(tag, "DrawTriangles", 0)
+        gmsh.view.option.setNumber(tag, "NormalRaise", 10./6.)
+
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
-    # for tag in [tag_v, tag_strain, tag_vorticity, tag_divergence]:
-    #     gmsh.view.option.setNumber(tag, "AdaptVisualizationGrid", 1)
-    #     gmsh.view.option.setNumber(tag, "TargetError", -0.0001)
-    #     gmsh.view.option.setNumber(tag, "MaxRecursionLevel", 2)
+
+    # for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
+    #     gmsh.view.option.setNumber(tag, "", )
 
     return tags
 
 
 def add_pressure_view(sim: Simulation_2D, p_num):
+    if p_num.size == 0:
+        return []
 
     weak_pressure_nodes = np.setdiff1d(sim.primary_nodes, sim.nodes_singular_p)
-    tag_pressure = gmsh.view.add("Pressure", tag=-1)
+    tag_pressure = gmsh.view.add("Pressure", tag=sim.tag)
+    sim.tag += 1
 
     if p_num.size == weak_pressure_nodes.size:  # weak incompressibility condition
         gmsh.view.addHomogeneousModelData(
@@ -327,13 +374,20 @@ def add_pressure_view(sim: Simulation_2D, p_num):
             sim.elem_tags, p_avg, numComponents=1
         )
 
+    gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_pressure, "IntervalsType", 3)
+    gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
+    gmsh.view.option.setNumber(tag_pressure, "CustomMin", 0.)
+    gmsh.view.option.setNumber(tag_pressure, "CustomMax", 2.)
+
     return [tag_pressure]
 
 
 def add_reconstruction(sim: Simulation_2D, extra):
     interface_nodes, strain_rec, coefs_matrix, moved_nodes, new_coords = extra
 
-    view_rec = gmsh.view.add("Reconstructed", -1)
+    view_rec = gmsh.view.add("Reconstructed", sim.tag)
+    sim.tag += 1
     # gmsh.view.option.setNumber(view_rec, 'LineWidth', 3.)
     gmsh.view.option.setNumber(view_rec, 'NbIso', 11)
     gmsh.view.option.setNumber(view_rec, 'IntervalsType', 3)
@@ -375,9 +429,10 @@ def add_reconstruction(sim: Simulation_2D, extra):
 
     nodes_rec = np.fromiter(strain_rec.keys(), dtype='int') + 1
     value_rec = np.fromiter(strain_rec.values(), dtype='float')
-    view_avg_rec = gmsh.view.add("Avg reconstr.", -1)
+    view_avg_rec = gmsh.view.add("Avg reconstr.", sim.tag)
+    sim.tag += 1
     gmsh.view.addHomogeneousModelData(
-        view_avg_rec, 0, sim.sim.model_name, "NodeData",
+        view_avg_rec, 0, sim.model_name, "NodeData",
         nodes_rec, value_rec, numComponents=1
     )
     gmsh.view.option.setNumber(view_avg_rec, 'IntervalsType', 1)
@@ -398,7 +453,8 @@ def add_reconstruction(sim: Simulation_2D, extra):
     data_2[:, [0, 2]] = sim.coords[moved_nodes]
     data_2[:, [1, 3]] = new_coords
     data_2[:, 7] = np.linalg.norm(sim.coords[moved_nodes] - new_coords, axis=1)
-    view_targets = gmsh.view.add("Targets", tag=-1)
+    view_targets = gmsh.view.add("Targets", tag=sim.tag)
+    sim.tag += 1
     gmsh.view.addListData(tag=view_targets, dataType="SL", numEle=n, data=data_2.flatten())
     gmsh.view.option.setNumber(view_targets, 'LineWidth', 3.)
     gmsh.view.option.setNumber(view_targets, 'ShowScale', 0)
@@ -422,13 +478,15 @@ def add_gauss_points(sim: Simulation_2D, t_num):
             else:
                 data += [*gauss_coords, 0., t_num[i, g]]
 
-    view_gauss_1 = gmsh.view.add("Gauss", tag=-1)
+    view_gauss_1 = gmsh.view.add("Gauss", tag=sim.tag)
+    sim.tag += 1
     gmsh.view.addListData(tag=view_gauss_1, dataType="SP", numEle=sim.ng_all - counter, data=data)
     gmsh.view.option.setNumber(view_gauss_1, 'RaiseZ', 1.)
     gmsh.view.option.setNumber(view_gauss_1, 'PointSize', 5.)
     gmsh.view.option.setNumber(view_gauss_1, 'ColormapNumber', 11)
 
-    view_gauss_2 = gmsh.view.add("Gauss_zero", tag=-1)
+    view_gauss_2 = gmsh.view.add("Gauss_zero", tag=sim.tag)
+    sim.tag += 1
     gmsh.view.addListData(tag=view_gauss_2, dataType="SP", numEle=counter, data=data_zero)
     gmsh.view.option.setNumber(view_gauss_2, 'PointSize', 5.)
     gmsh.view.option.setNumber(view_gauss_2, 'ColormapNumber', 9)
@@ -449,6 +507,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
         sim.elem_node_tags = sim.elem_node_tags[:, :-1]
         u_num = u_num[:sim.n_node]
 
+    sim.tag = 1
     tags_velocities = add_velocity_views(sim, u_num, strain_tensor, strain_norm)
     tags_unstrained = add_unstrained_zone(sim, t_num)
     tags_pressure = add_pressure_view(sim, p_num)
@@ -456,11 +515,11 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
     # tags_steamlines = add_streamlines(sim, u_num, tags_velocities[0])
     tags_steamlines = add_streamfunction(sim, u_num)
 
-    tags_invisible = tags_velocities[1:] + tags_pressure + tags_gauss
+    tags_invisible = tags_velocities[:] + tags_pressure + tags_gauss + tags_steamlines
 
     if extra is not None:
         tags_reconstructed = add_reconstruction(sim, extra)
-        tag_all_steps = gmsh.view.addAlias(tags_reconstructed[0], copyOptions=True, tag=-1)
+        tag_all_steps = gmsh.view.addAlias(tags_reconstructed[0], copyOptions=True, tag=sim.tag)
         gmsh.view.remove(tags_reconstructed[0])
         tags_invisible += [tag_all_steps]
 

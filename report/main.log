@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2022.9.23)  8 MAY 2023 10:54
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2022/dev/Debian) (preloaded format=pdflatex 2022.9.23)  17 MAY 2023 02:30
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -656,9 +656,7 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count337
 \@lastruleclass=\count338
 \@thisrulewidth=\dimen324
-)
-\@float@every@table=\toks43
- (/usr/share/texlive/texmf-dist/tex/latex/placeins/placeins.sty
+) (/usr/share/texlive/texmf-dist/tex/latex/placeins/placeins.sty
 Package: placeins 2005/04/18  v 2.2
 ) (/usr/share/texlive/texmf-dist/tex/latex/tools/multicol.sty
 Package: multicol 2021/10/28 v1.9b multicolumn formatting (FMi)
@@ -776,8 +774,8 @@ Package: adjustbox 2020/08/19 v1.3 Adjusting TeX boxes (trim, clip, ...)
  (/usr/share/texlive/texmf-dist/tex/latex/xkeyval/xkeyval.sty
 Package: xkeyval 2020/11/20 v2.8 package option processing (HA)
  (/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkeyval.tex (/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkvutils.tex
-\XKV@toks=\toks44
-\XKV@tempa@toks=\toks45
+\XKV@toks=\toks43
+\XKV@tempa@toks=\toks44
 )
 \XKV@depth=\count351
 File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
@@ -826,14 +824,14 @@ File: pppdftex.def 2022/01/29 v0.5u Pdfpages driver for pdfTeX (AM)
 )
 \pdfpages@includegraphics@status=\count353
 \AM@pagebox=\box162
-\AM@global@opts=\toks46
+\AM@global@opts=\toks45
 \AM@pagecnt=\count354
-\AM@toc@title=\toks47
+\AM@toc@title=\toks46
 \c@AM@survey=\count355
 \AM@templatesizebox=\box163
 ) (/usr/share/texlive/texmf-dist/tex/latex/footmisc/footmisc.sty
 Package: footmisc 2011/06/06 v5.5b a miscellany of footnote facilities
-\FN@temptoken=\toks48
+\FN@temptoken=\toks47
 \footnotemargin=\dimen353
 \c@pp@next@reset=\count356
 Package footmisc Info: Declaring symbol style bringhurst on input line 855.
@@ -863,7 +861,7 @@ Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
 \Gm@layoutheight=\dimen359
 \Gm@layouthoffset=\dimen360
 \Gm@layoutvoffset=\dimen361
-\Gm@dimlist=\toks49
+\Gm@dimlist=\toks48
 ) (/usr/share/texlive/texmf-dist/tex/latex/titling/titling.sty
 Package: titling 2009/09/04 v2.1d maketitle typesetting
 \thanksmarkwidth=\skip82
@@ -875,7 +873,7 @@ Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 ) (/usr/share/texlive/texmf-dist/tex/latex/listings/listings.sty
 \lst@mode=\count363
 \lst@gtempboxa=\box164
-\lst@token=\toks50
+\lst@token=\toks49
 \lst@length=\count364
 \lst@currlwidth=\dimen362
 \lst@column=\count365
@@ -1028,12 +1026,12 @@ LaTeX Font Info:    ... okay on input line 10.
 \scratchbox=\box166
 \nofMPsegments=\count382
 \nofMParguments=\count383
-\everyMPshowfont=\toks51
+\everyMPshowfont=\toks50
 \MPscratchCnt=\count384
 \MPscratchDim=\dimen371
 \MPnumerator=\count385
 \makeMPintoPDFobject=\count386
-\everyMPtoPDFconversion=\toks52
+\everyMPtoPDFconversion=\toks51
 ) (/usr/share/texlive/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
@@ -1127,46 +1125,46 @@ l.16 \chapter
 Chapter 1.
 [2
 
-]
-Package svg Info: Last page of `./svg-inkscape/fluid_classification_svg-tex.pdf' is 1 on input line 109.
+] [3]
+Package svg Info: Last page of `./svg-inkscape/fluid_classification_svg-tex.pdf' is 1 on input line 112.
  (./svg-inkscape/fluid_classification_svg-tex.pdf_tex
-<./svg-inkscape/fluid_classification_svg-tex.pdf, id=125, page=1, 514.32103pt x 261.376pt>
+<./svg-inkscape/fluid_classification_svg-tex.pdf, id=150, page=1, 514.32103pt x 261.376pt>
 File: ./svg-inkscape/fluid_classification_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/fluid_classification_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/fluid_classification_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 239.88654pt.
-) [3] [4 <./svg-inkscape/fluid_classification_svg-tex.pdf>] [5] [6]
+) [4 <./svg-inkscape/fluid_classification_svg-tex.pdf>] [5] [6]
 Chapter 2.
 [7
 
 ] (./schema_1D.tex) [8]
-Package svg Info: Last page of `./svg-inkscape/shape_fct_1D_svg-tex.pdf' is 1 on input line 279.
+Package svg Info: Last page of `./svg-inkscape/shape_fct_1D_svg-tex.pdf' is 1 on input line 283.
  (./svg-inkscape/shape_fct_1D_svg-tex.pdf_tex
-<./svg-inkscape/shape_fct_1D_svg-tex.pdf, id=243, page=1, 586.59103pt x 225.24101pt>
+<./svg-inkscape/shape_fct_1D_svg-tex.pdf, id=258, page=1, 586.59103pt x 225.24101pt>
 File: ./svg-inkscape/shape_fct_1D_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/shape_fct_1D_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/shape_fct_1D_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 448.42822pt x 172.19537pt.
 ) [9 <./svg-inkscape/shape_fct_1D_svg-tex.pdf>] [10]
-Package svg Info: Last page of `./svg-inkscape/interior_point_example_svg-tex.pdf' is 1 on input line 381.
+Package svg Info: Last page of `./svg-inkscape/interior_point_example_svg-tex.pdf' is 1 on input line 385.
  (./svg-inkscape/interior_point_example_svg-tex.pdf_tex
-<./svg-inkscape/interior_point_example_svg-tex.pdf, id=415, page=1, 875.67104pt x 311.40024pt>
+<./svg-inkscape/interior_point_example_svg-tex.pdf, id=430, page=1, 875.67104pt x 311.40024pt>
 File: ./svg-inkscape/interior_point_example_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/interior_point_example_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/interior_point_example_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 167.85901pt.
 ) [11]
-Package svg Info: Last page of `./svg-inkscape/result_1D_P1_svg-tex.pdf' is 1 on input line 413.
+Package svg Info: Last page of `./svg-inkscape/result_1D_P1_svg-tex.pdf' is 1 on input line 418.
  (./svg-inkscape/result_1D_P1_svg-tex.pdf_tex
-<./svg-inkscape/result_1D_P1_svg-tex.pdf, id=424, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/result_1D_P1_svg-tex.pdf, id=439, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/result_1D_P1_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/result_1D_P1_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/result_1D_P1_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 283.7262pt.
 )
-Package svg Info: Last page of `./svg-inkscape/result_1D_P2_svg-tex.pdf' is 1 on input line 420.
+Package svg Info: Last page of `./svg-inkscape/result_1D_P2_svg-tex.pdf' is 1 on input line 425.
  (./svg-inkscape/result_1D_P2_svg-tex.pdf_tex
-<./svg-inkscape/result_1D_P2_svg-tex.pdf, id=426, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/result_1D_P2_svg-tex.pdf, id=441, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/result_1D_P2_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/result_1D_P2_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/result_1D_P2_svg-tex.pdf , page1 used on input line 56.
@@ -1175,81 +1173,78 @@ Package pdftex.def Info: ./svg-inkscape/result_1D_P2_svg-tex.pdf , page1 used on
 
 pdfTeX warning: pdflatex (file ./svg-inkscape/result_1D_P2_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
 >]
-Chapter 3.
-LaTeX Font Info:    Trying to load font information for T1+cmss on input line 465.
-(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmss.fd
+LaTeX Font Info:    Trying to load font information for T1+cmss on input line 472.
+ (/usr/share/texlive/texmf-dist/tex/latex/base/t1cmss.fd
 File: t1cmss.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
-LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 465.
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 472.
  (/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
-Package svg Info: Last page of `./svg-inkscape/res_P1_iteration_01_svg-tex.pdf' is 1 on input line 476.
+Package svg Info: Last page of `./svg-inkscape/res_P1_iteration_01_svg-tex.pdf' is 1 on input line 483.
  (./svg-inkscape/res_P1_iteration_01_svg-tex.pdf_tex
-<./svg-inkscape/res_P1_iteration_01_svg-tex.pdf, id=1334, page=1, 586.59103pt x 297.511pt>
+<./svg-inkscape/res_P1_iteration_01_svg-tex.pdf, id=1349, page=1, 586.59103pt x 297.511pt>
 File: ./svg-inkscape/res_P1_iteration_01_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P1_iteration_01_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P1_iteration_01_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 239.4164pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P1_iteration_02_svg-tex.pdf' is 1 on input line 480.
+Package svg Info: Last page of `./svg-inkscape/res_P1_iteration_02_svg-tex.pdf' is 1 on input line 487.
  (./svg-inkscape/res_P1_iteration_02_svg-tex.pdf_tex
-<./svg-inkscape/res_P1_iteration_02_svg-tex.pdf, id=1336, page=1, 586.59103pt x 297.511pt>
+<./svg-inkscape/res_P1_iteration_02_svg-tex.pdf, id=1351, page=1, 586.59103pt x 297.511pt>
 File: ./svg-inkscape/res_P1_iteration_02_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P1_iteration_02_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P1_iteration_02_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 239.4164pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P1_first_svg-tex.pdf' is 1 on input line 490.
+Package svg Info: Last page of `./svg-inkscape/res_P1_first_svg-tex.pdf' is 1 on input line 497.
  (./svg-inkscape/res_P1_first_svg-tex.pdf_tex
-<./svg-inkscape/res_P1_first_svg-tex.pdf, id=1338, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/res_P1_first_svg-tex.pdf, id=1353, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/res_P1_first_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P1_first_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P1_first_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 283.7262pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P1_last_svg-tex.pdf' is 1 on input line 494.
+Package svg Info: Last page of `./svg-inkscape/res_P1_last_svg-tex.pdf' is 1 on input line 501.
  (./svg-inkscape/res_P1_last_svg-tex.pdf_tex
-<./svg-inkscape/res_P1_last_svg-tex.pdf, id=1340, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/res_P1_last_svg-tex.pdf, id=1355, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/res_P1_last_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P1_last_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P1_last_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 283.7262pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P2_iteration_01_svg-tex.pdf' is 1 on input line 507.
+Package svg Info: Last page of `./svg-inkscape/res_P2_iteration_01_svg-tex.pdf' is 1 on input line 514.
  (./svg-inkscape/res_P2_iteration_01_svg-tex.pdf_tex
-<./svg-inkscape/res_P2_iteration_01_svg-tex.pdf, id=1342, page=1, 586.59103pt x 297.511pt>
+<./svg-inkscape/res_P2_iteration_01_svg-tex.pdf, id=1357, page=1, 586.59103pt x 297.511pt>
 File: ./svg-inkscape/res_P2_iteration_01_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P2_iteration_01_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P2_iteration_01_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 239.4164pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P2_iteration_02_svg-tex.pdf' is 1 on input line 512.
+Package svg Info: Last page of `./svg-inkscape/res_P2_iteration_02_svg-tex.pdf' is 1 on input line 519.
  (./svg-inkscape/res_P2_iteration_02_svg-tex.pdf_tex
-<./svg-inkscape/res_P2_iteration_02_svg-tex.pdf, id=1344, page=1, 586.59103pt x 297.511pt>
+<./svg-inkscape/res_P2_iteration_02_svg-tex.pdf, id=1359, page=1, 586.59103pt x 297.511pt>
 File: ./svg-inkscape/res_P2_iteration_02_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P2_iteration_02_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P2_iteration_02_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 239.4164pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P2_first_svg-tex.pdf' is 1 on input line 522.
+Package svg Info: Last page of `./svg-inkscape/res_P2_first_svg-tex.pdf' is 1 on input line 529.
  (./svg-inkscape/res_P2_first_svg-tex.pdf_tex
-<./svg-inkscape/res_P2_first_svg-tex.pdf, id=1346, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/res_P2_first_svg-tex.pdf, id=1361, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/res_P2_first_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P2_first_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P2_first_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 283.7262pt.
 )
-Package svg Info: Last page of `./svg-inkscape/res_P2_last_svg-tex.pdf' is 1 on input line 526.
+Package svg Info: Last page of `./svg-inkscape/res_P2_last_svg-tex.pdf' is 1 on input line 533.
  (./svg-inkscape/res_P2_last_svg-tex.pdf_tex
-<./svg-inkscape/res_P2_last_svg-tex.pdf, id=1348, page=1, 679.33798pt x 408.32549pt>
+<./svg-inkscape/res_P2_last_svg-tex.pdf, id=1363, page=1, 679.33798pt x 408.32549pt>
 File: ./svg-inkscape/res_P2_last_svg-tex.pdf Graphic file (type pdf)
 <use ./svg-inkscape/res_P2_last_svg-tex.pdf, page 1>
 Package pdftex.def Info: ./svg-inkscape/res_P2_last_svg-tex.pdf , page1 used on input line 56.
 (pdftex.def)             Requested size: 472.03123pt x 283.7262pt.
-) [14
-
-] [15] [16 <./svg-inkscape/res_P1_iteration_01_svg-tex.pdf> <./svg-inkscape/res_P1_iteration_02_svg-tex.pdf
+) [14] [15] [16 <./svg-inkscape/res_P1_iteration_01_svg-tex.pdf> <./svg-inkscape/res_P1_iteration_02_svg-tex.pdf
 
 pdfTeX warning: pdflatex (file ./svg-inkscape/res_P1_iteration_02_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
 >] [17 <./svg-inkscape/res_P1_first_svg-tex.pdf> <./svg-inkscape/res_P1_last_svg-tex.pdf
@@ -1262,35 +1257,123 @@ pdfTeX warning: pdflatex (file ./svg-inkscape/res_P2_iteration_02_svg-tex.pdf): 
 
 pdfTeX warning: pdflatex (file ./svg-inkscape/res_P2_last_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
 >]
-Chapter 4.
-<./svg-inkscape/shape_fcts_2d_P1_svg-tex.pdf, id=3032, 361.35pt x 216.81pt>
-<./svg-inkscape/shape_fcts_2d_bubble_svg-tex.pdf, id=3033, 361.35pt x 216.81pt>
-<./svg-inkscape/shape_fcts_2d_P2_svg-tex.pdf, id=3034, 722.7pt x 361.35pt>
-[20
+Package svg Info: Last page of `./svg-inkscape/sensibility_1D_exact_svg-tex.pdf' is 1 on input line 557.
+ (./svg-inkscape/sensibility_1D_exact_svg-tex.pdf_tex
+<./svg-inkscape/sensibility_1D_exact_svg-tex.pdf, id=3051, page=1, 570.93298pt x 263.78549pt>
+File: ./svg-inkscape/sensibility_1D_exact_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/sensibility_1D_exact_svg-tex.pdf, page 1>
+Package pdftex.def Info: ./svg-inkscape/sensibility_1D_exact_svg-tex.pdf , page1 used on input line 56.
+(pdftex.def)             Requested size: 472.03123pt x 218.09663pt.
+)
+Package svg Info: Last page of `./svg-inkscape/sensibility_1D_bad_svg-tex.pdf' is 1 on input line 563.
+ (./svg-inkscape/sensibility_1D_bad_svg-tex.pdf_tex
+<./svg-inkscape/sensibility_1D_bad_svg-tex.pdf, id=3053, page=1, 570.93298pt x 263.78549pt>
+File: ./svg-inkscape/sensibility_1D_bad_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/sensibility_1D_bad_svg-tex.pdf, page 1>
+Package pdftex.def Info: ./svg-inkscape/sensibility_1D_bad_svg-tex.pdf , page1 used on input line 56.
+(pdftex.def)             Requested size: 472.03123pt x 218.09663pt.
+) [20
 
-] (./main.bbl [21] [22]) [23
+] [21 <./svg-inkscape/sensibility_1D_exact_svg-tex.pdf> <./svg-inkscape/sensibility_1D_bad_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/sensibility_1D_bad_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+>]
+Chapter 3.
+<./svg-inkscape/shape_fcts_2d_P1_svg-tex.pdf, id=3274, 361.35pt x 216.81pt>
+<./svg-inkscape/shape_fcts_2d_bubble_svg-tex.pdf, id=3275, 361.35pt x 216.81pt>
+<./svg-inkscape/shape_fcts_2d_P2_svg-tex.pdf, id=3276, 722.7pt x 361.35pt>
+[22
+
+] [23]
+Package svg Info: Last page of `./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf' is 4 on input line 670.
+ (./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf_tex
+<./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, id=3299, page=1, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, page 1>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf , page1 used on input line 56.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, id=3300, page=2, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, page 2>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf , page2 used on input line 61.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, id=3301, page=3, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, page 3>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf , page3 used on input line 66.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, id=3302, page=4, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf, page 4>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf , page4 used on input line 74.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+)
+Package svg Info: Last page of `./svg-inkscape/poiseuille_free_weak_svg-tex.pdf' is 4 on input line 676.
+ (./svg-inkscape/poiseuille_free_weak_svg-tex.pdf_tex
+<./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, id=3304, page=1, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, page 1>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf , page1 used on input line 56.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, id=3305, page=2, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, page 2>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf , page2 used on input line 61.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, id=3306, page=3, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, page 3>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf , page3 used on input line 66.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+<./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, id=3307, page=4, 1213.53375pt x 759.83875pt>
+File: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf Graphic file (type pdf)
+<use ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf, page 4>
+Package pdftex.def Info: ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf , page4 used on input line 74.
+(pdftex.def)             Requested size: 472.03123pt x 295.5591pt.
+) (./main.bbl [24] [25 <./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf> <./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_vzero_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_free_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_free_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_free_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+> <./svg-inkscape/poiseuille_free_weak_svg-tex.pdf
+
+pdfTeX warning: pdflatex (file ./svg-inkscape/poiseuille_free_weak_svg-tex.pdf): PDF inclusion: multiple pdfs with page group included in a single page
+>]) [26
 
 ]
 Appendix A.
-[24
+[27
 
 ] (./main.aux)
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: A30A6F926B3D74A2ED7289555F4F54E8;2523.
+(rerunfilecheck)             Checksum: C9F7571945A6EC6F704C56770A339298;3022.
  ) 
 Here is how much of TeX's memory you used:
- 40103 strings out of 480247
- 815342 string characters out of 5896151
- 1214129 words of memory out of 5000000
- 57147 multiletter control sequences out of 15000+600000
- 495686 words of font info for 92 fonts, out of 8000000 for 9000
+ 40203 strings out of 480247
+ 819740 string characters out of 5896151
+ 1218091 words of memory out of 5000000
+ 57215 multiletter control sequences out of 15000+600000
+ 496462 words of font info for 93 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 115i,20n,118p,619b,831s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx0900.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2074.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2488.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfcc1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfsi1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1095.pfb>
-Output written on main.pdf (25 pages, 1793687 bytes).
+ 115i,20n,118p,785b,831s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cmextra/cmmib8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx0900.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2074.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx2488.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfcc1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0800.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfsi1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti1095.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1095.pfb>
+Output written on main.pdf (28 pages, 2234038 bytes).
 PDF statistics:
- 3233 PDF objects out of 3580 (max. 8388607)
- 2204 compressed objects within 23 object streams
- 125 named destinations out of 1000 (max. 500000)
- 286 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 3516 PDF objects out of 3580 (max. 8388607)
+ 2395 compressed objects within 24 object streams
+ 140 named destinations out of 1000 (max. 500000)
+ 380 words of extra memory for PDF output out of 10000 (max. 10000000)
 

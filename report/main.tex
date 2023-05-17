@@ -75,7 +75,10 @@ The simplest example are the Power-law Fluids, that assume $\mu(\dot\gamma) = K 
     \item \textit{Newtonian} fluids of course when $n=1$.
 \end{itemize}
 
-A little bit more general is the Herschel-Bulkley Model that extends the Power-law model with a yield stress $\tau_0$ under which the fluid does not deform: it is \textit{unyielded}, $\dot\gamma=0$. Above that threshold, the fluid becomes \textit{yielded} and follows the Power-law model. Bingham fluids correspond to the special case of $n=1$. The constitutive law of the Herschel-Bulkley Model reads as follows
+A little bit more general is the Herschel-Bulkley Model that extends the Power-law model with a yield stress $\tau_0$. 
+In regions where the shear stress $\tau < \tau_0$, the fluid behaves as a non-deformable solid ($\gam=\mathbf{0}$) and is called \textit{unyielded}. In this region, the fluid undergoes a rigid-body motion: a uniform translation and/or a uniform rotation.
+
+Above that threshold, the fluid becomes \textit{yielded} and follows the Power-law model. Bingham fluids correspond to the special case of $n=1$. The constitutive law of the Herschel-Bulkley Model reads as follows
 \begin{equation}
     \begin{aligned}
         \dot \gamma_{ij} &= 0 & \text{if} \quad \tau \leq \tau_0\\
@@ -122,7 +125,7 @@ In order to solve \cref{eq:momentum,eq:mass} with the finite element method, one
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\Omega} \nabla \cdot (p\vv)} + {\color{red} \int_{\Omega} \nabla \cdot (\taub \cdot \vv) - \int_{\Omega}  \taub (\uu) : \nabla^\top \vv} + \int_{\Omega} \ff \cdot \vv\\
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\partial \Omega} p \vv \cdot \nn} + {\color{red} \int_{\partial\Omega} (\taub \cdot \vv) \cdot \nn - \int_{\Omega}  \taub (\uu) : \big(\mathbf{D}(\vv) + \mathbf{\Omega}(\vv)\big)^\top} + \int_{\Omega} \ff \cdot \vv \\
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \taub (\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + \int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x \int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + \int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s
     \end{aligned}\label{eq:weak_formulation}
 \end{equation}
 that must hold $\forall \; \vv \in H^1(\Omega)^d$ such that $\vv = \mathbf{0} \text{ on } \Gamma_D$.
@@ -180,6 +183,7 @@ We can show that the weak formulation and the energy minimization problem are eq
 \end{align}
 
 It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{eq:gateau_2} cancel out for every perturbation fields $\vv$ and $q$. Those are precisely the expressions of the weak formulation we derived in \eqref{eq:weak_formulation} and \eqref{eq:weak_formulation_p}.
+
 
 \chapter{1D solution using conic optimization}
 
@@ -401,6 +405,7 @@ With our recent knowledge in conic programming, we can reformulate problem \eqre
             \qquad & \left|\pdv{u^h}{y}\right|_{y=y_g} \leq T_{i,g} \quad \forall i \:\forall g \qquad\;\;\: \iff \qquad \left[ T_{i,g}, \left|\pdv{u^h}{y}\right|_{y=y_g}\right] \in L^{2} \quad \forall i \:\forall g\\
             \qquad & U_0 = U_N = 0
         \end{aligned}
+        \label{eq:problem_1D}
     \end{equation}
 \end{empheqboxed}
 
@@ -423,7 +428,7 @@ At this stage, the finite element solution will be relevant only when the interf
 \end{figure}
 
 
-\chapter{Interface tracking}
+\section{Interface tracking}
 
 INTRODUCE CONCEPT interface tracking
 
@@ -434,6 +439,8 @@ Going back to the constitutive law of bingham fluids, one can see that the strai
     \item and $\partial_{yy} u > 0$ as for a Newtonian Poiseuille flow.
 \end{itemize}    
 This is what we observed in \cref{fig:results_1D_P1,fig:results_1D_P2}.
+
+\subsection{Reconstructed strain}
 
 We will therefore use this continuity of the strain field as a termination criteria for the tracking algorithm. Sadly, P1-elements for the velocity only provide piecewise discontinuous strains. Therefore, we reconstruct an continuous strain field as a linear approximation of the finite element solution at the Gauss points. This approximation is one-sided at each interface as we should only take the information from the yielded regions.
 
@@ -531,6 +538,38 @@ Surprisingly the convergence is faster for P1 elements (piecewise constant strai
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  end  %%%%%%%%%%%%%%%%%%%%%%
 
+\FloatBarrier
+\subsection{Energy-based tracking}
+An alternative approach was considered for the interface tracking. It consists in minimizing the functional not only over the nodal values, but also over the position of the nodes. Two difficulties then arose. The first one is that the optimization problem becomes non-convex, because of the body force term $-fu^h(y_g)$.
+\begin{equation}
+    \minimize_{U_j, y_i} \sum_{i} \sum_{g} -f \sum_{j=1}^{n} U_{j} \phi_j(y_g) \frac{\Delta y_i}{2}
+\end{equation}
+where the product $U_j (y_{i}-y_{i-1})$ is obviously not convex in the variables $U_j, y_i, y_{i-1}$ since $U_j$ can be positive or negative. This issue could be overcome by first solving the optimization problem with the velocities as variables, and then fix the velocities while minimizing over the nodal positions. This problem is in fact convex because the three terms of \eqref{eq:problem_1D} are convex in $y_i$:
+\begin{align}
+    \left(\pdv{u^h}{y}\right)^2 \Delta y_{i} = \left(\sum_j U_j\pdv{\phi}{\eta} \frac{2}{\Delta y_i}\right)^2 \Delta y_{i} &\qquad \text{convex when } \Delta y_i > 0\\
+    \left|\pdv{u^h}{y}\right| \Delta y_{i} = \left|\sum_j U_j\pdv{\phi}{\eta} \pdv{\eta}{y}\right| \Delta y_{i} = 2\left|\sum_j U_j\pdv{\phi}{\eta} \right| &\qquad \text{convex because constant in } y_i\\
+    -f\sum_j U_j \phi_j \Delta y_i &\qquad \text{convex because linear in } y_i
+\end{align}
+
+The second difficulty is even greater: the optimum of this problem (fixing the nodal values or not) is not a mesh with nodes placed at the analytical interface: with $P^1$ elements, the energy functional can be better minimized by \textit{wrongly} placing the nodes. An example is shown in \cref{fig:sensibility_exact,fig:sensibility_exact} with a mesh of only four nodes.
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/sensibility_1D_exact.svg}
+    \caption{Nodes at the interface: $\mathcal{J}(u^h) = \mathcal{J}(u^*) + 1.302\times 10^{-3}$.}
+    \label{fig:sensibility_exact}
+\end{figure}
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/sensibility_1D_bad.svg}
+    \caption{Optimal nodes: $\mathcal{J}(u^h) = \mathcal{J}(u^*) + 5.787\times 10^{-4}$.}
+    \label{fig:sensibility_bad}
+\end{figure}
+
+With $P^2$ elements, this energy-based approach would provide the optimal piecewise quadratic velocity field over all possible meshes. Since, by chance, the analytical solution is quadratic, it would also be the solution of the finite element problem. Hence, the minimization would give the exact velocity field and the correct mesh with nodes at the interface.
+
+In that case, it would be impossible to further decrease the cost as the exact solution is the optimum of the continuous problem \eqref{eq:minimize} over all velocity fields in $H^1(\Omega)$.
+
+This approach is however not suitable in general where the exact velocity field is not necessarily part of the finite element space.
 
 \chapter{2D problem}
 
@@ -601,6 +640,45 @@ The minimization problem can for Cartesian coordinate systems is given hereunder
         \end{aligned}
     \end{equation}
 \end{empheqboxed}
+
+\section{Boundary conditions}
+In the Poiseuille flow simulation, I obtained different results with different setups of boundary conditions at the inflow and outflow.
+\begin{table}[hb]
+    \centering
+    \begin{tabular}[t]{cccc}
+        \toprule
+         & & Free velocity & Normal force and tangential velocity\\
+        Incompressibility & Integral & & \\
+        \midrule
+        \multirow{2}{*}{Weak} & Bulk & $4.30 \times 10^{-11}$ & $-4.33 \times 10^{-3}$\\
+        & Boundary & $1.01 \times 10^{-10}$ &  $-4.33 \times 10^{-3}$\\
+        \multirow{2}{*}{Strong} & Bulk & $5.32 \times 10^{-10}$ & $-4.20 \times 10^{-3}$\\
+         & Boundary & $1.02 \times 10^{-9}$ &  $-4.20 \times 10^{-3}$\\
+        \bottomrule
+    \end{tabular}
+    \caption{Deviation from the analytical functional: $\mathcal{J}(u^h) - \mathcal{J}(u)$.}
+\end{table}%
+
+On the one hand, when we impose the tangential velocity, the solution corresponds exactly to a Poiseuille flow, uniform in $x$. The numerical result is excellent, whatever the way of imposing the pressure gradient (boundary or volume integral), and the incompressibility condition (weak or strong). In the case of a flow in a channel of 2 meters long and 1 meter wide, the exact energy functional is $-1/12$ and is always obtained numerically within at least $10^{-9}$.
+
+On the other hand, when the inflow/outflow velocity is left free, poor results are obtained, especially near the boundary, where the vertical velocity is no longer zero. The maximum velocity at the channel is also too high $0.135$ instead of $0.125$. Furthermore, the pressure at the corners is very far from its analytical value. The solver manages to find a velocity field with a lower energy functional: $\mathcal{J}(u^h) < \mathcal{J}(u)$ for both weak/strong constraints and body/boundary integrals. This is possible because the incompressibility condition is not respected at every position $(x,y)$ of the domain, but rather in a discrete way either at the gauss points, or via pressure test functions.
+
+The two situations are represented graphically in \cref{fig:poiseuille_vzero,fig:poiseuille_free}, with the pressure and velocity fields. The horizontal and vertical velocity profiles are also provided at the inflow/outflow.
+
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/poiseuille_vzero_weak.svg}
+    \caption{Poiseuille flow with imposed zero vertical velocity at the inflow/outflow.}
+    \label{fig:poiseuille_vzero}
+\end{figure}
+\begin{figure}
+    \centering
+    \includesvg[width=\textwidth]{../figures/poiseuille_free_weak.svg}
+    \caption{Poiseuille flow with free velocity at the inflow/outflow.}
+    \label{fig:poiseuille_free}
+\end{figure}
+
+
 
 %\nocite{*}
 %\printbibliography

@@ -78,6 +78,7 @@ def solve_FE(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
     u_num = np.array(res['x'])[:I1].reshape(sim.n_node)
     s_num = np.array(res['x'])[I1:I2].reshape((sim.n_elem, sim.nG))
     t_num = np.array(res['x'])[I2:].reshape((sim.n_elem, sim.nG))
+    print(res["primal objective"] + 1./192.)
     return u_num, s_num, t_num
 
 
@@ -190,22 +191,24 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-8, rtol=1e-6):
 if __name__ == "__main__":
 
     params = dict(
-        H=1., K=1., tau_zero=0.25, f=1., degree=2, n_elem=5,
+        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=3,
         random_seed=3, fix_interface=False,
         save=False, plot_density=25, dimensions=True
     )
 
     sim = Simulation_1D(params)
     
-    # y_tmp = np.array([-0.5, -0.4, -0.2, -0.02, 0.45, 0.5])
-    # sim.set_y(y_tmp)
+    # y_tmp = np.array([-0.5, -0.4, -0.30, 0.30, 0.4, 0.5])
+    y_tmp = np.array([-0.5, -0.3335, 0.3335, 0.5])  # -1/192 + # -1/192 + 0.0005787071770959997
+    # y_tmp = np.array([-0.5, -0.25, 0.25, 0.5])  # -1/192 + 0.0013020833333655057
+    sim.set_y(y_tmp)
     # sim.y[3] = -sim.y[2]
     # sim.set_y(sim.y)
 
     # Solve the problem ITERATE
-    u_num = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
+    # u_num = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
 
     # Solve problem ONE SHOT
-    # u_num, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
+    u_num, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
 
     plot_solution_1D(sim, u_num, extra_name="last", window="Final solution")
