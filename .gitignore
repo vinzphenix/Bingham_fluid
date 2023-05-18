@@ -62,6 +62,9 @@ dkms.conf
 *.log
 *.out
 *.xml
+*.pre
+*.toc
+*.asy
 svg-inkscape/
 
 
