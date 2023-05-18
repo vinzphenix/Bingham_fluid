@@ -24,14 +24,142 @@ def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
         dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf[:, np.newaxis, :], axis=1)
 
     for i in range(sim.n_elem):
-        idx_local_nodes = sim.elem_node_tags[i, :]
+        idx_local_nodes = sim.elem_node_tags[i, :sim.n_local_node]
         det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        for j, idx_node in enumerate(idx_local_nodes[:3]):  # don't evaluate at bubble node
+        for j, idx_node in enumerate(idx_local_nodes):  # don't evaluate at bubble node
             dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
             dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
             l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
             velocity_gradient[i, j, np.array([0, 1, 3, 4])] = np.array([l11, l12, l21, l22])
     return
+
+
+# def get_stress_boundary(sim: Simulation_2D, u_num):
+
+#     gmsh.model.mesh.createEdges()
+#     line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
+#     edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
+#     edge_node_tags = np.array(edge_node_tags).astype(int) - 1
+#     edge_node_tags = edge_node_tags.reshape((-1, n_pts))
+#     n_edge = edge_node_tags.shape[0]
+
+#     coords_org = sim.coords[edge_node_tags[:, 0]]
+#     coords_dst = sim.coords[edge_node_tags[:, 1]]
+#     length = np.linalg.norm(coords_dst - coords_org, axis=1)
+#     tangent = (coords_dst - coords_org) / length[:, None]
+#     tsfm = np.array([[0, 1], [-1, 0]])
+#     normal = np.dot(tsfm[:, :], tangent[:, :].T).T
+
+#     integral_rule = "Gauss" + str(2 * (sim.element == "mini") + 4 * (sim.element == "th"))
+#     uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
+#     ng_edge = len(weights_edge)
+#     _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
+#     sf_edge = np.array(sf).reshape((ng_edge, -1))
+
+#     xi = (np.array(uvw).reshape((ng_edge, 3))[:, 0] + 1.) / 2.
+#     uvw_1 = np.c_[xi, 0. * xi, 0. * xi]
+#     uvw_2 = np.c_[xi, 1. - xi, 0. * xi]
+#     uvw_3 = np.c_[0. * xi, xi, 0. * xi]
+#     sf_list = []
+
+#     for uvw in [uvw_1, uvw_2, uvw_3]:
+#         _, sf, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, uvw.flatten(), 'GradLagrange')
+#         sf_list.append(np.array(sf).reshape((ng_edge, -1, 3))[:, :, :-1])
+
+#     strain = np.zeros((n_edge, ng_edge, 2, 2))
+#     for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
+#         elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
+#         elems_dst = sim.n2e_map[sim.n2e_st[dst]: sim.n2e_st[dst + 1]]
+#         elem = np.intersect1d(elems_org, elems_dst)[0]  # always one and only one
+#         print(org+1, dst+1, sim.elem_tags[elem])
+#         loc_edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
+
+#         dphi = sf_list[loc_edge_nb]
+#         inv_jac = sim.inverse_jacobians[elem]  / sim.determinants[i]
+#         u_local = u_num[sim.elem_node_tags[elem]]
+
+#         strain[i, :, :, :] = np.einsum("jd,gjm,mn->gdn", u_local, dphi, inv_jac)
+
+#     strain[:, :, 1, 0] = 0.5 * (strain[:, :, 0, 1] + strain[:, :, 1, 0])
+#     strain[:, :, 0, 1] = strain[:, :, 1, 0]  # symmetrize
+#     gamma = 2. * strain
+#     norm = 0.5 * (gamma[:, :, 0, 0]**2 + gamma[:, :, 1, 1]**2 + 2. * gamma[:, :, 0, 1]**2)
+#     norm[norm > sim.tau_zero] = 1.  # trick to avoid dividing by zero
+#     strain = (sim.K + sim.tau_zero / norm[:, :, None, None]) * gamma
+
+#     shear_force = np.einsum("g, igpq,ip,gk->ikq", weights_edge, gamma, normal, sf_edge)
+
+#     nodes_bd = np.union1d(sim.nodes_boundary, sim.nodes_corner)
+#     rows = np.tile([0, 1], (n_edge * n_pts))
+#     cols = np.repeat(edge_node_tags, 2).flatten()
+#     shear_force = csr_matrix((shear_force.flatten(), (rows, cols)), shape=(2, nodes_bd.size))
+#     shear_force = shear_force.toarray().T
+
+#     for node in nodes_bd:
+#         print(f"({sim.coords[node, 0]:5.2f}, {sim.coords[node, 1]:5.2f})  {shear_force[node, 0]:8.3f}  {shear_force[node, 1]:8.3f}")
+#     return nodes_bd, shear_force
+
+
+def get_stress_boundary(sim: Simulation_2D, strain_full):
+
+    gmsh.model.mesh.createEdges()
+    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
+    edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
+    edge_node_tags = np.array(edge_node_tags).astype(int) - 1
+    edge_node_tags = edge_node_tags.reshape((-1, n_pts))
+    n_edge = edge_node_tags.shape[0]
+
+    coords_org = sim.coords[edge_node_tags[:, 0]]
+    coords_dst = sim.coords[edge_node_tags[:, 1]]
+    length = np.linalg.norm(coords_dst - coords_org, axis=1)
+    tangent = (coords_dst - coords_org) / length[:, None]
+    tsfm = np.array([[0, 1], [-1, 0]])
+    normal = np.dot(tsfm[:, :], tangent[:, :].T).T
+
+    nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
+    # strain = np.zeros((nodes_bd.size, 2, 2))
+    shear_force = np.zeros((n_edge, n_pts, 2))
+    data = []
+
+    for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
+        elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
+        elems_dst = sim.n2e_map[sim.n2e_st[dst]: sim.n2e_st[dst + 1]]
+        elem = np.intersect1d(elems_org, elems_dst)[0]  # always one and only one
+        edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
+
+        nodes_on_edge = np.in1d(sim.elem_node_tags[elem], edge_node_tags[i])
+        indices = np.arange(sim.nsf)[nodes_on_edge]
+        for j, elem_node_idx in enumerate(indices):
+            local_strain = strain_full[elem, elem_node_idx, [[0, 1], [3, 4]]]
+            local_norm = 2. * local_strain[0, 0]**2 + 2. * \
+                local_strain[1, 1]**2 + 4. * local_strain[1, 0]**2
+            
+            local_strain = np.where(
+                local_norm > sim.tol_yield, 
+                (sim.K + sim.tau_zero / local_norm) * 2. * local_strain,
+                0. * local_strain
+            )
+            shear_force[i, j] = np.dot(normal[i], local_strain)
+
+    # avg_shear_force = np.zeros((nodes_bd.size, 2))
+    # count = np.zeros(nodes_bd.size, dtype=int)
+    # for i in range(n_edge):
+    #     for j in range(n_pts):
+    #         node = edge_node_tags[i, j]
+    #         avg_shear_force[node] += shear_force[i, j]
+    #         count[node] += 1
+    # avg_shear_force /= count[:, None]
+
+    data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3))
+    data[:, 0] = sim.coords[edge_node_tags[:, 0], 0]  # x coord node 1
+    data[:, 1] = sim.coords[edge_node_tags[:, 1], 0]  # x coord node 2
+    data[:, 2] = sim.coords[edge_node_tags[:, 0], 1]  # y coord node 1
+    data[:, 3] = sim.coords[edge_node_tags[:, 1], 1]  # y coord node 2
+    data[:, [6, 7, 9, 10, 12, 13]] = np.c_[
+        shear_force[:, 0, :], shear_force[:, 1, :], shear_force[:, 2, :]
+    ]
+
+    return n_edge, data
 
 
 def plot_1D_slice(u_num, sim: Simulation_2D):
@@ -83,7 +211,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     rows = rows.flatten()
     cols = cols.flatten()
     mass_matrices = mass_matrices.flatten()
-    
+
     mass_matrices[rows == 0] = 0.
     mass_matrices[(rows == 0) & (cols == 0)] = 1.
     mass_matrix = csr_matrix((mass_matrices, (rows, cols)), shape=(sim.n_node, sim.n_node))
@@ -117,8 +245,6 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     length = np.linalg.norm(coords_dst - coords_org, axis=1)
     tangent = -(coords_dst - coords_org) / length[:, None]
 
-    uvw = 0.5 + 0.5 * np.array([-1. / np.sqrt(3), 1. / np.sqrt(3)])
-    ng_edge = len(uvw)
     integral_rule = "Gauss" + str(2 * (sim.element == "mini") + 4 * (sim.element == "th"))
     uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
     ng_edge = len(weights_edge)
@@ -160,9 +286,14 @@ def add_streamfunction(sim: Simulation_2D, u_num):
         tag_psi, 0, sim.model_name, "NodeData",
         sim.node_tags + 1, psi, numComponents=1
     )
-    gmsh.view.option.set_number(tag_psi, "NbIso", 40)
+    gmsh.view.option.set_number(tag_psi, "NbIso", 20)
     gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
-    
+    gmsh.view.option.set_number(tag_psi, "ShowScale", 0)
+    gmsh.view.option.set_number(tag_psi, "LineWidth", 1.5)
+    gmsh.view.option.set_number(tag_psi, "ColormapAlpha", 0.75)
+    gmsh.view.option.set_number(tag_psi, "ColormapNumber", 0)
+    gmsh.view.option.set_number(tag_psi, "ColormapInvert", 1)
+
     return [tag_psi]
 
 
@@ -170,8 +301,8 @@ def add_streamlines(sim: Simulation_2D, u_num, tag_v):
 
     # option_names = ['View', 'X0', 'Y0', 'X1', 'Y1', 'DT', 'NumPointsU', 'MaxIter']
     option_names = [
-        'X0', 'Y0', 'X1', 'Y1', 'X2', 'Y2', 
-        'NumPointsU', 'NumPointsV', 
+        'X0', 'Y0', 'X1', 'Y1', 'X2', 'Y2',
+        'NumPointsU', 'NumPointsV',
         'DT', 'MaxIter'
     ]
 
@@ -260,24 +391,29 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     strain_tensor[:, :, 1] = 0.5 * (strain_tensor[:, :, 1] + strain_tensor[:, :, 3])
     strain_tensor[:, :, 3] = strain_tensor[:, :, 1]
 
+    n_edge, data_bd_shear = get_stress_boundary(sim, strain_tensor)
+
     tag_velocity = gmsh.view.add("Velocity", tag=sim.tag)
 
-    tag_u = gmsh.view.add("Velocity - x", tag=sim.tag+1)
-    tag_v = gmsh.view.add("Velocity - y", tag=sim.tag+2)
+    tag_u = gmsh.view.add("Velocity - x", tag=sim.tag + 1)
+    tag_v = gmsh.view.add("Velocity - y", tag=sim.tag + 2)
 
-    tag_strain_xx = gmsh.view.add("Strain xx", tag=sim.tag+3)
-    tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag+4)
-    tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag+5)
-    
-    tag_strain = gmsh.view.add("Strain tensor", tag=sim.tag+6)
-    tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag+7)
-    tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag+8)
-    tag_divergence = gmsh.view.add("Divergence", tag=sim.tag+9)
+    tag_strain_xx = gmsh.view.add("Strain xx", tag=sim.tag + 3)
+    tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag + 4)
+    tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag + 5)
+
+    tag_strain = gmsh.view.add("Strain tensor", tag=sim.tag + 6)
+    tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
+    tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
+    tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
+
+    tag_bd_shear = gmsh.view.add("Shear force", tag=sim.tag + 10)
+
     tags = [
-        tag_velocity, tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy, 
-        tag_strain, tag_strain_norm_avg, tag_vorticity, tag_divergence
+        tag_velocity, tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
+        tag_strain, tag_strain_norm_avg, tag_vorticity, tag_divergence, tag_bd_shear
     ]
-    sim.tag += 10
+    sim.tag += 11
 
     gmsh.view.addHomogeneousModelData(
         tag_velocity, 0, sim.model_name, "NodeData",
@@ -327,24 +463,40 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
         sim.elem_tags, divergence, numComponents=1
     )
 
+    gmsh.view.addListData(tag_bd_shear, "VL", n_edge, data_bd_shear.flatten())
+    gmsh.view.option.setNumber(tag_bd_shear, "VectorType", 2)
+    gmsh.view.option.setNumber(tag_bd_shear, "Sampling", 1)
+    gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 5.)
+    gmsh.view.option.setNumber(tag_bd_shear, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 75)
+    gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
+    gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
+    gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
+
     v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
     strain_normal_raise = 0.5 / np.amax(strain_norm)
     gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
     gmsh.view.option.setNumber(tag_velocity, "DrawLines", 0)
     gmsh.view.option.setNumber(tag_velocity, "DrawPoints", 0)
-    # gmsh.view.option.setNumber(tag_v, "Sampling", 5)
     gmsh.view.option.setNumber(tag_velocity, "NormalRaise", v_normal_raise)
-    gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 100)
+    gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 50)
     gmsh.view.option.setNumber(tag_velocity, "LineWidth", 0.7)
     gmsh.view.option.setNumber(tag_velocity, "PointSize", 2.5)
+    gmsh.view.option.setNumber(tag_velocity, "ShowScale", 1)
+    gmsh.view.option.setNumber(tag_velocity, "Sampling", 1)
 
-    gmsh.view.option.setNumber(tag_velocity, "ShowScale", 0)
-    for tag in tag_u, tag_v:
+    for tag in [tag_u, tag_v]:
         gmsh.view.option.setNumber(tag, "ShowScale", 1)
         gmsh.view.option.setNumber(tag, "DrawTriangles", 0)
-        gmsh.view.option.setNumber(tag, "NormalRaise", 10./6.)
+        gmsh.view.option.setNumber(tag, "NormalRaise", 10. / 6.)
+        # gmsh.view.option.setNumber(tag, "ShowScale", 0)
 
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
+    for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
+        gmsh.view.option.setNumber(tag, "ColormapAlpha", 0.75)
+        gmsh.view.option.setNumber(tag, "RangeType", 2)
+        gmsh.view.option.setNumber(tag, "CustomMin", -0.25)
+        gmsh.view.option.setNumber(tag, "CustomMax", 0.25)
 
     # for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
     #     gmsh.view.option.setNumber(tag, "", )
@@ -374,7 +526,7 @@ def add_pressure_view(sim: Simulation_2D, p_num):
             sim.elem_tags, p_avg, numComponents=1
         )
 
-    gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 24)
     gmsh.view.option.setNumber(tag_pressure, "IntervalsType", 3)
     gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
     gmsh.view.option.setNumber(tag_pressure, "CustomMin", 0.)

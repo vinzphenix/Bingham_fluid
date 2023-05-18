@@ -84,15 +84,15 @@ if __name__ == "__main__":
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="test")
     # parameters = dict(K=1., tau_zero=0.25, f=[1., 0.], element="th", model_name="rectangle")
     
-    # beta = np.sin(0.)
-    # parameters = dict(
-    #     K=1., tau_zero=0.0, f=[0*np.cos(beta), 0*np.sin(beta)],
-    #     element="th", model_name="rectanglerot"
-    # )
+    beta = np.sin(0.)
+    parameters = dict(
+        K=1., tau_zero=0.0, f=[0*np.cos(beta), 0*np.sin(beta)],
+        element="th", model_name="rectanglerot"
+    )
 
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="rect_fit")
     # parameters = dict(K=1., tau_zero=0.9, f=[1., 0.], element="th", model_name="cylinder")
-    parameters = dict(K=1., tau_zero=1., f=[0., 0.], element="th", model_name="cavity")
+    # parameters = dict(K=1., tau_zero=1., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=0.3, f=[1., 0.], element="th", model_name="bfs")
     # parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="th", model_name="opencavity")
 
@@ -128,11 +128,16 @@ if __name__ == "__main__":
                 print(tmp)
         print("s = ", s)
 
-        # sim.save_solution(u_field, p_field, d_field, model_variant=f'{sim.tau_zero:.0f}')
+        sim.save_solution(u_field, p_field, d_field, model_variant=f'bcGood')
 
     elif mode == 3:  # Load solution from disk
-        model, variant = "cavity", "2"
+        model, variant = "rectanglerot", "bcBad"
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
+        # model, variant = "rectanglerot", "bcGood"
+        # parameters, u_field2, p_field2, d_field2, coords = load_solution(model, variant)
+        # u_field -= u_field2
+        # p_field -= p_field2
+
         sim = Simulation_2D(parameters, new_coords=coords)
 
     else:  # DUMMY solution to debug

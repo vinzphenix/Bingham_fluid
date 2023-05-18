@@ -72,8 +72,8 @@ def compute_boundary_source(sim: Simulation_2D):
 
     # values = sigma * n = [-p n + tau * n]
     g = np.zeros((n_edge, n_pts, 2))
-    g[:, :, 0] = 1. - sim.coords[edge_node_tags, 0]  # p=2 at inflow, p=0 at outflow
-    g[:, :, 1] = sim.coords[edge_node_tags, 1]
+    g[:, :, 0] = 2. - sim.coords[edge_node_tags, 0]  # p=2 at inflow, p=0 at outflow
+    # g[:, :, 1] = sim.coords[edge_node_tags, 1]
     mask_outflow = sim.coords[edge_node_tags, 0] > 2. - 1e-3
     g[mask_outflow] *= -1
 
@@ -112,8 +112,8 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
 
     # Handle objective coefficients of the Neumann boundary condition
     # -integral_{Gamma} (gx, gy) * (u, v) ds
-    # cols, vals = compute_boundary_source(sim)
-    # cost[cols] -= vals
+    cols, vals = compute_boundary_source(sim)
+    cost[cols] -= vals
 
     # Input the objective sense (minimize/maximize)
     task.putobjsense(mosek.objsense.minimize)

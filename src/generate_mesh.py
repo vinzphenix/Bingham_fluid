@@ -158,14 +158,13 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     # tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
 
     tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
-    tag_u_set = gmsh.model.addPhysicalGroup(1, [], tag=3, name="u_one")
-    tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=2, name="v_zero")
+    tag_u_set = gmsh.model.addPhysicalGroup(1, ln_inflow, tag=3, name="u_one")
+    tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow+ln_no_slip, tag=2, name="v_zero")
     tag_neumann = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow, tag=6, name="neumann")
 
     tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
     tag_other = gmsh.model.addPhysicalGroup(1, list(ln_others), tag=5, name="others")
     
-
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
     # Meshing
@@ -490,10 +489,10 @@ if __name__ == "__main__":
     # create_split_rectangle(path_to_dir + "rect_fit.msh", width=3., height=2.,
     #                        elemSizeRatio=1. / 15., y_zero=0.3, cut=False)
 
-    # create_split_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
-                        #    elemSizeRatio=1. / 15., y_zero=0.0, cut=False, angle=0.*np.pi/6.)
+    create_split_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
+                           elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=0.*np.pi/6.)
 
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50., radial=False, sharp=True)
-    create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False)
+    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)

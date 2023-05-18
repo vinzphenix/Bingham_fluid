@@ -577,8 +577,7 @@ This approach is however not suitable in general where the exact velocity field 
 
 It is well known that velocity-pressure fields discretized with P1-P0 and P1-P1 elements do not provide stable discretizations of the Stokes equations, or equivalently of incompressible linear elasticity REF. A first option is to enrich the velocity space with a bubble function: this is the MINI element. A second option is to use P2 elements for the velocity field. Both methods were implemented in our case. 
 
-The shape functions involved are represented graphically in %\cref{fig:shape_functions_2d}. 
-Again, the finite element approximation velocity field $\vv^h$ reads as
+The shape functions involved are represented graphically in \cref{fig:shape_functions_2d}. Again, the finite element approximation velocity field $\vv^h$ reads as
 \begin{align}
     \vv^h(x, y) &= \sum_{j} \mathbf{V}_j \: \phi_j(x, y)
 \end{align}
@@ -611,7 +610,7 @@ To express the deformation norm $\|\gam\|$ needed in the functional, we need the
     \implies \quad \|\gam(u, v)\|_{\text{Cart}}^2 &= 2 \left(\pdv{u}{x}\right)^2 + \left(\pdv{u}{y} + 2\pdv{v}{x}\right)^2 + \left(\pdv{v}{y}\right)^2
 \end{align}
 
-Each of these partial derivatives are computed as a sum of shape functions derivatives. These spatial derivatives in the physical domain $(x,y)$ are themselves computed from derivatives in the parametric domain $(\xi, \eta)$ through the Jacobian of the transformation.
+Each of these partial derivatives is computed as a sum of shape functions derivatives. These spatial derivatives in the physical domain $(x,y)$ are themselves computed from derivatives in the parametric domain $(\xi, \eta)$ through the Jacobian of the transformation.
 \begin{align}
     \pdv{u^h_i}{x_j} &= \sum_k U_k \pdv{\phi_k}{x_j} \qquad i=1,2 \quad j=1,2\\
     \left(\nabla_\xx \: \phi\right)_{\text{Cart}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}}\\
@@ -633,6 +632,7 @@ The minimization problem can for Cartesian coordinate systems is given hereunder
     \begin{equation}
         \begin{aligned}
             \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} &\qquad \sum_{i}\sum_{g} \omega_g \left[\frac{\mu}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \vert_{\xx_g} \right] \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g}\\
+            &\qquad - \sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h\vert_{\xx_g} \frac{\ell_{\text{e}}}{2}\\
             \textrm{s.t.} &\qquad \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L_R^5 && \forall i, g\\
             &\qquad \left(T_{i,g}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L^4 && \forall i, g\\
             &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) && \forall\; l\\
@@ -642,42 +642,86 @@ The minimization problem can for Cartesian coordinate systems is given hereunder
 \end{empheqboxed}
 
 \section{Boundary conditions}
-In the Poiseuille flow simulation, I obtained different results with different setups of boundary conditions at the inflow and outflow.
-\begin{table}[hb]
+Boundary conditions should never be overlooked, especially in the case of the Poiseuille flow. 
+
+Of course, no-slip walls are easily handled, with homogeneous Dirichlet boundary conditions. However, the situation is not as simple at the inflow and outflow. We can list the three most obvious choices:
+\begin{enumerate}
+    \item Impose the velocity profile at the inflow (Dirichlet)
+    \item Impose the pressure at the inflow and at the outflow (Neumann)
+    \item Impose the pressure gradient over the domain $\Omega$ (Body force)
+\end{enumerate}
+
+However, care must be taken because we are only providing the normal force on the boundary, due to the pressure gradient, but not the tangential force due to the shear stress that is not known yet. If we prescribe only the normal component of the traction $\mathbf{g}=(\nn\cdot\mathbf{\sigma}\cdot\nn)\nn$, we also need to prescribe the tangential component of the velocity $\vv\cdot\nn^\perp$ \cite{Bangerth}.
+
+Each description must then be completed in order to obtain a correct physical flow.
+\begin{enumerate}
+    \item At the inflow, impose the velocity profile with $\vv \cdot \nn = v_n$ and $\vv \cdot \nn^\perp = v_t = 0$. At the outflow, set zero tangential velocity $v_t = 0$, along with a normal force $\mathbf{g} \cdot \nn = -p + \nn\cdot\boldsymbol\tau\cdot\nn = -p_{\text{out}}$. It is not very suitable for Bingham fluids because it requires the knowledge of the velocity profile beforehand.
+    \item Impose the normal boundary force at the inflow and outflow, made up of the pressure and normal shear stress: $\mathbf{g} \cdot \nn = -p_{\text{in/out}}$. Also set $v_t=0$ at the two boundaries.
+    \item Set the pressure gradient as body force $\mathbf{f} = -\partial_x p$. It still requires to specify the normal shear stress and tangential velocity: $\mathbf{g} \cdot \nn = 0$, and $v_t=0$.
+\end{enumerate}
+
+If one forgets to cancel the tangential velocity at the outflow, the problem becomes equivalent to impose zero tangential shear stress at the outflow, which is of course not the situation of a Poiseuille flow where $\tau_{12} = \mu\partial_y u \neq 0$. 
+
+I ran a first simulation with the correct boundary condition (case 2), and a second one where I removed the condition $v_t=0$. These two situations are compared in \cref{fig:poiseuille_vzero,fig:poiseuille_free}. In order to achieve zero tangential shear force, the finite element solution gives a very high pressure gradient near the outflow corners.
+
+One can also wonder if the choice of boundary condition (1-2-3), or the choice of incompressibility condition (weak-strong) influences quality of the solution. In the case of a flow in a channel of 2 meters long and 1 meter wide, the exact energy functional is $-1/12$. The deviation of the numerical functional from the exact functional is given in \cref{tab:setups_compare} for different setups. 
+
+\begin{table}[h]
     \centering
     \begin{tabular}[t]{cccc}
         \toprule
-         & & Free velocity & Normal force and tangential velocity\\
-        Incompressibility & Integral & & \\
+         & & Correct setup & Incorrect setup\\
+         & & $\mathbf{g}\cdot \nn = -p$ and $v_t=0$ & $\mathbf{g} = -p\nn$\\
+        Incompressibility & Dirichlet/Neumann & & \\
+         & Body force & & \\
         \midrule
-        \multirow{2}{*}{Weak} & Bulk & $4.30 \times 10^{-11}$ & $-4.33 \times 10^{-3}$\\
-        & Boundary & $1.01 \times 10^{-10}$ &  $-4.33 \times 10^{-3}$\\
-        \multirow{2}{*}{Strong} & Bulk & $5.32 \times 10^{-10}$ & $-4.20 \times 10^{-3}$\\
-         & Boundary & $1.02 \times 10^{-9}$ &  $-4.20 \times 10^{-3}$\\
+        \multirow{2}{*}{Weak} & Dirichlet (1) & $6.095 \times 10^{-10}$ &  $-2.077 \times 10^{-3}$\\
+         & Neumann (2) & $2.201 \times 10^{-9}$ &  $-2.130 \times 10^{-3}$\\
+         & Body force (3) & $1.858 \times 10^{-11}$ & $-2.130 \times 10^{-3}$\\[4pt]
+        \multirow{2}{*}{Strong} & Dirichlet (1) & $7.603 \times 10^{-10}$ &  $-2.037 \times 10^{-3}$\\
+         & Neumann (2) & $8.898 \times 10^{-10}$ &  $-2.088 \times 10^{-3}$\\
+         & Body Force (3) & $5.483 \times 10^{-10}$ & $-2.088 \times 10^{-3}$\\
         \bottomrule
     \end{tabular}
     \caption{Deviation from the analytical functional: $\mathcal{J}(u^h) - \mathcal{J}(u)$.}
+    \label{tab:setups_compare}
 \end{table}%
 
-On the one hand, when we impose the tangential velocity, the solution corresponds exactly to a Poiseuille flow, uniform in $x$. The numerical result is excellent, whatever the way of imposing the pressure gradient (boundary or volume integral), and the incompressibility condition (weak or strong). In the case of a flow in a channel of 2 meters long and 1 meter wide, the exact energy functional is $-1/12$ and is always obtained numerically within at least $10^{-9}$.
-
-On the other hand, when the inflow/outflow velocity is left free, poor results are obtained, especially near the boundary, where the vertical velocity is no longer zero. The maximum velocity at the channel is also too high $0.135$ instead of $0.125$. Furthermore, the pressure at the corners is very far from its analytical value. The solver manages to find a velocity field with a lower energy functional: $\mathcal{J}(u^h) < \mathcal{J}(u)$ for both weak/strong constraints and body/boundary integrals. This is possible because the incompressibility condition is not respected at every position $(x,y)$ of the domain, but rather in a discrete way either at the gauss points, or via pressure test functions.
-
-The two situations are represented graphically in \cref{fig:poiseuille_vzero,fig:poiseuille_free}, with the pressure and velocity fields. The horizontal and vertical velocity profiles are also provided at the inflow/outflow.
-
-\begin{figure}
+\begin{figure}[b]
     \centering
-    \includesvg[width=\textwidth]{../figures/poiseuille_vzero_weak.svg}
-    \caption{Poiseuille flow with imposed zero vertical velocity at the inflow/outflow.}
-    \label{fig:poiseuille_vzero}
-\end{figure}
-\begin{figure}
-    \centering
-    \includesvg[width=\textwidth]{../figures/poiseuille_free_weak.svg}
-    \caption{Poiseuille flow with free velocity at the inflow/outflow.}
-    \label{fig:poiseuille_free}
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth,]{../figures/bc_good_force.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth,]{../figures/bc_bad_force.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    % \vspace{-2cm}
+    % \begin{subfigure}[t]{0.8\textwidth}
+    %     \includesvg[width=\textwidth]{../figures/bc_diff_force.svg}
+    % \end{subfigure}
+    \caption{Comparison of the shear stress field, and boundary forces of the correct (top) and incorrect (bottom) flows. The streamlines are also represented in white.}
+    \label{fig:bc_issue_force}
 \end{figure}
 
+\begin{figure}[b]
+    \centering
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth]{../figures/bc_good_velocity.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth]{../figures/bc_bad_velocity.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    % \vspace{-2cm}
+    % \begin{subfigure}[t]{0.8\textwidth}
+    %     \includesvg[width=\textwidth]{../figures/bc_diff_velocity.svg}
+    % \end{subfigure}
+    \caption{Comparison of the velocity and pressure fields of the correct (top) and incorrect (bottom) flows. The horizontal and vertical velocity profiles are also shown at the boundaries.}
+    \label{fig:bc_issue_velocity}
+\end{figure}
 
 
 %\nocite{*}

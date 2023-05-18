@@ -6,6 +6,13 @@ Neil Balmforth and Richard Craster.
   582, pages 34--51.
 \newblock Springer, 01 2008.
 
+\bibitem{Bangerth}
+Wolfgang Bangerth.
+\newblock Finite element methods in scientific computing: Boundary conditions,
+  2014.
+\newblock URL:
+  \url{https://www.math.colostate.edu/~bangerth/videos/676/slides.21.5.pdf}.
+
 \bibitem{Bleyer}
 Jeremy Bleyer, Mathilde Maillard, Patrick {de Buhan}, and Philippe Coussot.
 \newblock Efficient numerical computations of yield stress fluid flows using
