@@ -14,7 +14,7 @@ def display_elem_edge_node():
     return
 
 
-def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_zero=0., cut=True, angle=0.):
+def create_split_rectangle(filename, width, height, elemSizeRatio, y_zero=0., cut=False, angle=0.):
     gmsh.initialize()
     factory = gmsh.model.geo
     meshFact = gmsh.model.mesh
@@ -147,24 +147,20 @@ def create_split_rectangle(filename, width=3., height=2., elemSizeRatio=0.1, y_z
     # Physical groups for boundary conditions
     ln_others = np.setdiff1d(lines, ln_cut + ln_inflow + ln_outflow + ln_no_slip)
 
-    # tag_pts_u_zero = gmsh.model.addPhysicalGroup(0, pts_no_slip, tag=1, name="u_zero")
-    # tag_pts_v_zero = gmsh.model.addPhysicalGroup(0, pts_inflow + pts_outflow + pts_no_slip, tag=2, name="v_zero")
-    tag_pts_u_zero = gmsh.model.addPhysicalGroup(0, pts_no_slip, tag=1, name="u_zero")
-    tag_pts_v_zero = gmsh.model.addPhysicalGroup(0, pts_no_slip, tag=2, name="v_zero")
-    tag_pts_u_set = gmsh.model.addPhysicalGroup(0, [], tag=3, name="u_one")
-    tag_pts_cut = gmsh.model.addPhysicalGroup(0, pts_cut, tag=4, name="cut")
+    lines_bd = ln_no_slip + ln_inflow + ln_outflow
+    lines_set_vn = ln_no_slip
+    lines_set_vt = ln_no_slip + ln_inflow + ln_outflow
+    lines_set_gn = np.setdiff1d(lines_bd, lines_set_vn)
+    lines_set_gt = np.setdiff1d(lines_bd, lines_set_vt)
 
-    # tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
-    # tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow + ln_no_slip, tag=2, name="v_zero")
+    gmsh.model.addPhysicalGroup(1, lines_set_vn, tag=1, name="setNormalFlow")
+    gmsh.model.addPhysicalGroup(1, lines_set_vt, tag=2, name="setTangentFlow")
+    gmsh.model.addPhysicalGroup(1, lines_set_gn, tag=3, name="setNormalForce")
+    gmsh.model.addPhysicalGroup(1, lines_set_gt, tag=4, name="setTangentForce")
 
-    tag_u_zero = gmsh.model.addPhysicalGroup(1, ln_no_slip, tag=1, name="u_zero")
-    tag_u_set = gmsh.model.addPhysicalGroup(1, ln_inflow, tag=3, name="u_one")
-    tag_v_zero = gmsh.model.addPhysicalGroup(1, ln_inflow+ln_no_slip, tag=2, name="v_zero")
-    tag_neumann = gmsh.model.addPhysicalGroup(1, ln_inflow + ln_outflow, tag=6, name="neumann")
+    gmsh.model.addPhysicalGroup(1, ln_cut, tag=5, name="cut")
+    gmsh.model.addPhysicalGroup(1, ln_others, tag=6, name="others")
 
-    tag_cut = gmsh.model.addPhysicalGroup(1, ln_cut, tag=4, name="cut")
-    tag_other = gmsh.model.addPhysicalGroup(1, list(ln_others), tag=5, name="others")
-    
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
     # Meshing
@@ -490,7 +486,7 @@ if __name__ == "__main__":
     #                        elemSizeRatio=1. / 15., y_zero=0.3, cut=False)
 
     create_split_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
-                           elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=0.*np.pi/6.)
+                           elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=np.pi / 6.)
 
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./50., radial=False, sharp=True)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False)

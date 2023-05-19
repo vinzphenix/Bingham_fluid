@@ -3,165 +3,6 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 
-def eval_velocity_gradient(u_local, dphi_local):
-    dudx = np.dot(u_local[:, 0], dphi_local[:, 0])
-    dudy = np.dot(u_local[:, 0], dphi_local[:, 1])
-    dvdx = np.dot(u_local[:, 1], dphi_local[:, 0])
-    dvdy = np.dot(u_local[:, 1], dphi_local[:, 1])
-    return dudx, dudy, dvdx, dvdy
-
-
-def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
-    velocity_gradient[:] = 0.
-    elem_type, n_local_node, local_coords = sim.elem_type, sim.n_local_node, sim.local_node_coords
-    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(elem_type, local_coords, 'GradLagrange')
-    dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
-
-    if sim.element == "mini":
-        # eval bubble derivatives at nodes
-        xi_eta = local_coords.reshape(n_local_node, 3)[:, :-1].T
-        bubble_dsf = np.c_[DPHI_DXI(*xi_eta), DPHI_DETA(*xi_eta)]
-        dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf[:, np.newaxis, :], axis=1)
-
-    for i in range(sim.n_elem):
-        idx_local_nodes = sim.elem_node_tags[i, :sim.n_local_node]
-        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        for j, idx_node in enumerate(idx_local_nodes):  # don't evaluate at bubble node
-            dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
-            dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
-            l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
-            velocity_gradient[i, j, np.array([0, 1, 3, 4])] = np.array([l11, l12, l21, l22])
-    return
-
-
-# def get_stress_boundary(sim: Simulation_2D, u_num):
-
-#     gmsh.model.mesh.createEdges()
-#     line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
-#     edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
-#     edge_node_tags = np.array(edge_node_tags).astype(int) - 1
-#     edge_node_tags = edge_node_tags.reshape((-1, n_pts))
-#     n_edge = edge_node_tags.shape[0]
-
-#     coords_org = sim.coords[edge_node_tags[:, 0]]
-#     coords_dst = sim.coords[edge_node_tags[:, 1]]
-#     length = np.linalg.norm(coords_dst - coords_org, axis=1)
-#     tangent = (coords_dst - coords_org) / length[:, None]
-#     tsfm = np.array([[0, 1], [-1, 0]])
-#     normal = np.dot(tsfm[:, :], tangent[:, :].T).T
-
-#     integral_rule = "Gauss" + str(2 * (sim.element == "mini") + 4 * (sim.element == "th"))
-#     uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
-#     ng_edge = len(weights_edge)
-#     _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
-#     sf_edge = np.array(sf).reshape((ng_edge, -1))
-
-#     xi = (np.array(uvw).reshape((ng_edge, 3))[:, 0] + 1.) / 2.
-#     uvw_1 = np.c_[xi, 0. * xi, 0. * xi]
-#     uvw_2 = np.c_[xi, 1. - xi, 0. * xi]
-#     uvw_3 = np.c_[0. * xi, xi, 0. * xi]
-#     sf_list = []
-
-#     for uvw in [uvw_1, uvw_2, uvw_3]:
-#         _, sf, _ = gmsh.model.mesh.getBasisFunctions(sim.elem_type, uvw.flatten(), 'GradLagrange')
-#         sf_list.append(np.array(sf).reshape((ng_edge, -1, 3))[:, :, :-1])
-
-#     strain = np.zeros((n_edge, ng_edge, 2, 2))
-#     for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
-#         elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
-#         elems_dst = sim.n2e_map[sim.n2e_st[dst]: sim.n2e_st[dst + 1]]
-#         elem = np.intersect1d(elems_org, elems_dst)[0]  # always one and only one
-#         print(org+1, dst+1, sim.elem_tags[elem])
-#         loc_edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
-
-#         dphi = sf_list[loc_edge_nb]
-#         inv_jac = sim.inverse_jacobians[elem]  / sim.determinants[i]
-#         u_local = u_num[sim.elem_node_tags[elem]]
-
-#         strain[i, :, :, :] = np.einsum("jd,gjm,mn->gdn", u_local, dphi, inv_jac)
-
-#     strain[:, :, 1, 0] = 0.5 * (strain[:, :, 0, 1] + strain[:, :, 1, 0])
-#     strain[:, :, 0, 1] = strain[:, :, 1, 0]  # symmetrize
-#     gamma = 2. * strain
-#     norm = 0.5 * (gamma[:, :, 0, 0]**2 + gamma[:, :, 1, 1]**2 + 2. * gamma[:, :, 0, 1]**2)
-#     norm[norm > sim.tau_zero] = 1.  # trick to avoid dividing by zero
-#     strain = (sim.K + sim.tau_zero / norm[:, :, None, None]) * gamma
-
-#     shear_force = np.einsum("g, igpq,ip,gk->ikq", weights_edge, gamma, normal, sf_edge)
-
-#     nodes_bd = np.union1d(sim.nodes_boundary, sim.nodes_corner)
-#     rows = np.tile([0, 1], (n_edge * n_pts))
-#     cols = np.repeat(edge_node_tags, 2).flatten()
-#     shear_force = csr_matrix((shear_force.flatten(), (rows, cols)), shape=(2, nodes_bd.size))
-#     shear_force = shear_force.toarray().T
-
-#     for node in nodes_bd:
-#         print(f"({sim.coords[node, 0]:5.2f}, {sim.coords[node, 1]:5.2f})  {shear_force[node, 0]:8.3f}  {shear_force[node, 1]:8.3f}")
-#     return nodes_bd, shear_force
-
-
-def get_stress_boundary(sim: Simulation_2D, strain_full):
-
-    gmsh.model.mesh.createEdges()
-    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
-    edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
-    edge_node_tags = np.array(edge_node_tags).astype(int) - 1
-    edge_node_tags = edge_node_tags.reshape((-1, n_pts))
-    n_edge = edge_node_tags.shape[0]
-
-    coords_org = sim.coords[edge_node_tags[:, 0]]
-    coords_dst = sim.coords[edge_node_tags[:, 1]]
-    length = np.linalg.norm(coords_dst - coords_org, axis=1)
-    tangent = (coords_dst - coords_org) / length[:, None]
-    tsfm = np.array([[0, 1], [-1, 0]])
-    normal = np.dot(tsfm[:, :], tangent[:, :].T).T
-
-    nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
-    # strain = np.zeros((nodes_bd.size, 2, 2))
-    shear_force = np.zeros((n_edge, n_pts, 2))
-    data = []
-
-    for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
-        elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
-        elems_dst = sim.n2e_map[sim.n2e_st[dst]: sim.n2e_st[dst + 1]]
-        elem = np.intersect1d(elems_org, elems_dst)[0]  # always one and only one
-        edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
-
-        nodes_on_edge = np.in1d(sim.elem_node_tags[elem], edge_node_tags[i])
-        indices = np.arange(sim.nsf)[nodes_on_edge]
-        for j, elem_node_idx in enumerate(indices):
-            local_strain = strain_full[elem, elem_node_idx, [[0, 1], [3, 4]]]
-            local_norm = 2. * local_strain[0, 0]**2 + 2. * \
-                local_strain[1, 1]**2 + 4. * local_strain[1, 0]**2
-            
-            local_strain = np.where(
-                local_norm > sim.tol_yield, 
-                (sim.K + sim.tau_zero / local_norm) * 2. * local_strain,
-                0. * local_strain
-            )
-            shear_force[i, j] = np.dot(normal[i], local_strain)
-
-    # avg_shear_force = np.zeros((nodes_bd.size, 2))
-    # count = np.zeros(nodes_bd.size, dtype=int)
-    # for i in range(n_edge):
-    #     for j in range(n_pts):
-    #         node = edge_node_tags[i, j]
-    #         avg_shear_force[node] += shear_force[i, j]
-    #         count[node] += 1
-    # avg_shear_force /= count[:, None]
-
-    data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3))
-    data[:, 0] = sim.coords[edge_node_tags[:, 0], 0]  # x coord node 1
-    data[:, 1] = sim.coords[edge_node_tags[:, 1], 0]  # x coord node 2
-    data[:, 2] = sim.coords[edge_node_tags[:, 0], 1]  # y coord node 1
-    data[:, 3] = sim.coords[edge_node_tags[:, 1], 1]  # y coord node 2
-    data[:, [6, 7, 9, 10, 12, 13]] = np.c_[
-        shear_force[:, 0, :], shear_force[:, 1, :], shear_force[:, 2, :]
-    ]
-
-    return n_edge, data
-
-
 def plot_1D_slice(u_num, sim: Simulation_2D):
 
     if sim.model_name[:4] not in ["rect", "test"]:
@@ -197,6 +38,109 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
     return
 
 
+def plot_solution_2D_matplotlib(u_num, sim: Simulation_2D):
+
+    fig, ax = plt.subplots(1, 1, figsize=(10., 6.), constrained_layout=True)
+
+    n_elem, n_node_per_elem = sim.elem_node_tags.shape
+    coords = sim.coords  # size (n_nodes, 2)
+
+    triang = mpl_tri.Triangulation(sim.coords[:, 0], sim.coords[:, 1], sim.elem_node_tags[:, :3])
+    tricontourset = ax.tricontourf(triang, u_num[:sim.n_node, 0])
+    ax.triplot(triang, 'ko-', alpha=0.5)
+    _ = fig.colorbar(tricontourset)
+
+    ax.quiver(coords[:, 0], coords[:, 1], u_num[:sim.n_node, 0], u_num[:sim.n_node, 1],
+              angles='xy', scale_units='xy', scale=5)
+    # ax.quiver(centers[:, 0], centers[:, 1], u_num[sim.n_node:, 0], u_num[sim.n_node:, 1],
+    #  color='C2', angles='xy', scale_units='xy', scale=5)
+
+    plt.show()
+
+    return
+
+
+def eval_velocity_gradient(u_local, dphi_local):
+    dudx = np.dot(u_local[:, 0], dphi_local[:, 0])
+    dudy = np.dot(u_local[:, 0], dphi_local[:, 1])
+    dvdx = np.dot(u_local[:, 1], dphi_local[:, 0])
+    dvdy = np.dot(u_local[:, 1], dphi_local[:, 1])
+    return dudx, dudy, dvdx, dvdy
+
+
+def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
+    velocity_gradient[:] = 0.
+    elem_type, n_local_node, local_coords = sim.elem_type, sim.n_local_node, sim.local_node_coords
+    _, dsf_at_nodes, _ = gmsh.model.mesh.getBasisFunctions(elem_type, local_coords, 'GradLagrange')
+    dsf_at_nodes = np.array(dsf_at_nodes).reshape((n_local_node, n_local_node, 3))[:, :, :-1]
+
+    if sim.element == "mini":
+        # eval bubble derivatives at nodes
+        xi_eta = local_coords.reshape(n_local_node, 3)[:, :-1].T
+        bubble_dsf = np.c_[DPHI_DXI(*xi_eta), DPHI_DETA(*xi_eta)]
+        dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf[:, np.newaxis, :], axis=1)
+
+    for i in range(sim.n_elem):
+        idx_local_nodes = sim.elem_node_tags[i, :sim.n_local_node]
+        det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
+        for j, idx_node in enumerate(idx_local_nodes):  # don't evaluate at bubble node
+            dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
+            dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
+            l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
+            velocity_gradient[i, j, np.array([0, 1, 3, 4])] = np.array([l11, l12, l21, l22])
+    return
+
+
+def get_stress_boundary(sim: Simulation_2D, strain_full):
+    """
+    Compute the stress tensor on the boundary, and where tau_zero < tau
+    using the evaluation of the strain tensor at those nodes.
+    Generates a ListData for gmsh: a force vector at each node of every boundary line segment
+    """
+
+    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("")
+    n_edge, n_pts = edge_node_tags.shape
+
+    nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
+    shear_force = np.zeros((n_edge, n_pts, 2))
+    data = []
+
+    # Loop over the edges on the boundary
+    for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
+        # locate the element on which is the current edge (using neighbours: fast)
+        elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
+        elems_dst = sim.n2e_map[sim.n2e_st[dst]: sim.n2e_st[dst + 1]]
+        elem = np.intersect1d(elems_org, elems_dst)[0]  # always one and only one
+        edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
+
+        # Mask that indicates which nodes of the element are on the boundary edge
+        nodes_on_edge = np.in1d(sim.elem_node_tags[elem], edge_node_tags[i])
+        indices = np.arange(sim.nsf)[nodes_on_edge]
+        for j, elem_node_idx in enumerate(indices):
+            local_strain = strain_full[elem, elem_node_idx, [[0, 1], [3, 4]]]
+            local_norm = 2. * local_strain[0, 0]**2 + 2. * \
+                local_strain[1, 1]**2 + 4. * local_strain[1, 0]**2
+
+            # Shear is indefinite when the fluid is unyielded
+            local_strain = np.where(
+                local_norm > sim.tol_yield,
+                (sim.K + sim.tau_zero / local_norm) * 2. * local_strain,
+                0. * local_strain
+            )
+            shear_force[i, j] = np.dot(normal[i], local_strain)
+
+    data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3))
+    data[:, 0] = sim.coords[edge_node_tags[:, 0], 0]  # x coord node 1
+    data[:, 1] = sim.coords[edge_node_tags[:, 1], 0]  # x coord node 2
+    data[:, 2] = sim.coords[edge_node_tags[:, 0], 1]  # y coord node 1
+    data[:, 3] = sim.coords[edge_node_tags[:, 1], 1]  # y coord node 2
+    data[:, [6, 7, 9, 10, 12, 13]] = np.c_[
+        shear_force[:, 0, :], shear_force[:, 1, :], shear_force[:, 2, :]
+    ]
+
+    return n_edge, data
+
+
 def compute_streamfunction(sim: Simulation_2D, u_num):
 
     ###############################  -  Mass matrix  -  ###############################
@@ -212,8 +156,11 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     cols = cols.flatten()
     mass_matrices = mass_matrices.flatten()
 
+    # The streamfunction is defined up to a constant
+    # -> impose psi=0 at some arbitray location
     mass_matrices[rows == 0] = 0.
     mass_matrices[(rows == 0) & (cols == 0)] = 1.
+
     mass_matrix = csr_matrix((mass_matrices, (rows, cols)), shape=(sim.n_node, sim.n_node))
 
     #############################  -  Vorticity source  -  ############################
@@ -232,29 +179,12 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     rhs_vorticity = rhs_vorticity.toarray().flatten()
 
     #############################  -  Boundary source  -  #############################
-    # Pff... easier to deal with Dirichlet conditions
-    gmsh.model.mesh.createEdges()
-    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
-    edge_node_tags = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag)
-    edge_node_tags = np.array(edge_node_tags).astype(int) - 1
-    edge_node_tags = edge_node_tags.reshape((-1, n_pts))
-    n_edge = edge_node_tags.shape[0]
 
-    coords_org = sim.coords[edge_node_tags[:, 0]]
-    coords_dst = sim.coords[edge_node_tags[:, 1]]
-    length = np.linalg.norm(coords_dst - coords_org, axis=1)
-    tangent = -(coords_dst - coords_org) / length[:, None]
-
-    integral_rule = "Gauss" + str(2 * (sim.element == "mini") + 4 * (sim.element == "th"))
-    uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
-    ng_edge = len(weights_edge)
-    _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
-    sf_edge = np.array(sf).reshape((ng_edge, -1))
-
+    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("")
     edge_v = u_num[edge_node_tags]
     source_boundary = np.einsum(
         'g,ijn,gj,in,gk,i->ik',
-        weights_edge, edge_v, sf_edge, tangent, sf_edge, length / 2.
+        sim.weights_edge, edge_v, sim.sf_edge, tangent, sim.sf_edge, length / 2.
     )  # size (ne, nsf)
 
     source_boundary = source_boundary.flatten()
@@ -268,6 +198,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     rhs[0] = 0.
     psi = spsolve(mass_matrix, rhs)
 
+    # Nice node renumbering
     # from scipy.sparse.csgraph import reverse_cuthill_mckee
     # perm = reverse_cuthill_mckee(mass_matrix, symmetric_mode=True)
     # plt.spy(mass_matrix.todense()[np.ix_(perm, perm)])
@@ -295,63 +226,6 @@ def add_streamfunction(sim: Simulation_2D, u_num):
     gmsh.view.option.set_number(tag_psi, "ColormapInvert", 1)
 
     return [tag_psi]
-
-
-def add_streamlines(sim: Simulation_2D, u_num, tag_v):
-
-    # option_names = ['View', 'X0', 'Y0', 'X1', 'Y1', 'DT', 'NumPointsU', 'MaxIter']
-    option_names = [
-        'X0', 'Y0', 'X1', 'Y1', 'X2', 'Y2',
-        'NumPointsU', 'NumPointsV',
-        'DT', 'MaxIter'
-    ]
-
-    if sim.model_name == "bfs":
-        option_values_list = [
-            [0, 0., 0., 0., 1., 0.2, 20, 500],
-            [0, 1., -0.5, 1.1, -0.4, 2., 5, 500],
-            [0, 1.005, -0.05, 1.06, -0.05, 0.5, 5, 500]
-        ]
-    elif sim.model_name == "cavity":
-        option_values_list = [
-            [0, 0.5, -0.25, 0.5, -0.9, 0.1, 20, 400],
-            # [0, 1., -1., 0.97, -0.97, .5, 5, 5000],
-        ]
-    elif sim.model_name == "opencavity":
-        option_values_list = [
-            # [0, 0., -0.01, 0., -1./3., 0.1, 20, 200],
-            # [0, 0., -1./3., 0.4, -1./3., 0.1, 20, 400],
-            [0.02, -0.02, 0.02, -0.98, 0.98, -0.02, 20, 20, 0.01, 100],
-        ]
-    elif sim.model_name in ["cylinder", "rectangle"]:
-        option_values_list = [
-            [0, 0., -0.95, 0., 0.95, 0.1, 30, 400],
-        ]
-    else:
-        return
-
-    tag_speed = gmsh.view.add("speed", tag=-1)
-    gmsh.view.addHomogeneousModelData(
-        tag_speed, 0, sim.model_name, "NodeData",
-        sim.node_tags + 1, np.linalg.norm(u_num, axis=1), numComponents=1
-    )
-    gmsh.view.option.set_number(tag_speed, "Visible", 0)
-
-    tags_streamlines = []
-    option_names += ['View', 'OtherView']
-
-    for option_values in option_values_list:
-
-        option_values += [tag_v - 1, tag_speed - 1]
-        for option_name, option_value in zip(option_names, option_values):
-            gmsh.plugin.set_number('StreamLines', option=option_name, value=option_value)
-
-        tag_streamlines = gmsh.plugin.run('StreamLines')
-        gmsh.view.option.set_number(tag_streamlines, "TimeStep", -1)
-        gmsh.view.option.set_number(tag_streamlines, "ShowScale", 1)
-        tags_streamlines += [tag_streamlines]
-
-    return tags_streamlines
 
 
 def add_unstrained_zone(sim: Simulation_2D, t_num):
@@ -592,7 +466,8 @@ def add_reconstruction(sim: Simulation_2D, extra):
     gmsh.view.option.setNumber(view_avg_rec, 'RangeType', 2)
     gmsh.view.option.setNumber(view_avg_rec, "CustomMin", 0.)
     gmsh.view.option.setNumber(view_avg_rec, "CustomMax", 0.)
-    gmsh.view.option.setNumber(view_avg_rec, "LineWidth", 10.)
+    gmsh.view.option.setNumber(view_avg_rec, "LineWidth", 2.)
+    gmsh.view.option.setNumber(view_avg_rec, "ColormapNumber", 21)
 
     # gmsh.view.option.setNumber(view_avg_rec, 'PointSize', 7.5)
     # gmsh.view.option.setNumber(view_avg_rec, 'Boundary', 3)
@@ -646,7 +521,36 @@ def add_gauss_points(sim: Simulation_2D, t_num):
     return [view_gauss_1, view_gauss_2]
 
 
-def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=True):
+def add_exact_interface(sim: Simulation_2D):
+    if (sim.tau_zero < sim.tol_yield) or (sim.model_name not in ["rectangle", "rectanglerot"]):
+        return
+
+    view_interface = gmsh.view.add("Exact interface", tag=sim.tag)
+    sim.tag += 1
+
+    beta = np.pi / 6. * (sim.model_name == "rectanglerot")
+    rot_matrix = np.array([
+        [np.cos(beta), -np.sin(beta)],
+        [np.sin(beta), np.cos(beta)]]
+    )
+    length = 2.  # hardcoded, but (max-min) not valid when rotated
+    yi = sim.tau_zero / 1.  # hardcoded, bc should otherwise compute dp/dx when Neumann
+    pts = np.c_[[0., yi], [length, yi], [0., -yi], [length, -yi]]
+    pts = np.dot(rot_matrix, pts).T
+    data = [
+        pts[0, 0], pts[1, 0], pts[0, 1], pts[1, 1], 0., 0., 0., 0.,
+        pts[2, 0], pts[3, 0], pts[2, 1], pts[3, 1], 0., 0., 0., 0.,
+    ]
+    gmsh.view.addListData(tag=view_interface, dataType="SL", numEle=2, data=data)
+    gmsh.view.option.setNumber(view_interface, 'ShowScale', 0)
+    gmsh.view.option.setNumber(view_interface, 'LineWidth', 5.)
+    gmsh.view.option.setNumber(view_interface, 'ColormapAlpha', 0.75)
+    gmsh.view.option.setNumber(view_interface, 'ColormapNumber', 23)
+
+    return [view_interface]
+
+
+def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
 
     gmsh.fltk.initialize()
 
@@ -654,7 +558,9 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
     strain_tensor = np.zeros((sim.n_elem, sim.n_local_node, 9))
     compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) matrix
 
-    if sim.degree == 3:  # remove bubble stuff
+    if sim.element == "mini":  # remove bubble stuff
+        dsf_rmv = sim.dv_shape_functions_at_v[:, -1, :]
+        elem_node_tags_rmv = sim.elem_node_tags[:, -1]
         sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
         sim.elem_node_tags = sim.elem_node_tags[:, :-1]
         u_num = u_num[:sim.n_node]
@@ -674,6 +580,9 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
         tag_all_steps = gmsh.view.addAlias(tags_reconstructed[0], copyOptions=True, tag=sim.tag)
         gmsh.view.remove(tags_reconstructed[0])
         tags_invisible += [tag_all_steps]
+        sim.tag += 1
+    
+    tags_exact_interface = add_exact_interface(sim)
 
     for tag in tags_invisible:
         gmsh.view.option.setNumber(tag, "Visible", 0)
@@ -692,30 +601,11 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None, run=Tr
     #     gmsh.plugin.set_number('CutParametric', option="View", value=1)
     #     gmsh.plugin.run('CutParametric')
 
-    if run:
-        gmsh.fltk.run()
-
+    gmsh.fltk.run()
     gmsh.fltk.finalize()
-    return
 
-
-def plot_solution_2D_matplotlib(u_num, sim: Simulation_2D):
-
-    fig, ax = plt.subplots(1, 1, figsize=(10., 6.), constrained_layout=True)
-
-    n_elem, n_node_per_elem = sim.elem_node_tags.shape
-    coords = sim.coords  # size (n_nodes, 2)
-
-    triang = mpl_tri.Triangulation(sim.coords[:, 0], sim.coords[:, 1], sim.elem_node_tags[:, :3])
-    tricontourset = ax.tricontourf(triang, u_num[:sim.n_node, 0])
-    ax.triplot(triang, 'ko-', alpha=0.5)
-    _ = fig.colorbar(tricontourset)
-
-    ax.quiver(coords[:, 0], coords[:, 1], u_num[:sim.n_node, 0], u_num[:sim.n_node, 1],
-              angles='xy', scale_units='xy', scale=5)
-    # ax.quiver(centers[:, 0], centers[:, 1], u_num[sim.n_node:, 0], u_num[sim.n_node:, 1],
-    #  color='C2', angles='xy', scale_units='xy', scale=5)
-
-    plt.show()
+    if sim.element == "mini":  # reset as it was
+        sim.dv_shape_functions_at_v = np.insert(sim.dv_shape_functions_at_v, 3, dsf_rmv, axis=1)
+        sim.elem_node_tags = np.c_[sim.elem_node_tags, elem_node_tags_rmv]
 
     return

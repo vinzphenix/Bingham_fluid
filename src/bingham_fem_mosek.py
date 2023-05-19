@@ -9,29 +9,6 @@ def streamprinter(text):
     sys.stdout.flush()
 
 
-def get_edge_node_tags(sim: Simulation_2D):
-
-    line_tag, n_pts = (1, 2) if sim.element == "mini" else (8, 3)
-
-    dim_tags_physical = gmsh.model.getPhysicalGroups(dim=1)
-    physical_tag_neumann = ""
-    for (dim, tag) in dim_tags_physical:
-        name = gmsh.model.getPhysicalName(dim, tag)
-        if name == "neumann":
-            physical_tag_neumann = tag
-
-    gmsh.model.mesh.createEdges()
-    edge_node_tags = np.zeros((0, n_pts), dtype=int)
-
-    tags = gmsh.model.getEntitiesForPhysicalGroup(1, physical_tag_neumann)
-    for tag in tags:
-        tmp = gmsh.model.mesh.getElementEdgeNodes(elementType=line_tag, tag=tag)
-        tmp = np.array(tmp).astype(int) - 1
-        edge_node_tags = np.r_[edge_node_tags, tmp.reshape((-1, n_pts))]
-    
-    return edge_node_tags, line_tag, n_pts
-
-
 def compute_bulk_source(sim: Simulation_2D):
     force = sim.f  # size = (2,)
     phi = sim.v_shape_functions
@@ -44,7 +21,6 @@ def compute_bulk_source(sim: Simulation_2D):
     cols = cols.flatten()
 
     vals = np.einsum("g,d,gj,i->ijd", sim.weights, force, phi, sim.determinants)
-    # vals[np.abs(vals) < 1e-14] = 0.
     vals = vals.flatten()
 
     cost_bulk = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))  # type: ignore
@@ -54,42 +30,50 @@ def compute_bulk_source(sim: Simulation_2D):
 
 
 def compute_boundary_source(sim: Simulation_2D):
-    edge_node_tags, line_tag, n_pts = get_edge_node_tags(sim)
-    n_edge = edge_node_tags.shape[0]
 
-    coords_org = sim.coords[edge_node_tags[:, 0]]
-    coords_dst = sim.coords[edge_node_tags[:, 1]]
-    length = np.linalg.norm(coords_dst - coords_org, axis=1)
-    tangent = (coords_dst - coords_org) / length[:, None]
-    tsfm = np.array([[0, 1], [-1, 0]])
-    normal = np.dot(tsfm[:, :], tangent[:, :].T).T
+    all_rows = np.zeros(0, dtype=int)
+    all_cols = np.zeros(0, dtype=int)
+    all_vals = np.zeros(0, dtype=float)
 
-    integral_rule = "Gauss" + str(1 * (sim.element == "mini") + 2 * (sim.element == "th"))
-    uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
-    ng_edge = len(weights_edge)
-    _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
-    sf_edge = np.array(sf).reshape((ng_edge, -1))
+    # def get_pressure(edge_node_normal):  # Can be better generalized
+    #     # normals[edge, node, direction]
+    #     return np.where(edge_node_normal[:, :, 0] <= 0., 1.5, -0.5)
+            # pressure = get_pressure(normal[:, None, :].repeat(n_pts, axis=1))
+            # normal_shear = np.zeros((n_edge, n_pts))
 
-    # values = sigma * n = [-p n + tau * n]
-    g = np.zeros((n_edge, n_pts, 2))
-    g[:, :, 0] = 2. - sim.coords[edge_node_tags, 0]  # p=2 at inflow, p=0 at outflow
-    # g[:, :, 1] = sim.coords[edge_node_tags, 1]
-    mask_outflow = sim.coords[edge_node_tags, 0] > 2. - 1e-3
-    g[mask_outflow] *= -1
+    for physical_name in ["setNormalForce", "setTangentForce"]:
 
-    bd_coefs = np.einsum(
-        'g,ijd,gj,i->ijd',
-        weights_edge, g, sf_edge, length / 2.
-    )  # size (nedge, nsf, 2)
-    bd_coefs = bd_coefs.flatten()
+        info = sim.get_edge_node_tags(physical_name)
+        edge_node_tags, length, tangent, normal = info
+        n_edge, n_pts = edge_node_tags.shape
+        if n_edge == 0:
+            continue
 
-    rows = np.zeros(2 * edge_node_tags.size, dtype=int)
-    cols = edge_node_tags[:, :, np.newaxis].repeat(2, axis=2)
-    cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # u_idxs
-    cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # v_idxs
-    cols = cols.flatten()
+        # values = sigma * n = [-p n + n * tau]
+        if physical_name == "setNormalForce":
+            gn = np.zeros((n_edge, n_pts))
+            sim.eval_gn(sim.coords[edge_node_tags], gn)
+            g_vector = np.einsum("ij,id->ijd", gn, normal)
+        else:  # setTangentForce
+            gt = np.zeros((n_edge, n_pts))
+            sim.eval_gt(sim.coords[edge_node_tags], gt)
+            g_vector = np.einsum("ij,id->ijd", gt, tangent)
+        
+        coefs = np.einsum(
+            'g,ijd,gj,i->ijd',
+            sim.weights_edge, g_vector, sim.sf_edge, length / 2.
+        )  # size (nedge, nsf, 2)
+        all_vals = np.r_[all_vals, coefs.flatten()]
 
-    cost_boundary = coo_matrix((bd_coefs, (rows, cols)), shape=(1, 2*sim.n_node))
+        rows = np.zeros(2 * edge_node_tags.size, dtype=int)
+        all_rows = np.r_[all_rows, rows]
+
+        cols = edge_node_tags[:, :, np.newaxis].repeat(2, axis=2)
+        cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # u_idxs
+        cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # v_idxs
+        all_cols = np.r_[all_cols, cols.flatten()]
+
+    cost_boundary = coo_matrix((all_vals, (all_rows, all_cols)), shape=(1, 2 * sim.n_node))
     cost_boundary.sum_duplicates()
     
     return cost_boundary.col, cost_boundary.data
@@ -124,23 +108,68 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
 
 def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
 
-    # Impose u = 0, where needed
-    idxs_zero_u = 2 * sim.nodes_zero_u + 0
-    task.putvarboundlistconst(idxs_zero_u, mosek.boundkey.fx, 0., 0.)
+    # def get_v_normal(coords):  # (n_edge, n_pts, 2)
+    #     vn = np.zeros((n_edge, n_pts))
+        
+    #     if sim.model_name in ["rectangle", "rectangle_rot"]:
+    #         beta = 0.
+    #         rot_matrix = np.array([[np.cos(beta), np.sin(beta)], [-np.sin(beta), np.cos(beta)]])
+    #         rot_coords = np.einsum("mn,ijn->ijm", rot_matrix, coords)
+    #         mask_inflow = np.abs(rot_coords[:, :, 0] - 0.) <= 1.e-5
+    #         vn[mask_inflow] = -(0.125 - 0.5 * rot_coords[mask_inflow, 1] ** 2)
+        
+    #     return vn
 
-    # Impose v = 0, where needed
-    idxs_zero_v = 2 * sim.nodes_zero_v + 1
-    task.putvarboundlistconst(idxs_zero_v, mosek.boundkey.fx, 0., 0.)
+    # def get_v_tangent(coords):  # (n_edge, n_pts, 2)
 
-    # Impose u = ..., where needed
-    idxs_with_u = 2 * sim.nodes_with_u + 0
-    bound_key_var = np.full(idxs_with_u.size, mosek.boundkey.fx)
-    # bound_value = 1. + 0. * sim.coords[sim.nodes_with_u, 0]
-    # bound_value = np.sin(np.pi * sim.coords[sim.nodes_with_u, 0] / 1.)**2
-    bound_value = (0.25 - sim.coords[sim.nodes_with_u, 1] ** 2) / 2.
-    task.putvarboundlist(idxs_with_u, bound_key_var, bound_value, bound_value)
+    #     vn = np.zeros((n_edge, n_pts))
 
-    return
+    #     return 0. * coords[:, :, 0]
+
+    for physical_name in ["setTangentFlow", "setNormalFlow"]:
+        
+        info = sim.get_edge_node_tags(physical_name)
+        edge_node_tags, length, tangent, normal = info
+        n_edge, n_pts = edge_node_tags.shape
+        if n_edge == 0:
+            continue
+            
+        # renumber rows from '0' to 'nb of unique nodes' in 'edge_node_tags'
+        rows = edge_node_tags[:, :, None].repeat(2, axis=2).flatten()
+        _, rows = np.unique(rows, return_inverse=True)
+
+        n_const = np.amax(rows) + 1  # number of constraints (unique nodes)
+        if n_const != np.unique(edge_node_tags.flatten()).size:
+            raise ValueError("Number of boundary constraints mismatch")
+
+        cols = edge_node_tags[:, :, None].repeat(2, axis=2)
+        cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # idxs u
+        cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # idxs v
+        cols = cols.flatten()
+
+        if physical_name == "setNormalFlow":            
+            speed = np.zeros((n_edge, n_pts))
+            sim.eval_vn(sim.coords[edge_node_tags], speed)
+            coefs = normal[:, None, :].repeat(n_pts, axis=1)
+        else:            
+            speed = np.zeros((n_edge, n_pts))
+            sim.eval_vt(sim.coords[edge_node_tags], speed)
+            coefs = tangent[:, None, :].repeat(n_pts, axis=1)
+
+        rhs = coo_matrix((speed.flatten(), (rows[::2], 0 * cols[::2])), shape=(n_const, 1))
+        rhs.sum_duplicates()
+
+        coefs = coo_matrix((coefs.flatten(), (rows, cols)), shape=(n_const, sim.n_node))
+        coefs.sum_duplicates()
+
+        row_start = task.getnumcon()
+        bkc = np.full(n_const, mosek.boundkey.fx)
+
+        task.appendcons(n_const)
+        task.putaijlist(coefs.row + row_start, coefs.col, coefs.data)
+        task.putconboundlist(rhs.row + row_start, bkc, rhs.data, rhs.data)
+    
+    return task.getnumcon()
 
 
 def get_dphi(sim: Simulation_2D, at_v):
@@ -246,13 +275,15 @@ def impose_divergence_free(sim: Simulation_2D, task: mosek.Task, strong: bool):
     res = set_strong_divergence_free(sim) if strong else set_weak_divergence_free(sim)
     rows, cols, vals, num_con = res
 
+    row_start = task.getnumcon()
+
     # Append 'numcon' empty constraints.
     task.appendcons(num_con)
-    task.putaijlist(rows, cols, vals)
-    task.putconboundsliceconst(0, num_con, mosek.boundkey.fx, 0., 0.)
+    task.putaijlist(rows + row_start, cols, vals)
+    task.putconboundsliceconst(row_start, num_con + row_start, mosek.boundkey.fx, 0., 0.)
     # task.putatruncatetol(1e-14)
 
-    sim.tmp = [rows, cols, vals]
+    # sim.tmp = [rows, cols, vals]
     return
 
 
@@ -374,12 +405,13 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         # Build the problem
         start_build_time = perf_counter()
         set_objective(sim, task)
-        set_boundary_conditions(sim, task)
+        n_bc = set_boundary_conditions(sim, task)
         impose_divergence_free(sim, task, strong)
         impose_conic_constraints(sim, task)
         end_build_time = perf_counter()
 
         # set solver options
+        task.putatruncatetol(1e-12)
         task.putintparam(mosek.iparam.num_threads, 4)
         task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas, 1.e-12)
         # task.putdouparam(mosek.dparam.intpnt_co_tol_pfeas, 1.e-12)
@@ -400,7 +432,8 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         print(f"{p_cost - (-1./12.):.3e}")
         # print(max_d_viol_var, max_p_viol_acc)
 
-        p_num = np.array(task.gety(mosek.soltype.itr))
+        i_start, i_end = n_bc, task.getnumcon()
+        p_num = np.array(task.getyslice(mosek.soltype.itr, i_start, i_end))
 
         i_start, i_end = 0, sim.n_velocity_var
         u_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))

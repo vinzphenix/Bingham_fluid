@@ -50,6 +50,30 @@ def get_analytical_poiseuille(sim: Simulation_2D):
     return np.c_[U_inf * u_analytical, np.zeros_like(u_analytical)]
 
 
+def check_incompressibility(k):
+    s: float = 0.
+    for elem in sim.n2e_map[sim.n2e_st[k]: sim.n2e_st[k+1]]:
+        loc_k = np.argwhere(sim.elem_node_tags[elem, :3] == k)[0][0]
+        print("k = ", loc_k)
+        local_nodes = sim.elem_node_tags[elem]
+        sub_s = 0.
+        for g, wg in enumerate(sim.weights_q):
+            dudx = 0.
+            dvdy = 0.
+            dphi = np.dot(sim.dv_shape_functions_at_q[g], sim.inverse_jacobians[elem]/sim.determinants[elem])
+            for j, node in enumerate(local_nodes):
+                dudx += u_field[node, 0] * dphi[j, 0]
+                dvdy += u_field[node, 1] * dphi[j, 1]
+                # print(f"u[{node:3d}] = {u_field[node, 0]:.3f}")
+            tmp = wg * sim.q_shape_functions[g, loc_k] * (dudx + dvdy) * sim.determinants[elem]
+            s += tmp
+            tmp = (dudx + dvdy)
+            sub_s += tmp
+            print(tmp)
+    print("s = ", s)
+    return
+
+
 def dummy():
     u_nodes = np.zeros((sim.n_node, 2))
     u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
@@ -86,7 +110,7 @@ if __name__ == "__main__":
     
     beta = np.sin(0.)
     parameters = dict(
-        K=1., tau_zero=0.0, f=[0*np.cos(beta), 0*np.sin(beta)],
+        K=1., tau_zero=0., f=[0*np.cos(beta), 0*np.sin(beta)],
         element="th", model_name="rectanglerot"
     )
 
@@ -105,30 +129,7 @@ if __name__ == "__main__":
     elif mode == 2:  # Solve the problem: ITERATE
         res = solve_interface_tracking(sim, max_it=5, tol_delta=1.e-3, deg=1, strong=False)
         u_field, p_field, d_field = res
-
-        k = 0
-        s: float = 0.
-        for elem in sim.n2e_map[sim.n2e_st[k]: sim.n2e_st[k+1]]:
-            loc_k = np.argwhere(sim.elem_node_tags[elem, :3] == k)[0][0]
-            print("k = ", loc_k)
-            local_nodes = sim.elem_node_tags[elem]
-            sub_s = 0.
-            for g, wg in enumerate(sim.weights_q):
-                dudx = 0.
-                dvdy = 0.
-                dphi = np.dot(sim.dv_shape_functions_at_q[g], sim.inverse_jacobians[elem]/sim.determinants[elem])
-                for j, node in enumerate(local_nodes):
-                    dudx += u_field[node, 0] * dphi[j, 0]
-                    dvdy += u_field[node, 1] * dphi[j, 1]
-                    # print(f"u[{node:3d}] = {u_field[node, 0]:.3f}")
-                tmp = wg * sim.q_shape_functions[g, loc_k] * (dudx + dvdy) * sim.determinants[elem]
-                s += tmp
-                tmp = (dudx + dvdy)
-                sub_s += tmp
-                print(tmp)
-        print("s = ", s)
-
-        sim.save_solution(u_field, p_field, d_field, model_variant=f'bcGood')
+        # sim.save_solution(u_field, p_field, d_field, model_variant=f'bcGood')
 
     elif mode == 3:  # Load solution from disk
         model, variant = "rectanglerot", "bcBad"

@@ -9,6 +9,8 @@ import mosek
 from tqdm import tqdm
 from time import perf_counter
 from bingham_1D_run import Simulation_1D, plot_solution_1D
+from bingham_boundary_conditions import *
+
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
@@ -54,9 +56,8 @@ class Simulation_2D:
         self.n_elem, self.nsf = self.elem_node_tags.shape  # takes extra bubble into account
 
         res = self.get_nodes_info()
-        self.node_tags, self.coords = res[0:2]
-        self.nodes_zero_u, self.nodes_zero_v, self.nodes_with_u = res[2:5]
-        self.nodes_singular_p, self.nodes_corner, self.nodes_boundary, self.nodes_cut = res[5:]
+        self.node_tags, self.coords, self.nodes_singular_p = res[0:3]
+        self.nodes_corner, self.nodes_boundary, self.nodes_cut = res[3:]
         self.n_node = len(self.node_tags)
 
         if self.element == "mini":  # Add the index of bubble nodes
@@ -76,6 +77,9 @@ class Simulation_2D:
         self.primary_nodes = self.get_primary_nodes()
         # self.nodes_singular_p = np.intersect1d(self.nodes_singular_p, self.primary_nodes)
 
+        self.line_tag, self.weights_edge, self.sf_edge = self.get_edge_info()
+        self.ng_edge, self.nsf_edge = self.sf_edge.shape
+
         self.n2e_map, self.n2e_st = self.get_node_elem_map()
         self.n2n_map, self.n2n_st = self.get_node_node_map()
 
@@ -83,6 +87,8 @@ class Simulation_2D:
         self.n_velocity_var = 2 * (self.n_node + self.n_elem * (self.element == "mini"))
         self.n_bound_var = self.ng_all + self.ng_all * (self.tau_zero > 0.)
         self.n_var = self.n_velocity_var + self.n_bound_var
+
+        self.eval_vn, self.eval_vt, self.eval_gn, self.eval_gt = self.bind_bc_functions()
 
         return
 
@@ -113,41 +119,18 @@ class Simulation_2D:
         node_tags = np.array(node_tags) - 1
         coords = np.array(coords).reshape((-1, 3))[:, :-1]
 
-        # bd_nodes_01, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=1)  # zero u
-        # bd_nodes_02, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=2)  # zero v
-        # bd_nodes_03, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=3)  # with u
-        bd_nodes_05, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=5)  # inf p
-
-        bd_nodes_11, _  = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=1)  # zero u
-        bd_nodes_12, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=2)  # zero v
-        bd_nodes_13, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=3)  # with u
-
-        nodes_zero_u = np.array(bd_nodes_11).astype(int) - 1
-        nodes_zero_v = np.array(bd_nodes_12).astype(int) - 1
-        nodes_with_u = np.array(bd_nodes_13).astype(int) - 1
-        
-        # Remove nodes both u = 0, u != 0
-        nodes_zero_u = np.setdiff1d(nodes_zero_u, nodes_with_u)
-
-        corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
         bd_nodes, _, _ = gmsh.model.mesh.getNodes(dim=1)
+        corner_nodes, _, _ = gmsh.model.mesh.getNodes(dim=0)
         cut_nodes, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=1, tag=4)
+        nodes_singular_p, _ = gmsh.model.mesh.getNodesForPhysicalGroup(dim=0, tag=5)
 
-        corner_nodes = np.array(corner_nodes).astype(int) - 1
         bd_nodes = np.array(bd_nodes).astype(int) - 1
+        corner_nodes = np.array(corner_nodes).astype(int) - 1
         cut_nodes = np.array(cut_nodes).astype(int) - 1
+        nodes_singular_p = np.array(nodes_singular_p).astype(int) - 1
+        nodes_singular_p = np.array([], dtype=int)
 
-        # Handle nodes where incompressibility is not imposed
-        nodes_singular_p = np.array(bd_nodes_05).astype(int) - 1
-        # nodes_singular_p = np.r_[nodes_zero_u, nodes_zero_v, nodes_with_u]
-        # nodes_singular_p = np.union1d(corner_nodes, bd_nodes)
-        # nodes_singular_p = corner_nodes
-
-        return (
-            node_tags, coords, 
-            nodes_zero_u, nodes_zero_v, nodes_with_u, 
-            nodes_singular_p, corner_nodes, bd_nodes, cut_nodes
-        )
+        return node_tags, coords, nodes_singular_p, corner_nodes, bd_nodes, cut_nodes
 
     def get_shape_fcts_info(self):
         n_local_node_v = self.n_local_node
@@ -313,6 +296,62 @@ class Simulation_2D:
             gmsh.model.mesh.setNode(node + 1, new_coords[node], [0., 0.])
         return
 
+
+    def get_edge_info(self):
+        line_tag = 1 if self.element == "mini" else 8
+        integral_rule = "Gauss" + str(1 * (self.element == "mini") + 2 * (self.element == "th"))
+        uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
+        ng_edge = len(weights_edge)
+        _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
+        sf_edge = np.array(sf).reshape((ng_edge, -1))
+        n_sf_edge = sf_edge.shape[1]
+        return line_tag, weights_edge, sf_edge
+
+
+    def get_edge_node_tags(self, physical_name):
+        gmsh.model.mesh.createEdges()
+        edge_node_tags = np.zeros((0, self.nsf_edge), dtype=int)
+
+        if physical_name == "":
+            tags = [-1]
+        else:
+            dim_tags_physical = gmsh.model.getPhysicalGroups(dim=1)
+            physical_tag = -1
+            for (dim, tag) in dim_tags_physical:
+                name = gmsh.model.getPhysicalName(dim, tag)
+                if name == physical_name:
+                    physical_tag = tag
+            if physical_tag == -1:
+                return np.zeros((0, 0)), *[None] * 3
+            else:
+                tags = gmsh.model.getEntitiesForPhysicalGroup(1, physical_tag)
+        
+        for tag in tags:
+            tmp = gmsh.model.mesh.getElementEdgeNodes(elementType=self.line_tag, tag=tag)
+            tmp = np.array(tmp).astype(int) - 1
+            edge_node_tags = np.r_[edge_node_tags, tmp.reshape((-1, self.nsf_edge))]
+        
+        coords_org = self.coords[edge_node_tags[:, 0]]
+        coords_dst = self.coords[edge_node_tags[:, 1]]
+        length = np.linalg.norm(coords_dst - coords_org, axis=1)
+        tangent = (coords_dst - coords_org) / length[:, None]
+        tsfm = np.array([[0, 1], [-1, 0]])
+        normal = np.dot(tsfm[:, :], tangent[:, :].T).T
+
+        return edge_node_tags, length, tangent, normal
+
+    def bind_bc_functions(self):
+        if self.model_name in ["rectangle", "rectanglerot"]:
+            return vn_poiseuille, vt_poiseuille, gn_poiseuille, gt_poiseuille
+        elif self.model_name in ["cavity"]:
+            return vn_cavity, vt_cavity, gn_cavity, gt_cavity
+        elif self.model_name in ["cylinder"]:
+            return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder
+        elif self.model_name in ["opencavity"]:
+            return vn_opencavity, vt_opencavity, gn_opencavity, gt_opencavity
+        else:
+            warning_msg = f"Boundary conditions not yet implemented for model '{self.model_name}'"
+            raise ValueError(warning_msg)
 
     def save_solution(self, u_num, p_num, t_num, model_variant):
         

@@ -630,6 +630,9 @@ def main():
         print(li, end=' ')
     print("")
 
+    # tmp = np.c_[coefs_mat.row, coefs_mat.col, coefs_mat.data]
+    # idxs_sort = np.lexsort((tmp[:, 0], tmp[:, 1]))
+
 if __name__ == "__main__":
 
     # main1()
@@ -639,3 +642,5 @@ if __name__ == "__main__":
     # main5()
     # main6()
     main()
+
+
