@@ -633,6 +633,27 @@ def main():
     # tmp = np.c_[coefs_mat.row, coefs_mat.col, coefs_mat.data]
     # idxs_sort = np.lexsort((tmp[:, 0], tmp[:, 1]))
 
+    # Express the strain tensor in the reference frame of the local flow direction
+    # rot_matrix = np.empty((sim.n_elem, sim.n_local_node, 2, 2))
+    # rot_matrix[:, :, 0, 0] = +u_num[sim.elem_node_tags, 0]
+    # rot_matrix[:, :, 0, 1] = +u_num[sim.elem_node_tags, 1]
+    # rot_matrix[:, :, 1, 0] = -u_num[sim.elem_node_tags, 1]
+    # rot_matrix[:, :, 1, 1] = +u_num[sim.elem_node_tags, 0]
+    # speed = np.linalg.norm(u_num[sim.elem_node_tags, :], axis=2)
+    # rot_matrix[speed > 1.e-6, :, :] /= speed[speed > 1.e-6, None, None]
+    # strain_tensor_ = np.empty((sim.n_elem, sim.n_local_node, 2, 2))
+    # strain_tensor_[:, :, 0, 0] = strain_tensor[:, :, 0]
+    # strain_tensor_[:, :, 0, 1] = strain_tensor[:, :, 1]
+    # strain_tensor_[:, :, 1, 0] = strain_tensor[:, :, 3]
+    # strain_tensor_[:, :, 1, 1] = strain_tensor[:, :, 4]
+    # strain_tensor_ = np.einsum("ijmn,ijno,ijpo->ijmp", rot_matrix, strain_tensor_, rot_matrix)
+    # strain_tensor[:, :, 0] = strain_tensor_[:, :, 0, 0]
+    # strain_tensor[:, :, 1] = strain_tensor_[:, :, 0, 1]
+    # strain_tensor[:, :, 3] = strain_tensor_[:, :, 1, 0]
+    # strain_tensor[:, :, 4] = strain_tensor_[:, :, 1, 1]
+
+
+
 if __name__ == "__main__":
 
     # main1()

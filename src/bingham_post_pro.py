@@ -184,7 +184,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     edge_v = u_num[edge_node_tags]
     source_boundary = np.einsum(
         'g,ijn,gj,in,gk,i->ik',
-        sim.weights_edge, edge_v, sim.sf_edge, tangent, sim.sf_edge, length / 2.
+        sim.weights_edge, edge_v, sim.sf_edge, -tangent, sim.sf_edge, length / 2.
     )  # size (ne, nsf)
 
     source_boundary = source_boundary.flatten()
@@ -381,6 +381,8 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 def add_pressure_view(sim: Simulation_2D, p_num):
     if p_num.size == 0:
         return []
+    if sim.model_name not in ["rectangle", "rectanglerot"]:
+        p_num -= np.mean(p_num)
 
     weak_pressure_nodes = np.setdiff1d(sim.primary_nodes, sim.nodes_singular_p)
     tag_pressure = gmsh.view.add("Pressure", tag=sim.tag)
@@ -555,6 +557,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.fltk.initialize()
 
     strain_norm = np.mean(t_num, axis=1)  # filled with |2D| (cst / elem)
+    strain_norm = np.sqrt(strain_norm) if sim.tau_zero < sim.tol_yield else strain_norm
     strain_tensor = np.zeros((sim.n_elem, sim.n_local_node, 9))
     compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) matrix
 

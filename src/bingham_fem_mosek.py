@@ -108,24 +108,6 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
 
 def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
 
-    # def get_v_normal(coords):  # (n_edge, n_pts, 2)
-    #     vn = np.zeros((n_edge, n_pts))
-        
-    #     if sim.model_name in ["rectangle", "rectangle_rot"]:
-    #         beta = 0.
-    #         rot_matrix = np.array([[np.cos(beta), np.sin(beta)], [-np.sin(beta), np.cos(beta)]])
-    #         rot_coords = np.einsum("mn,ijn->ijm", rot_matrix, coords)
-    #         mask_inflow = np.abs(rot_coords[:, :, 0] - 0.) <= 1.e-5
-    #         vn[mask_inflow] = -(0.125 - 0.5 * rot_coords[mask_inflow, 1] ** 2)
-        
-    #     return vn
-
-    # def get_v_tangent(coords):  # (n_edge, n_pts, 2)
-
-    #     vn = np.zeros((n_edge, n_pts))
-
-    #     return 0. * coords[:, :, 0]
-
     for physical_name in ["setTangentFlow", "setNormalFlow"]:
         
         info = sim.get_edge_node_tags(physical_name)
@@ -135,17 +117,11 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
             continue
             
         # renumber rows from '0' to 'nb of unique nodes' in 'edge_node_tags'
-        rows = edge_node_tags[:, :, None].repeat(2, axis=2).flatten()
-        _, rows = np.unique(rows, return_inverse=True)
-
-        n_const = np.amax(rows) + 1  # number of constraints (unique nodes)
-        if n_const != np.unique(edge_node_tags.flatten()).size:
-            raise ValueError("Number of boundary constraints mismatch")
+        rows = edge_node_tags[:, :, None].repeat(2, axis=2)
 
         cols = edge_node_tags[:, :, None].repeat(2, axis=2)
         cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # idxs u
         cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # idxs v
-        cols = cols.flatten()
 
         if physical_name == "setNormalFlow":            
             speed = np.zeros((n_edge, n_pts))
@@ -156,6 +132,22 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
             sim.eval_vt(sim.coords[edge_node_tags], speed)
             coefs = tangent[:, None, :].repeat(n_pts, axis=1)
 
+        # Handle corners where the normal/tangent velocity is not well defined 
+        # Take into account only one of the two possible edges
+        mask_rmv = sim.get_idx_corner_to_rm(
+            sim.coords[edge_node_tags], 
+            normal[:, None, :].repeat(n_pts, axis=1)
+        )
+
+        rows = rows[~mask_rmv].flatten()
+        cols = cols[~mask_rmv].flatten()
+        coefs = coefs[~mask_rmv].flatten()
+        speed = speed[~mask_rmv].flatten()
+        _, rows = np.unique(rows, return_inverse=True)
+
+        # number of constraints (unique nodes, corners possibly removed)
+        n_const = np.amax(rows) + 1 
+
         rhs = coo_matrix((speed.flatten(), (rows[::2], 0 * cols[::2])), shape=(n_const, 1))
         rhs.sum_duplicates()
 
@@ -164,6 +156,8 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
 
         row_start = task.getnumcon()
         bkc = np.full(n_const, mosek.boundkey.fx)
+
+        mask = np.logical_or(coefs.col == 0, coefs.col == 1)
 
         task.appendcons(n_const)
         task.putaijlist(coefs.row + row_start, coefs.col, coefs.data)
