@@ -251,14 +251,14 @@ def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
     gmsh.finalize()
 
 
-def create_cavity(filename, elemSizeRatio, cut=True):
+def create_cavity(filename, elemSizeRatio, cut=True, size_field=False):
     gmsh.initialize()
     factory = gmsh.model.geo
     meshFact = gmsh.model.mesh
 
     width, height = 1., 1.
     lc = elemSizeRatio * width
-    refinement_factor_surface = 4.
+    refinement_factor_surface = 1. if size_field else 10.
 
     c = width / 2. if cut else width
 
@@ -320,6 +320,44 @@ def create_cavity(filename, elemSizeRatio, cut=True):
 
     factory.synchronize()
 
+    if (size_field) and (not cut):
+        # Set mesh size field
+        p_solid_lf = factory.addPoint(0.3, -0.28, 0.)
+        p_solid_rg = factory.addPoint(0.7, -0.28, 0.)
+        diag_lf = factory.addLine(p1, p_solid_lf)
+        diag_rg = factory.addLine(p4, p_solid_rg)
+        line_solid = factory.addLine(p_solid_lf, p_solid_rg)
+        factory.synchronize()
+
+        gmsh.model.mesh.field.add("Distance", tag=1)
+        gmsh.model.mesh.field.setNumbers(1, "CurvesList", [diag_lf, diag_rg, l4])
+        gmsh.model.mesh.field.setNumber(1, "Sampling", 100)
+
+        gmsh.model.mesh.field.add("Distance", tag=2)
+        gmsh.model.mesh.field.setNumbers(2, "PointsList", [p1, p4])
+        gmsh.model.mesh.field.setNumbers(2, "CurvesList", [line_solid])
+        gmsh.model.mesh.field.setNumber(2, "Sampling", 100)
+
+        gmsh.model.mesh.field.add("Threshold", 3)
+        gmsh.model.mesh.field.setNumber(3, "InField", 1)
+        gmsh.model.mesh.field.setNumber(3, "SizeMin", lc / 12)
+        gmsh.model.mesh.field.setNumber(3, "SizeMax", lc)
+        gmsh.model.mesh.field.setNumber(3, "DistMin", 0.05)
+        gmsh.model.mesh.field.setNumber(3, "DistMax", 0.10)
+
+        gmsh.model.mesh.field.add("Threshold", 4)
+        gmsh.model.mesh.field.setNumber(4, "InField", 2)
+        gmsh.model.mesh.field.setNumber(4, "SizeMin", lc / 8)
+        gmsh.model.mesh.field.setNumber(4, "SizeMax", lc)
+        gmsh.model.mesh.field.setNumber(4, "DistMin", 0.10)
+        gmsh.model.mesh.field.setNumber(4, "DistMax", 0.30)
+
+        gmsh.model.mesh.field.add("Min", 5)
+        gmsh.model.mesh.field.setNumbers(5, "FieldsList", [3, 4])
+        gmsh.model.mesh.field.setAsBackgroundMesh(5)
+        gmsh.option.setNumber("Mesh.Algorithm", 5)
+
+
     # Physical groups for boundary conditions
 
     lines_set_vn = lines_bd
@@ -345,6 +383,7 @@ def create_cavity(filename, elemSizeRatio, cut=True):
     # for si in srfs:
     #     meshFact.setTransfiniteSurface(si)
 
+    # gmsh.option.setNumber("Mesh.Algorithm", 5)
     meshFact.generate(2)
     gmsh.write(filename)
 
@@ -480,66 +519,6 @@ def create_backward_facing_step(filename, elemSizeRatio):
     return
 
 
-def create_pipe_v1(filename, elemSizeRatio, l1, l2, width, radius, theta):
-    gmsh.initialize()
-    gmsh.model.add("pipe")
-
-    r_in, r_out = radius, radius + width
-
-    rect1 = gmsh.model.occ.add_rectangle(0., 0., 0., l1, width)
-    rect2 = gmsh.model.occ.add_rectangle(l1, 0., 0., l2, width)
-    gmsh.model.occ.rotate([(2, rect2)], l1, -radius, 0., 0., 0., 1., -np.radians(theta))
-
-    inner_circle = gmsh.model.occ.add_disk(l1, -r_in, 0., r_in, r_in)
-    outer_circle = gmsh.model.occ.add_disk(l1, -r_in, 0., r_out, r_out)
-
-    tools = []
-    tools.append(gmsh.model.occ.add_rectangle(l1-r_out, -r_in, 0., r_out, r_out))
-    tools.append(gmsh.model.occ.add_rectangle(l1, -r_in, 0., r_out, r_out))
-    gmsh.model.occ.rotate([(2, tools[1])], l1, -radius, 0., 0., 0., 1., -np.radians(theta))
-    if theta < 90.:
-        tools.append(gmsh.model.occ.add_rectangle(l1-r_out, -r_in, 0., 2*r_out, -r_out))
-    elif theta < 180.:
-        tools.append(gmsh.model.occ.add_rectangle(l1-r_out, -r_in, 0., r_out, -r_out))
-    dim_tags_tool = [(2, tool) for tool in tools]
-    bent_section, _ = gmsh.model.occ.cut(
-        [(2, outer_circle)], 
-        [(2, inner_circle), *dim_tags_tool]
-    )
-
-    gmsh.model.occ.fuse(bent_section, [(2, rect1), (2, rect2)])
-    gmsh.model.occ.synchronize()
-
-    lines_bd = [i for i in range(4, 15)]
-    ln_in_out = [4, 6]
-    lines_set_vn = np.setdiff1d(lines_bd, ln_in_out)
-    lines_set_vt = lines_bd
-    lines_set_gn = np.setdiff1d(lines_bd, lines_set_vn)
-    lines_set_gt = np.setdiff1d(lines_bd, lines_set_vt)
-
-    gmsh.model.addPhysicalGroup(1, lines_set_vn, tag=1, name="setNormalFlow")
-    gmsh.model.addPhysicalGroup(1, lines_set_vt, tag=2, name="setTangentFlow")
-    gmsh.model.addPhysicalGroup(1, lines_set_gn, tag=3, name="setNormalForce")
-    gmsh.model.addPhysicalGroup(1, lines_set_gt, tag=4, name="setTangentForce")
-
-    gmsh.model.addPhysicalGroup(2, [4], tag=-1, name="bulk")
-
-    gmsh.model.mesh.setSize([(2, 4)], elemSizeRatio * width)
-    # for i in [3, 4, 5, 6]:
-    #     gmsh.model.mesh.setSize([(0, i)], elemSizeRatio * height)
-
-    gmsh.model.occ.synchronize()
-    gmsh.model.geo.synchronize()
-    gmsh.model.mesh.generate(2)
-
-    # gmsh.write(filename)
-
-    # display_elem_edge_node()
-    gmsh.fltk.run()
-    gmsh.finalize()
-    return
-
-
 def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
     gmsh.initialize()
     factory = gmsh.model.geo
@@ -624,7 +603,8 @@ if __name__ == "__main__":
     #                        elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=np.pi / 6.)
 
     # create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./30., radial=False, sharp=False)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False)
+    create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./12., cut=False, size_field=True)
+
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
-    create_pipe(path_to_dir + "pipe.msh", 1./20., l1=2., l2=1., width=1., radius=0.5, theta=120.)
+    # create_pipe(path_to_dir + "pipe.msh", 1./20., l1=2., l2=1., width=1., radius=0.5, theta=120.)

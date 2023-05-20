@@ -110,9 +110,9 @@ if __name__ == "__main__":
     
     # beta = np.sin(0.)
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectanglerot")
-    parameters = dict(K=1., tau_zero=0.3, f=[0., 0.], element="th", model_name="pipe")
+    # parameters = dict(K=1., tau_zero=0.3, f=[0., 0.], element="th", model_name="pipe")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="cylinder")
-    # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="cavity")
+    parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="opencavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
 
