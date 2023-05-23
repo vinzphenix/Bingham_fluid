@@ -82,9 +82,9 @@ def eval_velocity_strain(sim: Simulation_1D, y, u_num):
     return [u_dense.flatten(), *ys, *strains, *stresses]
 
 
-def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_aft, u_aft):
+def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, y_aft, u_aft, idxs_switch, coefs):
 
-    fs = (8., 4.)
+    fs = (8., 3.5)
     fig, axs = plt.subplots(1, 2, figsize=fs, constrained_layout=True, sharex='all', sharey='all')
 
     y_ana = np.array([-sim.H / 2., -sim.y_zero, 0., sim.y_zero, sim.H / 2.])
@@ -102,7 +102,7 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
         y_guess = -coef[0] / coef[1]
 
         y_min = y_guess if dir == 1 else y_bfr[max(i - 1, 0)]
-        y_max = y_bfr[min(i + 2, sim.n_node - 1)] if dir == 1 else y_guess
+        y_max = y_bfr[min(i + 2, sim.n_elem)] if dir == 1 else y_guess
         delta = (y_max - y_min) / 6.
         y_array = np.linspace(y_min - delta, y_max + delta, 2)  # straight line
         dudy_approx = np.dot(np.c_[np.ones(2), y_array], coef)
@@ -132,14 +132,16 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
     extra_label = r"" if sim.dimensions else r" / (h/2)"
     axs[0].set_ylabel(r"$y {:s}$".format(extra_label), fontsize=ftSz2)
     for ax, title_name in zip(axs, ['Before update', 'After update']):
-        extra_label = r"" if sim.dimensions else r"h / U_{\infty}"
-        ax.set_xlabel(r"${:s} \partial_y u $".format(extra_label), fontsize=ftSz2)
-        ax.set_title(title_name, fontsize=ftSz1)
+        if sim.iteration == 2:
+            extra_label = r"" if sim.dimensions else r"h / U_{\infty}"
+            ax.set_xlabel(r"${:s} \partial_y u $".format(extra_label), fontsize=ftSz2)
+        if sim.iteration == 1:
+            ax.set_title(title_name, fontsize=ftSz1)
         ax.legend(fontsize=ftSz3, loc="lower left")
         ax.grid(ls=':')
-    
+
     if sim.save:
-        path = "./figures/"
+        path = "../figures/"
         filename = f"res_P{sim.degree:d}_iteration_{sim.iteration:02d}"
         fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
     else:
@@ -147,7 +149,10 @@ def plot_reconstruction(sim: Simulation_1D, y_bfr, u_bfr, idxs_switch, coefs, y_
     return
 
 
-def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overview Poiseuille"):
+def plot_solution_1D(
+    sim: Simulation_1D, u_nodes, mini_display=False,
+    extra_name="", window="Overview Poiseuille"
+):
 
     u_num = u_nodes.copy()
 
@@ -170,11 +175,15 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
             this_y[:] /= sim.H / 2.
 
     # FIGURE
-    # plt.rcParams["text.usetex"] = sim.save
-    figsize = (9.5, 5.75) if sim.save else (12., 8.)
-    # fig, axs = plt.subplots(2, 3, figsize=figsize, sharey="all", num=window)
-    fig, axs = plt.subplots(1, 2, figsize=(8., 3.75), sharey="all", num=window)
-    axs = axs.reshape((1, 2))
+    if mini_display:
+        figsize, dims = (8., 3.75), (1, 2)
+    elif sim.save:
+        figsize, dims = (9.5, 5.75), (2, 3)
+    else:
+        figsize, dims = (12., 8.), (2, 3)
+    
+    fig, axs = plt.subplots(*dims, figsize=figsize, sharey="all", num=window)
+    axs = axs.reshape(dims)
 
     ax = axs[0, 0]
     extra_label = r"" if sim.dimensions else r"/ U_{\infty}"
@@ -195,35 +204,34 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
     ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
     ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')
 
-    """
-    ax = axs[0, 2]
-    extra_label = r"\tau_0" if sim.tau_zero > 0. else r"h \partial_x p"
-    extra_label = r"" if sim.dimensions else r"\:/\: {:s}".format(extra_label)
-    ax.set_xlabel(r"$|\tau_{{xy}}| {:s}$".format(extra_label), fontsize=ftSz2)
-    ax.set_title("Shear stress profile", fontsize=ftSz1)
-    ax.plot(tau_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
-    ax.plot(tau_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
-    ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
-    ax.plot(*make_step(tau_dense, y_dense, sim.plot_density+1), '-', ms=5, color='C1')
-    ax.plot(*make_step(tau_discrete, y_discrete, 2), 'o', ls="", ms=5, color='C1')
+    if not mini_display:
+        ax = axs[0, 2]
+        extra_label = r"\tau_0" if sim.tau_zero > 0. else r"h \partial_x p"
+        extra_label = r"" if sim.dimensions else r"\:/\: {:s}".format(extra_label)
+        ax.set_xlabel(r"$|\tau_{{xy}}| {:s}$".format(extra_label), fontsize=ftSz2)
+        ax.set_title("Shear stress profile", fontsize=ftSz1)
+        ax.plot(tau_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+        ax.plot(tau_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
+        ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
+        ax.plot(*make_step(tau_dense, y_dense, sim.plot_density+1), '-', ms=5, color='C1')
+        ax.plot(*make_step(tau_discrete, y_discrete, 2), 'o', ls="", ms=5, color='C1')
 
-    zipped = [axs[1, :]]
-    zipped += [[y_all[::1 + (sim.degree == 1)], y_gauss, y_gauss]]
-    zipped += [[u_ana_nodes[::1 + (sim.degree == 1)], du_ana_gauss, tau_ana_gauss]]
-    zipped += [[u_num, du_gauss, tau_gauss]]
-    zipped += [[u_ana_dense, du_ana_dense, tau_ana_dense]]
-    zipped += [[u_dense, du_dense, tau_dense]]
+        zipped = [axs[1, :]]
+        zipped += [[y_all[::1 + (sim.degree == 1)], y_gauss, y_gauss]]
+        zipped += [[u_ana_nodes[::1 + (sim.degree == 1)], du_ana_gauss, tau_ana_gauss]]
+        zipped += [[u_num, du_gauss, tau_gauss]]
+        zipped += [[u_ana_dense, du_ana_dense, tau_ana_dense]]
+        zipped += [[u_dense, du_dense, tau_dense]]
 
-    for ax, y_pts, phi_ana_pts, phi_pts, phi_ana_dense, phi_dense in zip(*zipped):
-        rel_error_nodes = (phi_pts - phi_ana_pts) / np.amax(np.abs(phi_ana_pts))
-        rel_error_dense = (phi_dense - phi_ana_dense) / np.amax(np.abs(phi_ana_dense))
-        ax.plot(rel_error_nodes, y_pts, marker="x", ls="", label="Error", color='red')
-        if (sim.degree == 2) and (ax==axs[1, 0]) and (1 == 0):
-            x_vals, y_vals = rel_error_dense, y_dense
-        else:
-            x_vals, y_vals = rel_error_nodes, y_pts
-        ax.plot(x_vals, y_vals, ls="-", color='red', alpha=al)
-    """
+        for ax, y_pts, phi_ana_pts, phi_pts, phi_ana_dense, phi_dense in zip(*zipped):
+            rel_error_nodes = (phi_pts - phi_ana_pts) / np.amax(np.abs(phi_ana_pts))
+            rel_error_dense = (phi_dense - phi_ana_dense) / np.amax(np.abs(phi_ana_dense))
+            ax.plot(rel_error_nodes, y_pts, marker="x", ls="", label="Error", color='red')
+            if (sim.degree == 2) and (ax==axs[1, 0]) and (1 == 0):
+                x_vals, y_vals = rel_error_dense, y_dense
+            else:
+                x_vals, y_vals = rel_error_nodes, y_pts
+            ax.plot(x_vals, y_vals, ls="-", color='red', alpha=al)
 
     for ax in axs.flatten():
         xmin, xmax = ax.get_xbound()
@@ -235,11 +243,13 @@ def plot_solution_1D(sim: Simulation_1D, u_nodes, extra_name="", window="Overvie
     for ax in axs[:, 0]:
         extra_label = r"" if sim.dimensions else r" / (h/2)"
         ax.set_ylabel(r"$y {:s}$".format(extra_label), fontsize=ftSz2)
-    # for ax, phi in zip(axs[1, :], [r'u', r'\partial_y u', r'\tau']):
-    #     y_pos = sim.H / 2. if sim.dimensions else 1.
-    #     # ax.vlines(0., -y_pos, y_pos, color='black', alpha=0.5)
-    #     ax.plot(np.zeros_like(y_discrete), y_discrete, '-_k', lw=1., alpha=0.5)
-    #     ax.set_xlabel(r"$({:s}^h - {:s}) / {:s}_{{max}}$".format(phi, phi, phi), fontsize=ftSz2)
+    if not mini_display:
+        for ax, phi in zip(axs[1, :], [r'u', r'\partial_y u', r'\tau']):
+            y_pos = sim.H / 2. if sim.dimensions else 1.
+            # ax.vlines(0., -y_pos, y_pos, color='black', alpha=0.5)
+            ax.plot(np.zeros_like(y_discrete), y_discrete, '-_k', lw=1., alpha=0.5)
+            xlabel = r"$({:s}^h - {:s}) / {:s}_{{max}}$".format(phi, phi, phi)
+            ax.set_xlabel(xlabel, fontsize=ftSz2)
 
     fig.tight_layout()
     if sim.save:

@@ -1,20 +1,30 @@
 \documentclass[11 pt]{report}
 \usepackage{structure}
 
-
-\title{Bingham fluids using X-MESH} % not definitive of course
+\title{{\Huge Numerical simulation of yield stress fluid flows with X-MESH}}
 \author{\textsc{DEGROOFF} Vincent}
 \date{\today}
 
 
 \begin{document}
  
+%\includepdf[pages=-]{front_page.pdf}
 \maketitle
 
+\setcounter{tocdepth}{1}
 \tableofcontents
 
 % FOR introduction
 %The flow characteristics of such materials are difficult to predict as they involve [...] solid and liquid regions that are generally impossible to locate a priori. CITE Coussot if used so  -->  use X-MESH
+
+% Index i: element
+% Index j: node
+% Index e: edge
+% Index g: gauss point
+
+\addcontentsline{toc}{chapter}{Introduction}
+\chapter*{Introduction}
+An introduction
 
 \chapter{Governing equations}
 
@@ -38,11 +48,11 @@ Throughout this study, we will consider low Reynolds numbers, i.e. flows that ar
     \begin{align}
         0 &= -\nabla p + \nabla \cdot \boldsymbol \tau(\uu) + \mathbf{f} &&\text{in} \; \Omega \label{eq:momentum} \\[2pt]
         0 &= \nabla \cdot \uu &&\text{in}\; \Omega \label{eq:mass}\\[6pt]
-        \uu &= \mathbf{U}_{D} &&\text{on}\; \Gamma_{D} \label{eq:Dirichlet}\\[2pt]
+        \uu &= \mathbf{U} &&\text{on}\; \Gamma_{D} \label{eq:Dirichlet}\\[2pt]
         \boldsymbol \sigma \cdot \nn &= \mathbf{g} &&\text{on}\; \Gamma_{N} \label{eq:Neumann}
     \end{align}
 \end{empheqboxed}
-where $\Gamma_{D}$ and $\Gamma_{N}$ refer to the partitions of $\partial \Omega$ where Dirichlet and Neumann boundary conditions are applied. $\uu_{D}$ and $\mathbf{g}$ are given beforehand. One could also decide to impose only the normal velocity along with the tangential stress, or the tangential velocity along with the normal stress, as will be explained in more detail in \cref{sec:boundary_conditions}.
+where $\Gamma_{D}$ and $\Gamma_{N}$ refer to the partitions of $\partial \Omega$ where Dirichlet and Neumann boundary conditions are applied. $\mathbf{U}$ and $\mathbf{g}$ are given beforehand. One could also decide to impose only the normal velocity along with the tangential stress, or the tangential velocity along with the normal stress, as will be explained in more detail in \cref{sec:boundary_conditions}.
 
 Before looking for a closure equation for the shear stress tensor, let us first recall the velocity gradient decomposition,
 \begin{empheqboxed}
@@ -61,9 +71,9 @@ To be exhaustive:
 
 \section{Constitutive equations of Bingham fluids}
 
-Newtonian fluid behavior is the most simple one can find in fluid mechanics because it assumes that the fluid deformation, or strain rate, is is directly proportional to the shear stress it undergoes. It is very accurate for many liquids and gases like air, water, oil, alcohol, glycerine, etc. However, this model cannot characterize a variety of well known substances from blood to toothpaste to ketchup to name a few.
+Newtonian fluid behavior is the most simple one can find in fluid mechanics because it assumes that the fluid deformation, or strain rate, is is directly proportional to the shear stress it undergoes. It is very accurate for many liquids and gases such as air, water, gasoline or alcohol, under normal conditions. However, this model cannot characterize a variety of well known substances from blood to toothpaste to ketchup to name a few.
 
-Such fluids can be described as Generalized Newtonian \cite{Geophysical}. This model extends Newtonian fluids with a nonlinear constitutive law between the stress $\boldsymbol\tau$ and strain rate $\gam$:
+Such fluids are much better described as \textit{generalized Newtonian} \cite{Geophysical}. This model extends Newtonian fluids with a nonlinear constitutive law between the stress $\boldsymbol\tau$ and strain rate $\gam$:
 \begin{equation}
     \boldsymbol\tau = \mu(\gam, T, \phi) \gam
     \label{eq:power-law}
@@ -77,7 +87,7 @@ where $\mu$, $T$ and $\phi$ respectively refer to the fluid viscosity, the tempe
     \end{alignedat}
 \end{equation}
 
-The first invariant is always zero when we deal with incompressible fluids since $\Tr(\gam) = 2 \nabla \cdot \vv$. The third invariant is always neglected because it is also zero for shearing flows -- $\vv = u(y)\mathbf{e}_1$ -- precisely those for which the theory was developed. The constitutive law was then later used to model more complex flows, but the absence of $I_3$ has persisted \cite{bird1987dynamics}.
+The first invariant is always zero when we deal with incompressible fluids since $\Tr(\gam) = 2 \nabla \cdot \vv$. The third invariant is always neglected because it is also zero for shearing flows in 3 dimensions -- $\vv = u(y)\mathbf{e}_1$ -- precisely those for which the theory was developed. The constitutive law was then later used to model more complex flows, but the absence of $I_3$ has persisted \cite{bird1987dynamics}.
 
 The simplest example of Generalized Newtonian fluids are the Power-law Fluids, that assume $\mu(\dot\gamma) = K \dot \gamma^{n-1}$, with the \textit{consistency} $K$ and \textit{index} $n$. This can already describe
 \begin{itemize}[label=---, topsep=0pt]
@@ -143,7 +153,8 @@ Those values are not universal. It is in fact hard to find unanimous parameters 
 
 The present study will focus on simple yield stress fluids. By simple yield stress fluids are meant those for which the \textbf{shear stress depends only} on the imposed \textbf{shear rate}, and not on time (thixotropic/rheopectic) or shear (elastic behavior) \cite{simpleyield}. Thixotropic fluids have the property that their viscosity \textit{under constant shear} decreases with time. Though less common, rheopectic are the exact opposite where viscosity increases with time. This history dependence is also called \textit{hysteresis}, and such fluids can thus have an hysteresis loop in their stress-strain diagram. 
 
-Furthermore, only Herschel-Bulkley fluids with index $n=1$ will be considered: these are the Bingham fluids. Let us then reformulate model \eqref{eq:herschel} for $n=1$, with $\dot\gamma$ defined in \eqref{eq:tensornorm}:
+% INTRODUCTION
+Furthermore, only Bingham fluids ($n=1$), will be considered hereafter. The equations of this model are indeed simpler to solve, but still provide solutions with the desired features that make them interesting to analyze with the X-MESH method. Let us then reformulate model \eqref{eq:herschel} for $n=1$, with $\dot\gamma$ defined in \eqref{eq:tensornorm}:
 \begin{empheqboxed}
     \begin{equation}
         \begin{aligned}
@@ -164,7 +175,7 @@ In order to solve \cref{eq:momentum,eq:mass} with the finite element method one 
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\Omega} \nabla \cdot (p\vv)} + {\color{red} \int_{\Omega} \nabla \cdot (\taub \cdot \vv) - \int_{\Omega}  \taub (\uu) : \nabla^\top \vv} + \int_{\Omega} \ff \cdot \vv\\
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv - \int_{\partial \Omega} p \vv \cdot \nn} + {\color{red} \int_{\partial\Omega} (\taub \cdot \vv) \cdot \nn - \int_{\Omega}  \taub (\uu) : \big(\mathbf{D}(\vv) + \mathbf{\Omega}(\vv)\big)^\top} + \int_{\Omega} \ff \cdot \vv \\
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \taub (\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + {\color{violet}\int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s}\\
-        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + {\color{violet}\int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s}
+        &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2K + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + {\color{violet}\int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s}
     \end{aligned}\label{eq:weak_formulation}
 \end{equation}
 that must hold $\forall \; \vv \in H^1(\Omega)^d$ such that $\vv = \mathbf{0} \text{ on } \Gamma_D$.
@@ -186,10 +197,10 @@ The velocity field $\uu$ solution of this weak formulation can also be found thr
 \begin{equation}
     \begin{aligned}
         W_{\textrm{internal}}(D_{ij}) &= \int_{0}^{D_{ij}} \sigma_{ij} \:\dd D_{ij}'\\
-        &= \int -p\delta_{ij} \:\dd D_{ij}' + \int 2\mu D_{ij}' \:\dd D_{ij}' + {\color{gray} 2} \int \frac{ \: \tau_0 D_{ij}'}{{\color{gray} 2} \sqrt{\frac{1}{2} D_{kl}'D_{kl}'}} \:\dd D_{ij}'\\
-        &= -p D_{ii} + \mu D_{ij} D_{ij} + {\color{gray} 2} \tau_0 \sqrt{\frac{1}{2} D_{ij} D_{ij}}\\
-        &= -p \nabla \cdot \uu + 2\mu \|\mathbf{D}\|^2 + 2\tau_0 \|\mathbf{D}\|\\
-        W_{\textrm{internal}}(\uu) &= -p \nabla \cdot \uu + \frac{\mu}{2} \|\gam(\uu)\|^2 + \tau_0 \|\gam(\uu)\|
+        &= \int -p\delta_{ij} \:\dd D_{ij}' + \int 2K D_{ij}' \:\dd D_{ij}' + {\color{gray} 2} \int \frac{ \: \tau_0 D_{ij}'}{{\color{gray} 2} \sqrt{\frac{1}{2} D_{kl}'D_{kl}'}} \:\dd D_{ij}'\\
+        &= -p D_{ii} + K D_{ij} D_{ij} + {\color{gray} 2} \tau_0 \sqrt{\frac{1}{2} D_{ij} D_{ij}}\\
+        &= -p \nabla \cdot \uu + 2K \|\mathbf{D}\|^2 + 2\tau_0 \|\mathbf{D}\|\\
+        W_{\textrm{internal}}(\uu) &= -p \nabla \cdot \uu + \frac{K}{2} \|\gam(\uu)\|^2 + \tau_0 \|\gam(\uu)\|
     \end{aligned}
     \label{eq:energy_density}
 \end{equation}
@@ -201,7 +212,7 @@ The total energy of the system $J$ is the work of internal forces diminished by 
 \begin{equation}
     \begin{aligned}
         \uu &= \argmin_{\vv \in \mathcal{V}} \mathcal{J}(\vv)\\[8pt]
-        \mathcal{J}(\vv) &= \frac{\mu}{2}\int_{\Omega} \|\gam(\vv)\|^2 \;\dd x + \tau_0 \int_{\Omega} \|\gam(\vv)\| \;\dd x - \int_{\Omega} \ff\cdot \vv \; \dd x - \int_{\Gamma_N} \mathbf{g} \cdot \vv \;\dd s\\[8pt]
+        \mathcal{J}(\vv) &= \frac{K}{2}\int_{\Omega} \|\gam(\vv)\|^2 \;\dd x + \tau_0 \int_{\Omega} \|\gam(\vv)\| \;\dd x - \int_{\Omega} \ff\cdot \vv \; \dd x - \int_{\Gamma_N} \mathbf{g} \cdot \vv \;\dd s\\[8pt]
         \mathcal{V} &= \{\vv \;\vert\; \nabla \cdot \vv = 0 \; \text{in} \; \Omega, \: \vv = \mathbf{u}_{D} \;\text{on}\; \Gamma_D \}
     \end{aligned}\label{eq:minimize}
 \end{equation}
@@ -212,12 +223,12 @@ In \cref{eq:energy_density}, we observe that the first term is the incompressibi
 We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$.
 
 \begin{align}
-    \mathcal{J}(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{\mu}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
+    \mathcal{J}(\uu + \epsilon \vv, p+\epsilon q) &= \int_{\Omega} \frac{K}{2} \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 + \tau_0  \|2\mathbf{D}(\uu + \epsilon \vv)\| \\
     &\qquad - (p + \epsilon q) \nabla \cdot (\uu + \epsilon \vv) - \mathbf{f}\cdot(\uu + \epsilon \vv) \: \dd \xx\\[8pt]
     \|2\mathbf{D}(\uu + \epsilon \vv)\|^2 &= \frac{1}{2} 2\mathbf{D}(\uu + \epsilon \vv) : 2\mathbf{D}(\uu + \epsilon \vv) \nonumber \\
     &= 2 \mathbf{D}(\uu):\mathbf{D}(\uu) + 4\epsilon \mathbf{D}(\uu):\mathbf{D}(\vv) + 2\epsilon^2 \mathbf{D}(\vv):\mathbf{D}(\vv)\\[8pt]
-    \left. \dv{\mathcal{J}(\uu + \epsilon \vv, p)}{\epsilon}\right\vert_{\epsilon=0} &= \int_{\Omega} \frac{\mu}{2}   4\mathbf{D}(\uu):\mathbf{D}(\vv) + \tau_0 \frac{4\mathbf{D}(\uu):\mathbf{D}(\vv)}{2\sqrt{2\mathbf{D}(\uu):\mathbf{D}(\uu)}} - p\nabla\cdot(\vv) - \mathbf{f}\cdot(\vv) \: \dd \xx\nonumber\\
-    &= \int_{\Omega} \left(2\mu + \frac{\tau_0}{\|\mathbf{D}(\uu)\|}\right) \mathbf{D}(\uu):\mathbf{D}(\vv) - p\nabla\cdot \vv - \mathbf{f} \cdot \vv \label{eq:gateau_1} \\[8pt]
+    \left. \dv{\mathcal{J}(\uu + \epsilon \vv, p)}{\epsilon}\right\vert_{\epsilon=0} &= \int_{\Omega} \frac{K}{2}   4\mathbf{D}(\uu):\mathbf{D}(\vv) + \tau_0 \frac{4\mathbf{D}(\uu):\mathbf{D}(\vv)}{2\sqrt{2\mathbf{D}(\uu):\mathbf{D}(\uu)}} - p\nabla\cdot(\vv) - \mathbf{f}\cdot(\vv) \: \dd \xx\nonumber\\
+    &= \int_{\Omega} \left(2K + \frac{\tau_0}{\|\mathbf{D}(\uu)\|}\right) \mathbf{D}(\uu):\mathbf{D}(\vv) - p\nabla\cdot \vv - \mathbf{f} \cdot \vv \label{eq:gateau_1} \\[8pt]
     \left. \dv{\mathcal{J}(\uu, p+\epsilon q)}{\epsilon}\right\vert_{\epsilon=0} &= -\int_{\Omega}q \nabla \cdot \uu  \label{eq:gateau_2}
 \end{align}
 
@@ -245,8 +256,8 @@ The expression of $\tau_{xy}$ can be obtained from the general expression of the
 \begin{align}
     \boldsymbol{\tau} &=
     \begin{pmatrix}
-        0 & \mu \partial_y u\\
-        \mu \partial_y u & 0\\
+        0 & K \partial_y u\\
+        K \partial_y u & 0\\
     \end{pmatrix} + \tau_0
     \begin{pmatrix}
         0 & 1\\
@@ -254,8 +265,8 @@ The expression of $\tau_{xy}$ can be obtained from the general expression of the
     \end{pmatrix} \sign(\partial_y u) \\[6pt] %& \text{if }\quad  \left|\partial_y u\right| > 0
     \implies \tau_{xy} &=
     \begin{cases}
-        \mu \partial_y u - \tau_0  \qquad y > y_0\\[3pt]
-        \mu \partial_y u + \tau_0  \qquad y < -y_0\\
+        K \partial_y u - \tau_0  \qquad y > y_0\\[3pt]
+        K \partial_y u + \tau_0  \qquad y < -y_0\\
     \end{cases} \label{eq:tau_xy_cases}
 \end{align}
 
@@ -268,21 +279,21 @@ In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state
 
 In the lower zone $[-\frac{h}{2}, -y_0]$, we find the velocity profile $u_3(y)$ by integration equations \eqref{eq:tau_xy} and \eqref{eq:tau_xy_cases}:
 \begin{align}
-    \int_{-\frac{h}{2}}^y \mu \pdv{u}{y} + \tau_0 &= \int_{-\frac{h}{2}}^y -f y\\
-    u_3(y) &= -\frac{\tau_0}{\mu} \left(\frac{h}{2}+y\right) + \frac{f}{2\mu} \, \left(\left(\frac{h}{2}\right)^2 - y^2\right)
+    \int_{-\frac{h}{2}}^y K \pdv{u}{y} + \tau_0 &= \int_{-\frac{h}{2}}^y -f y\\
+    u_3(y) &= -\frac{\tau_0}{K} \left(\frac{h}{2}+y\right) + \frac{f}{2K} \, \left(\left(\frac{h}{2}\right)^2 - y^2\right)
 \end{align}
 
 The continuity of the velocity field allows us to find the velocity of the plug:
 \begin{align}
-    u_2 &= u_3(-y_0) = %-\frac{\tau_0}{\mu} (h+y_0) + \frac{1}{2\mu} \pdv{p}{x} \, (h^2 - y_0^2)\\
-    \frac{f}{8\mu} \left(h - 2y_0\right)^2
+    u_2 &= u_3(-y_0) = %-\frac{\tau_0}{K} (h+y_0) + \frac{1}{2K} \pdv{p}{x} \, (h^2 - y_0^2)\\
+    \frac{f}{8K} \left(h - 2y_0\right)^2
 \end{align}
 
 The procedure is very similar for the upper zone $[y_0, h/2]$.
 
 Let us define the non-dimensional coordinate $\eta$, the reference velocity $U_{\infty}$ as the maximum velocity of a classical Poiseuille flow and the Bingham number $Bn$ that relates the yield and viscous stresses.
 \begin{align}
-    \eta=\frac{2y}{h} \qquad U_{\infty}= \frac{f h^2}{8\mu} \qquad Bn=\frac{\tau_0 h}{\mu U_{\infty}}=\frac{8\tau_0}{f h} \qquad \eta_0 = \frac{2y_0}{h} = \frac{Bn}{4}
+    \eta=\frac{2y}{h} \qquad U_{\infty}= \frac{f h^2}{8K} \qquad Bn=\frac{\tau_0 h}{K U_{\infty}}=\frac{8\tau_0}{f h} \qquad \eta_0 = \frac{2y_0}{h} = \frac{Bn}{4}
 \end{align}
 
 The velocity profile can then be expressed as follows, in the presence of a yielded region, i.e. when $\eta_0 < 1 \iff Bn < 4$:
@@ -333,9 +344,9 @@ The strain-rate tensor with a unidirectional flow $u(y)$ only contains the off-d
 The minimization function $J$ of \autoref{eq:minimize} becomes:
 \begin{equation}
 \begin{aligned}
-    \mathcal{J}(u^h) &= \int_{\Omega} \left[ \frac{\mu}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
-    &= \sum_{i=1}^N \int_{\Omega_i} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{\Omega_i} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{\Omega_i} - f u^h\vert_{\Omega_i} \; \right] \dd y\\
-    &= \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
+    \mathcal{J}(u^h) &= \int_{\Omega} \left[ \frac{K}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
+    &= \sum_{i=1}^N \int_{\Omega_i} \left[\frac{K}{2}  \left(\pdv{u^h}{y}\right)^2_{\Omega_i} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{\Omega_i} - f u^h\vert_{\Omega_i} \; \right] \dd y\\
+    &= \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{K}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
 \end{aligned}
 \end{equation}
 where we used Gauss-Legendre quadrature of appropriate order with weights $\omega_g$ and coordinates $y_g$ in the element $\Omega_i$, mapped from coordinates $\eta_g$ in the reference element $[-1,1]$.
@@ -348,7 +359,7 @@ In short, one should solve problem \eqref{eq:problem_1D_nonlinear} hereunder
     \end{aligned}\label{eq:problem_1D_nonlinear}
 \end{equation}
 
-However, this problem cannot be solve straightforwardly with classical optimization techniques such as gradient descent or Newton's method as it contains a non-differentiable term $|\pdv{u^h}{y}|$. Next section will introduce a suitable method, known as conic optimization.
+However, this problem cannot be solved straightforwardly with classical optimization techniques such as gradient descent or Newton's method as it contains a non-differentiable term $|\pdv{u^h}{y}|$. Next section will introduce a suitable method, known as conic optimization.
 
 One could argue that absolute values can be transformed in multiple linear terms in this case. However, this is no longer true as we go to higher dimensions since the tensor norm will become the square root of multiple squared terms. 
 
@@ -436,8 +447,8 @@ With our recent knowledge in conic programming, we can reformulate problem \eqre
 \begin{empheqboxed}
     \begin{equation}
         \begin{aligned}
-            %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{\mu}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
-            \minimize_{U_j, S_{i, g}, T_{i, g}} \qquad &\sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{\mu}{2} \, S_{i, g} + \tau_0 \, T_{i,g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}\\
+            %\min_{s, t, U} \qquad &\sum_{i=1}^n \; \frac{K}{2} s_i \Delta y_i  + \tau_0 t_i \Delta y_i - f \frac{U_{i-1}+U_i}{2} \Delta y_i \\
+            \minimize_{U_j, S_{i, g}, T_{i, g}} \qquad &\sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{K}{2} \, S_{i, g} + \tau_0 \, T_{i,g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}\\
             %\left(\pdv{u^h}{y}\right)^2_{y=y_g}
             %\left|\pdv{u^h}{y}\right|_{y=y_g}
             \textrm{s.t.} \qquad & \left(\pdv{u^h}{y}\right)^2_{y=y_g} \leq S_{i,g} \quad \forall i \:\forall g \qquad \iff \qquad \left[S_{i,g}, \frac{1}{2}, \left(\pdv{u^h}{y}\right)^2_{y=y_g}\right] \in L_R^{3} \quad \forall i \:\forall g\\
@@ -450,48 +461,49 @@ With our recent knowledge in conic programming, we can reformulate problem \eqre
 
 We minimize this problem over the nodal velocities $U$, and the newly added $S$ and $T$ variables. Even if the inequalities may confuse at first glance, they are valid from a modelling standpoint. They are always verified as equalities at the optimum. We can show it by contradiction. Let us assume that $\left(\pdv{u^h}{y}\right)^2 < S_{i,g}$ for a specific index $i,g$ at the optimum. Then the cost can be reduced by decreasing $S_{i,g}$ by $\epsilon > 0$, keeping all other variables unchanged: we are not at the optimum. % fool the solver
 
-At this stage, the finite element solution will be relevant only when the interface is represented on the mesh. Therefore, the arbitrary mesh is manually modified such that two nodes are placed at $y=\pm y_0$. In the next chapter, we will develop an algorithm that moves the nodes without knowing the interface position beforehand.
+At this stage, the finite element solution will be relevant only when the interface is represented on the mesh. Therefore, the arbitrary mesh is manually modified such that two nodes are placed at $y=\pm y_0$. The goal of the next section, is to develop an algorithm that moves the nodes without knowing the interface position beforehand.
+
+The optimization problem was solved with the interior-point solver of the open-source software \texttt{CVXOPT}.
 
 \begin{figure}
     \centering
     \includesvg[width=\textwidth]{../figures/result_1D_P1.svg}
-    \caption{FE solution of the Poiseuille flow with $P1$ elements. The unyielded zone is shaded in grey. The error is shown at the nodes for $u(y)$ and at the element center for the strain and shear.}
+    \caption{FE solution of the Poiseuille flow with $\mathcal{P}_1$ elements. The unyielded zone is shaded in grey. The error is shown at the nodes for $u(y)$ and at the element center for the strain and shear.}
     \label{fig:results_1D_P1}
 \end{figure}
 
 \begin{figure}
     \centering
     \includesvg[width=\textwidth]{../figures/result_1D_P2.svg}
-    \caption{FE solution of the Poiseuille flow with $P2$ elements. The unyielded zone is shaded in grey. The error is computed on the whole domain $\Omega$.}
+    \caption{FE solution of the Poiseuille flow with $\mathcal{P}_2$ elements. The unyielded zone is shaded in grey. The error is computed on the whole domain $\Omega$.}
     \label{fig:results_1D_P2}
 \end{figure}
 
 
 \section{Interface tracking}
 
-URGENT
+The concept of \textit{front tracking} was initially introduced by James Glimm and co-authors \cite{chern1986front} in the context of hydrodynamics. So I let him define it in his own words \cite{SHE2016383}:
+\begin{displayquote}
+    Front tracking is the use of surfaces or lower dimensional manifolds as computational degrees of freedom in a numerical algorithm. Its purpose is to improve the resolution of discontinuities or steep gradients in the solution variables or in the laws of physics which describe them.
+\end{displayquote}
 
-INTRODUCE CONCEPT interface tracking
+In our model, the velocity field and even the strain rate field are continuous. In fact, one can infer that on the liquid side of the interface, where $\tau=\tau_0$, the strain rate must also equal to $0$.
+\begin{equation}
+    \tau_0 = \|\boldsymbol \tau\| \stackrel{\eqref{eq:constitutive}}{=} (K + \tau_0 / \dot \gamma) \|\gam\| = K \dot \gamma + \tau_0 \qquad \implies \qquad \dot \gamma = 0
+\end{equation}
 
-Going back to the constitutive law of bingham fluids, one can see that the strain rate at the interface is continuous and equal to $0$. There is actually a discontinuity, but it only appears in the second derivative of the velocity:
-\begin{itemize}[label=---, topsep=0pt]
-    \setlength{\itemsep}{0pt}
-    \item $\partial_{yy} u = 0$ in the solid plug as $\partial_y=0$ over a whole nonempty interval.
-    \item and $\partial_{yy} u > 0$ as for a Newtonian Poiseuille flow.
-\end{itemize}    
-This is what we observed in \cref{fig:results_1D_P1,fig:results_1D_P2}.
+The discontinuity is to be found in the derivative of the deformation, e.g. the concavity of the velocity profile in the 1-dimensional case. In fact, $\partial_{yy} u = 0$ in the solid plug as $\partial_y u = 0$ over a whole nonempty interval, while $\partial_{yy} u > 0$ in the liquid region. This is what we observed in \cref{fig:results_1D_P1,fig:results_1D_P2}.
 
 \subsection{Reconstructed strain}
 
-We will therefore use this continuity of the strain field as a termination criteria for the tracking algorithm. Sadly, P1-elements for the velocity only provide piecewise discontinuous strains. Therefore, we reconstruct an continuous strain field as a linear approximation of the finite element solution at the Gauss points. This approximation is one-sided at each interface as we should only take the information from the yielded regions.
+We will therefore make this continuity of the strain rate field our primary objective. Sadly, $\mathcal{P}_1$-elements for the velocity only provide piecewise constant strains, which are of course discontinuous. The idea is thus to reconstruct a continuous strain field as a linear approximation of the finite element solution at the Gauss points. This approximation is one-sided at each interface as we should only take the information from the yielded regions.
 
-TALK ABOUT SUPER-CONVERGENCE.
+The choice of gauss points as abscissae of the linear approximation may seem trivial in this 1-dimensional model case, but the topic was seriously investigated for general geometries. Barlow showed that reduced integration points are superconvergent points, i.e. at which the stress is an order of magnitude more accurate than in any other point within the element \cite{Barlow}. Later on, Zienkiewicz and Zhu developed an error estimator by extrapolating values at the integration points \cite{Zienkiewicz}.
 
-The procedure is described in \cref{alg:tacking_1d}.
+The procedure is described in \cref{alg:tacking_1d} and illustrated in \cref{fig:tracking_1D_P1_steps,fig:tracking_1D_P2_steps}. The strain field $\partial_y u$ is shown at each iteration with with its corresponding mesh. The complete overview of the solution is provided for the first and last iterations, for both $\mathcal{P}_1$ and $\mathcal{P}_2$ elements, in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}.
 
-%Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node. We can however still compute the solution with the finite element code described in \cref{sec:fem_1D}. The nodes will be moved progressively until the continuity of the strain field is ensured.
 
-\begin{algorithm}[t]
+\begin{algorithm}[H]
     \caption{Interface-tracking algorithm in 1 dimension.}
     \label{alg:tacking_1d}
     optimalMesh $\gets$ false\;
@@ -499,40 +511,41 @@ The procedure is described in \cref{alg:tacking_1d}.
     \While{\textsf{not optimalMesh}}{
         Minimize the energy functional $\mathcal{J}$ with $\mathcal{M}$ and retrieve the solutions $U_j, T_{i,g}$\;
         $\mathcal{I} \gets$ set of current interfaces (node shared between yielded and unyielded elements)\;
-        \If{$\mathcal{I} = \emptyset$}{
-            break \tcp*{Mesh should be finer to have unyielded elements}
-        }
+        \tcp{Stop if $\mathcal{I} = \emptyset$: the mesh should be finer to have unyielded elements}
+        %\If{$\mathcal{I} = \emptyset$}{
+            %    break \tcp*{Mesh should be finer to have unyielded elements}
+            %}
+        optimalMesh $\gets$ true\;
         \ForAll {$k \in \mathcal{I}$}{
             $\ell_k \gets$ one-sided linear approximation function of the strain close to $y_k$\;
-            \If{$\ell_k(y_k) \neq 0$} {
+            \If{$\ell_k(y_k) \not\approx 0$} {
                 optimalMesh $\gets$ false \tcp*{since $\partial_y u$ is not continuous at the interface}
-                $y_k\gets \text{root} (\ell_k(y))$ \tcp*{update $\mathcal{M}$}
+                $y_k\gets \text{root} (\ell_k(y))$ \tcp*{update $\mathcal{M}$ using the linear approximation}
             }
         }
     }
     \Return $U_j$ 
 \end{algorithm}
 
-The algorithm is illustrated in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}. The strain field $\partial_y u$ is shown at each iteration with with its corresponding mesh. The complete overview of the solution is provided for the first and last iterations, for both P1 and P2 elements, in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}.
 
-Surprisingly the convergence is faster for P1 elements (piecewise constant strains). This can be easily explained by a flaw in \cref{alg:tacking_1d}: the reconstruction is made over all the Gauss points of elements near the current interface. However, one of these gauss point can be inside the unyielded region (as in \cref{subfig:tracking_1D_P2_step_1}). In that case, the reconstruction is deteriorated because it uses information from the wrong side, leading to a slower convergence.
+%Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node. We can however still compute the solution with the finite element code described in \cref{sec:fem_1D}. The nodes will be moved progressively until the continuity of the strain field is ensured.
 
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  start  %%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[b]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{\textwidth}
-        \includesvg[width=\textwidth]{../figures/res_P1_iteration_01.svg}
+        \includesvg[width=0.98\textwidth]{../figures/res_P1_iteration_01.svg}
         %\caption{From first to second iteration.}
     \end{subfigure}
     \begin{subfigure}[t]{\textwidth}
-        \includesvg[width=\textwidth]{../figures/res_P1_iteration_02.svg}
+        \includesvg[width=0.98\textwidth]{../figures/res_P1_iteration_02.svg}
         %\caption{From second to third iteration.}
     \end{subfigure}
-    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.}
+    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. Mesh with 5 $\mathcal{P}_1$-elements.}
     \label{fig:tracking_1D_P1_steps}
 \end{figure}
 
-\begin{figure}[b]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P1_first.svg}
@@ -542,14 +555,17 @@ Surprisingly the convergence is faster for P1 elements (piecewise constant strai
         \includesvg[width=\textwidth]{../figures/res_P1_last.svg}
         \caption{Final mesh.}
     \end{subfigure}
-    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.}
+    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. $\mathcal{P}_1$ elements.}
     \label{fig:tracking_1D_P1}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  end  %%%%%%%%%%%%%%%%%%%%%%
 
+Although the initial velocity profile was far from correct, two iterations were enough to bring the nodes to the interface, and provide an accurate numerical solution with errors around $10^{-6}$.
+
+Surprisingly the convergence is faster for $\mathcal{P}_1$-elements (piecewise constant strain rate) than for $\mathcal{P}_2$-elements (piecewise linear strain rate). This can be easily explained by a flaw in \cref{alg:tacking_1d}: the reconstruction is made over all the Gauss points of elements near the current interface. However, one of these gauss point can be inside the unyielded region, as can be seen in \cref{fig:tracking_1D_P2_steps}. In that case, the reconstruction is deteriorated because it uses information from the wrong side, leading to a slower convergence.
 
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  start  %%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[b]
+\begin{figure}[H]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P2_iteration_01.svg}
@@ -560,7 +576,7 @@ Surprisingly the convergence is faster for P1 elements (piecewise constant strai
         \includesvg[width=\textwidth]{../figures/res_P2_iteration_02.svg}
         %\caption{From second to third iteration.}
     \end{subfigure}
-    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. P1 elements.}
+    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. $\mathcal{P}_1$ elements.}
     \label{fig:tracking_1D_P2_steps}
 \end{figure}
 
@@ -574,14 +590,16 @@ Surprisingly the convergence is faster for P1 elements (piecewise constant strai
         \includesvg[width=\textwidth]{../figures/res_P2_last.svg}
         \caption{Final mesh.}
     \end{subfigure}
-    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. P1 elements.}
+    \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. $\mathcal{P}_1$ elements.}
     \label{fig:tracking_1D_P2}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  end  %%%%%%%%%%%%%%%%%%%%%%
 
+
+
 \FloatBarrier
 \subsection{Energy-based tracking}
-An alternative approach was considered for the interface tracking. It consists in minimizing the functional not only over the nodal values, but also over the position of the nodes. Two difficulties then arose. The first one is that the optimization problem becomes non-convex, because of the body force term $-fu^h(y_g)$.
+An alternative approach was considered for the interface tracking. It consists in minimizing the functional not only over the nodal values, but also over the position of the nodes. Two difficulties then arose. The first one is that the optimization problem becomes non-convex, because of the body force term $fu^h(y_g)$.
 \begin{equation}
     \minimize_{U_j, y_i} \sum_{i} \sum_{g} -f \sum_{j=1}^{n} U_{j} \phi_j(y_g) \frac{\Delta y_i}{2}
 \end{equation}
@@ -606,19 +624,19 @@ The second difficulty is even greater: the optimum of this problem (fixing the n
     \label{fig:sensibility_bad}
 \end{figure}
 
-With $P^2$ elements, this energy-based approach would provide the optimal piecewise quadratic velocity field over all possible meshes. Since, by chance, the analytical solution is quadratic, it would also be the solution of the finite element problem. Hence, the minimization would give the exact velocity field and the correct mesh with nodes at the interface.
+With $P^2$ elements, this energy-based approach would provide the optimal piecewise quadratic velocity field over all possible meshes. Since, by chance, the analytical solution is quadratic, it would also be the solution of the finite element problem. Hence, the minimization would give the exact velocity field and the correct mesh with nodes at the interface. In that case, it would be impossible to further decrease the cost as the exact solution is optimal over all velocity fields in $H^1(\Omega)$. The approach is however not suitable in general where the exact velocity field is not necessarily part of the finite element space.
 
-In that case, it would be impossible to further decrease the cost as the exact solution is the optimum of the continuous problem \eqref{eq:minimize} over all velocity fields in $H^1(\Omega)$.
-
-This approach is however not suitable in general where the exact velocity field is not necessarily part of the finite element space.
 
 \chapter{2D problem}
 
-\section{Equations}
+%INTRODUCTION
+% Déboires
+%Let us finally get to the crux of this study: the simulation of two-dimensional flows.
 
-It is well known that velocity-pressure fields discretized with P1-P0 and P1-P1 elements do not provide stable discretizations of the Stokes equations, or equivalently of incompressible linear elasticity REF. A first option is to enrich the velocity space with a bubble function: this is the MINI element. A second option is to use P2 elements for the velocity field. Both methods were implemented in our case. 
+\section{Finite element formulation}
+It is well known that velocity-pressure fields discretized with $\mathcal{P}_1$--$\mathcal{P}_0$ and $\mathcal{P}_1$--$\mathcal{P}_1$ elements do not provide stable discretizations of the Stokes equations, or equivalently of the incompressible linear elasticity equations. A first option is to enrich the velocity space with a bubble function: this is the MINI element \cite{ministable}. A second option is to use Taylor-Hood elements, i.e. $\mathcal{P}_k$--$\mathcal{P}_{k-1}$ for $2 \leq k$. This element was implemented in the code for $k=2$, along with the MINI element. The simulations presented here were done with Taylor-Hood elements unless otherwise specified.
 
-The shape functions involved are represented graphically in \cref{fig:shape_functions_2d}. Again, the finite element approximation velocity field $\vv^h$ reads as
+The shape functions $\phi_j$ are represented graphically in \cref{fig:shape_functions_2d}. Again, the finite element approximation velocity field $\vv^h$ is a sum of shape functions attached to each node $j$, weighted by the nodal values $\mathbf{V}_j$:
 \begin{align}
     \vv^h(x, y) &= \sum_{j} \mathbf{V}_j \: \phi_j(x, y)
 \end{align}
@@ -627,7 +645,7 @@ The shape functions involved are represented graphically in \cref{fig:shape_func
     \centering
     \begin{subfigure}[t]{0.495\textwidth}
         \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P1.svg}
-        \caption{Lagrange P1}
+        \caption{Lagrange $\mathcal{P}_1$}
     \end{subfigure}
     \begin{subfigure}[t]{0.495\textwidth}
         \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_bubble.svg}
@@ -635,7 +653,7 @@ The shape functions involved are represented graphically in \cref{fig:shape_func
     \end{subfigure}
     \begin{subfigure}[b]{\textwidth}
         \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P2.svg}
-        \caption{Lagrange P2}
+        \caption{Lagrange $\mathcal{P}_2$}
     \end{subfigure}
     \caption{Shape functions used for the pressure and velocity fields in 2-dimensions.}
     \label{fig:shape_functions_2d}
@@ -648,12 +666,12 @@ To express the deformation norm $\|\gam\|$ needed in the functional, we need the
         \pdv{u}{x} & \pdv{u}{y}\\
         \pdv{v}{x} & \pdv{v}{y}\\
     \end{bmatrix}\\
-    \implies \quad \|\gam(u, v)\|_{\text{Cart}}^2 &= 2 \left(\pdv{u}{x}\right)^2 + \left(\pdv{u}{y} + 2\pdv{v}{x}\right)^2 + \left(\pdv{v}{y}\right)^2
+    \implies \quad \|\gam(u, v)\|_{\text{Cart}}^2 &= 2 \left(\pdv{u}{x}\right)^2 + \left(\pdv{u}{y} + \pdv{v}{x}\right)^2 + 2\left(\pdv{v}{y}\right)^2
 \end{align}
 
-Each of these partial derivatives is computed as a sum of shape functions derivatives. These spatial derivatives in the physical domain $(x,y)$ are themselves computed from derivatives in the parametric domain $(\xi, \eta)$ through the Jacobian of the transformation.
+Each of these partial derivatives is also computed as a sum of shape functions derivatives. These spatial derivatives in the physical domain $(x,y)$ are themselves computed from derivatives in the parametric domain $(\xi, \eta)$ through the Jacobian of the transformation.
 \begin{align}
-    \pdv{u^h_i}{x_j} &= \sum_k U_k \pdv{\phi_k}{x_j} \qquad i=1,2 \quad j=1,2\\
+    \pdv{u^h_m}{x_n} &= \sum_j U_j \pdv{\phi_j}{x_n} \qquad m=1,2 \quad n=1,2\\
     \left(\nabla_\xx \: \phi\right)_{\text{Cart}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}}\\
     \dv{\boldsymbol \xi}{\mathbf{x}} &= \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)^{-1} = 
     \begin{bmatrix}
@@ -662,51 +680,83 @@ Each of these partial derivatives is computed as a sum of shape functions deriva
     \end{bmatrix}^{-1}
 \end{align}
 
-The functional of the approximate field $\vv^h$ is recalled below, along with the incompressibility constraint, where $\psi$ denotes the pressure linear shape function, attached to every primary node.
+The functional of the approximate field $\vv^h$ is recalled below, along with the \textit{weak} incompressibility constraint, where $\psi_l$ denotes the pressure linear shape function, attached to every primary node $l$.
 \begin{align}
-    \mathcal{J}(u^h, v^h) &= \int_{\Omega} \frac{\mu}{2} \|\gam(u^h, v^h)\|^2 + \tau_0 \|\gam(u^h, v^h)\| - \mathbf{f} \cdot \vv^h \; \dd x\\
-    0 &= \int_{\Omega} \psi_l \; \nabla \cdot \vv^h \qquad \forall \quad \psi_l
+    \mathcal{J}(u^h, v^h) &= \int_{\Omega} \frac{K}{2} \|\gam(u^h, v^h)\|^2 + \tau_0 \|\gam(u^h, v^h)\| - \mathbf{f} \cdot \vv^h \; \dd x\\
+    0 &= \int_{\Omega} \psi_l \; \nabla \cdot \vv^h \qquad \forall \quad \psi_l \label{eq:strong_div}
 \end{align}
 
-The minimization problem can for Cartesian coordinate systems is given hereunder while cylindrical and polar coordinates are detailed in \cref{appendix:curvilinear}.
+It is also possible to impose the incompressibility constraint in a \textit{strong} way, i.e. locally at each integration point\cite{Bleyer}. Both options \eqref{eq:weak_div} and \eqref{eq:strong_div} were implemented in the code.
+\begin{equation}
+    \pdv{u^h}{x} + \pdv{v^h}{y} = 0 \qquad \forall i \; \forall g \label{eq:weak_div}
+\end{equation}
+
+\pagebreak
+The minimization problem can for Cartesian coordinate systems is given hereunder:% while cylindrical and polar coordinates are detailed in \cref{appendix:curvilinear}.
+% \begin{empheqboxed}
+%     \begin{equation}
+%         \begin{aligned}
+%             \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} &\qquad \sum_{i}\sum_{g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \vert_{\xx_g} \right] \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g}\\
+%             &\qquad - \sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h\vert_{\xx_g} \frac{\ell_{\text{e}}}{2}\\
+%             \textrm{s.t.} &\qquad \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L_R^5 && \forall i, g\\
+%             &\qquad \left(T_{i,g}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L^4 && \forall i, g\\
+%             &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) && \forall\; l\\
+%             &\qquad \mathbf{V}_{j} = \mathbf{u}_{D} && \forall\; \mathbf{V}_{j} \in \Gamma_D
+%         \end{aligned}
+%     \end{equation}
+% \end{empheqboxed}
 \begin{empheqboxed}
     \begin{equation}
-        \begin{aligned}
-            \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} &\qquad \sum_{i}\sum_{g} \omega_g \left[\frac{\mu}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \vert_{\xx_g} \right] \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g}\\
-            &\qquad - \sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h\vert_{\xx_g} \frac{\ell_{\text{e}}}{2}\\
+        \begin{alignedat}{3}
+            \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} &\qquad \sum_{i}\sum_{g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \vert_{\xx_g} \right] \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g}
+            - && \: \sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h\vert_{\tilde \xx_g} \frac{\ell_{\text{e}}}{2}\\
             \textrm{s.t.} &\qquad \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L_R^5 && \forall i, g\\
             &\qquad \left(T_{i,g}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L^4 && \forall i, g\\
             &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) && \forall\; l\\
-            &\qquad \mathbf{V}_{j} = \mathbf{u}_{D} && \forall\; \mathbf{V}_{j} \in \Gamma_D
-        \end{aligned}
+            &\qquad \mathbf{V}_{j} = \mathbf{U} && \forall\; \mathbf{V}_{j} \in \Gamma_D
+        \end{alignedat}
     \end{equation}
 \end{empheqboxed}
-
-Talk about WEAK / STRONG incompressibility.
+where $\tilde \omega_g$, $\tilde \xx_g$ are the integration weights and positions on the edges, while $\ell_e$ indicates its length.
 
 \section{Boundary conditions}
 \label{sec:boundary_conditions}
 Boundary conditions should never be overlooked, especially in the case of the Poiseuille flow. 
 
-Of course, no-slip walls are easily handled, with homogeneous Dirichlet boundary conditions. However, the situation is not as simple at the inflow and outflow. We can list the three most obvious choices:
+No-slip walls are easily handled, with homogeneous Dirichlet boundary conditions. However, the situation is not as simple at the inflow and outflow. We can list the three most obvious choices:
 \begin{enumerate}
     \item Impose the velocity profile at the inflow (Dirichlet)
     \item Impose the pressure at the inflow and at the outflow (Neumann)
     \item Impose the pressure gradient over the domain $\Omega$ (Body force)
 \end{enumerate}
 
-However, care must be taken because we are only providing the normal force on the boundary, due to the pressure gradient, but not the tangential force due to the shear stress that is not known yet. If we prescribe only the normal component of the traction $\mathbf{g}=(\nn\cdot\mathbf{\sigma}\cdot\nn)\nn$, we also need to prescribe the tangential component of the velocity $\vv\cdot\nn^\perp$ \cite{Bangerth}.
+However, care must be taken because we are only providing the normal force on the boundary, due to the pressure gradient, but not the tangential force due to the shear stress that is not known yet. If we prescribe only the normal component of the traction $\mathbf{g}=(\nn\cdot\mathbf{\sigma}\cdot\nn)\nn$, we also need to prescribe the tangential component of the velocity $\vv\cdot\nn^\perp$, as can be derived from the weak formulation \cref{eq:weak_formulation} \cite{Bangerth}.
 
 Each description must then be completed in order to obtain a correct physical flow.
 \begin{enumerate}
-    \item At the inflow, impose the velocity profile with $\vv \cdot \nn = v_n$ and $\vv \cdot \nn^\perp = v_t = 0$. At the outflow, set zero tangential velocity $v_t = 0$, along with a normal force $\mathbf{g} \cdot \nn = -p + \nn\cdot\boldsymbol\tau\cdot\nn = -p_{\text{out}}$. It is not very suitable for Bingham fluids because it requires the knowledge of the velocity profile beforehand.
+    \item At the inflow, impose the velocity profile with $\vv \cdot \nn = v_n$ and $\vv \cdot \nn^\perp = v_t = 0$. At the outflow, set zero tangential velocity $v_t = 0$, along with a normal force $\mathbf{g} = (-p + \nn\cdot\boldsymbol\tau\cdot\nn)\,\nn = -p_{\text{out}}\nn$. It is not very suitable for Bingham fluids because it requires the knowledge of the velocity profile beforehand.
     \item Impose the normal boundary force at the inflow and outflow, made up of the pressure and normal shear stress: $\mathbf{g} \cdot \nn = -p_{\text{in/out}}$. Also set $v_t=0$ at the two boundaries.
-    \item Set the pressure gradient as body force $\mathbf{f} = -\partial_x p$. It still requires to specify the normal shear stress and tangential velocity: $\mathbf{g} \cdot \nn = 0$, and $v_t=0$.
+    \item Set the pressure gradient as body force $\mathbf{f} = -\partial_x p$. It still requires to specify the normal shear stress and tangential velocity: $\mathbf{g} = 0 \,\nn$, and $v_t=0$.
 \end{enumerate}
 
-If one forgets to cancel the tangential velocity at the outflow, the problem becomes equivalent to impose zero tangential shear stress at the outflow, which is of course not the situation of a Poiseuille flow where $\tau_{12} = \mu\partial_y u \neq 0$. 
+If one forgets to cancel the tangential velocity at the outflow, the problem becomes equivalent to impose zero tangential shear stress at the outflow, which is of course not the situation of a Poiseuille flow where $\tau_{12} = K\partial_y u \neq 0$. 
 
-I ran a first simulation with the correct boundary condition (case 2), and a second one where I removed the condition $v_t=0$. These two situations are compared in \cref{fig:bc_issue_force,fig:bc_issue_velocity}. In order to achieve zero tangential shear force, the finite element solution gives a very high pressure gradient near the outflow corners.
+\pagebreak
+I ran a first set of simulations with the correct setup, imposing $v_t=0$, and a second one with the incorrect setup where the condition $v_t=0$ was intentionally forgotten, both without yield stress ($\tau_0=0$). These two situations are compared in \cref{fig:bc_issue}. When no condition is applied on the tangential outflow velocity,the finite element solution gives a very high pressure gradient near the outflow corners in order to achieve zero tangential shear force. Also note that the streamlines are curved at the outflow, towards the corners.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth,]{../figures/bc_good.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.9\textwidth}
+        \includesvg[width=\textwidth,]{../figures/bc_bad.svg}
+        %\caption{From first to second iteration.}
+    \end{subfigure}
+    \caption{Comparison of the pressure field, streamlines and boundary forces of the correct (top) and incorrect (bottom) flows.}
+    \label{fig:bc_issue}
+\end{figure}
 
 One can also wonder if the choice of boundary condition (1-2-3), or the choice of incompressibility condition (weak-strong) influences quality of the solution. In the case of a flow in a channel of 2 meters long and 1 meter wide, the exact energy functional is $-1/12$. The deviation of the numerical functional from the exact functional is given in \cref{tab:setups_compare} for different setups. 
 
@@ -715,7 +765,7 @@ One can also wonder if the choice of boundary condition (1-2-3), or the choice o
     \begin{tabular}[t]{cccc}
         \toprule
          & & Correct setup & Incorrect setup\\
-         & & $\mathbf{g}\cdot \nn = -p$ and $v_t=0$ & $\mathbf{g} = -p\nn$\\
+         & & $v_t=0$ & $v_t$ free\\
         Incompressibility & Dirichlet/Neumann & & \\
          & Body force & & \\
         \midrule
@@ -731,41 +781,36 @@ One can also wonder if the choice of boundary condition (1-2-3), or the choice o
     \label{tab:setups_compare}
 \end{table}%
 
-\begin{figure}[b]
-    \centering
-    \begin{subfigure}[t]{0.9\textwidth}
-        \includesvg[width=\textwidth,]{../figures/bc_good_force.svg}
-        %\caption{From first to second iteration.}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.9\textwidth}
-        \includesvg[width=\textwidth,]{../figures/bc_bad_force.svg}
-        %\caption{From first to second iteration.}
-    \end{subfigure}
-    % \vspace{-2cm}
-    % \begin{subfigure}[t]{0.8\textwidth}
-    %     \includesvg[width=\textwidth]{../figures/bc_diff_force.svg}
-    % \end{subfigure}
-    \caption{Comparison of the shear stress field, and boundary forces of the correct (top) and incorrect (bottom) flows. The streamlines are also represented in white.}
-    \label{fig:bc_issue_force}
-\end{figure}
+\section{Poiseuille flow}
 
-\begin{figure}[b]
-    \centering
-    \begin{subfigure}[t]{0.9\textwidth}
-        \includesvg[width=\textwidth]{../figures/bc_good_velocity.svg}
-        %\caption{From first to second iteration.}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.9\textwidth}
-        \includesvg[width=\textwidth]{../figures/bc_bad_velocity.svg}
-        %\caption{From first to second iteration.}
-    \end{subfigure}
-    % \vspace{-2cm}
-    % \begin{subfigure}[t]{0.8\textwidth}
-    %     \includesvg[width=\textwidth]{../figures/bc_diff_velocity.svg}
-    % \end{subfigure}
-    \caption{Comparison of the velocity and pressure fields of the correct (top) and incorrect (bottom) flows. The horizontal and vertical velocity profiles are also shown at the boundaries.}
-    \label{fig:bc_issue_velocity}
-\end{figure}
+\section{Curved channel flow}
+
+\section{Lid-driven cavity}
+
+\section{Flow around cylinder}
+
+\addcontentsline{toc}{chapter}{Conclusion}
+\chapter*{Conclusion}
+A conclusion
+
+
+% \begin{figure}[b]
+%     \centering
+%     \begin{subfigure}[t]{0.9\textwidth}
+%         \includesvg[width=\textwidth]{../figures/bc_good_velocity.svg}
+%         %\caption{From first to second iteration.}
+%     \end{subfigure}
+%     \begin{subfigure}[t]{0.9\textwidth}
+%         \includesvg[width=\textwidth]{../figures/bc_bad_velocity.svg}
+%         %\caption{From first to second iteration.}
+%     \end{subfigure}
+%     % \vspace{-2cm}
+%     % \begin{subfigure}[t]{0.8\textwidth}
+%     %     \includesvg[width=\textwidth]{../figures/bc_diff_velocity.svg}
+%     % \end{subfigure}
+%     \caption{Comparison of the velocity and pressure fields of the correct (top) and incorrect (bottom) flows. The horizontal and vertical velocity profiles are also shown at the boundaries.}
+%     \label{fig:bc_issue_velocity}
+% \end{figure}
 
 
 %\nocite{*}
@@ -820,6 +865,8 @@ Polar coordinates provide quite similar equations. Here again, we assume axisymm
     \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{1}{r}\pdv{u_\theta}{\theta} + \frac{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r} + \cot \theta \frac{u_\theta}{r}\bigg)^2 \nonumber\\
     &+ \bigg(\frac{1}{r}\pdv{u_r}{\theta} \pdv{u_\theta}{r} - \frac{u_\theta}{r}\bigg)^2
 \end{align}
+
+%\includepdf[pages=-]{back_page.pdf}
 
 \end{document}
 

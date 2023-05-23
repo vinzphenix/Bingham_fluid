@@ -24,32 +24,43 @@ def plot_interior_point(save=False):
         idx = np.unravel_index(fmu.argmin(), fmu.shape)
         x_path[i], y_path[i] = x[idx], y[idx]
 
-    fig, axs = plt.subplots(1, 3, figsize=(12., 4.), constrained_layout=True, sharey='all')
+    fig, axs = plt.subplots(1, 3, figsize=(10., 4.), constrained_layout=True, sharey='all')
     for mu, levels, ax in zip([10., 1., 0.1], levels_list, axs):
+        label_1 = "Constraints" if ax == axs[0] else ""
+        label_2 = r"Level sets of $f_{\mu}$" if ax == axs[1] else ""
+        label_3 = "Central path" if ax == axs[2] else ""
+
         ax.plot(x1, (5. - x1) / 3., color='black')  # 1st side
         ax.plot((3 - y1) / 2., y1, color='black')  # 2nd side
-        ax.plot(xs, (2 * xs - 1) / 4., color='black', label='constraints')  # 3rd side
+        ax.plot(xs, (2 * xs - 1) / 4., color='black', label=label_1)  # 3rd side
 
-        fmu = x / mu - np.log(2. * x + y - 3.) - np.log(1. - 2. *
-                                                        x + 4 * y) - np.log(5. - x - 3 * y)
+        fmu = x / mu - np.log(2. * x + y - 3.) \
+            - np.log(1. - 2. * x + 4 * y) \
+            - np.log(5. - x - 3 * y)
         fmu = np.nan_to_num(fmu, nan=100.)
 
         idx = np.unravel_index(fmu.argmin(), fmu.shape)
-        ax.plot(x_path[mu_range >= mu], y_path[mu_range >= mu],
-                ls='-', color='C1', label='central path')
+        ax.plot(
+            x_path[mu_range >= mu], y_path[mu_range >= mu],
+            ls='-', color='C1', label=label_3
+        )
         ax.plot(x[idx], y[idx], ls='', marker='o', ms=10, color='C1')
 
-        ax.set_title(r"$\mu = {{{:.1f}}}$".format(mu), fontsize=14)
+        ax.set_title(r"$\mu = {{{:.1f}}}$".format(mu), fontsize=ftSz1)
         ax.contour(x, y, fmu, colors='C2', levels=levels)
-        ax.plot([], [], ls='-', color='C2', label=r'level set of $f_{\mu}$')
+        ax.plot([], [], ls='-', color='C2', label=label_2)
         ax.set_aspect('equal')
         ax.grid(ls=':')
         ax.set_ylim(0.1, 1.5)
-        ax.set_xlabel(r"$x$", fontsize=13)
+        ax.set_xlabel(r"$x$", fontsize=ftSz2)
+        ax.legend(fontsize=ftSz2, loc="lower right")
 
-    axs[0].set_ylabel(r"$y$", fontsize=13)
-    axs[-1].legend(fontsize=13)
-    # plt.savefig(path + "interior_point_example.svg", format="svg", bbox_inches="tight")
+    axs[0].set_ylabel(r"$y$", fontsize=ftSz2)
+    plt.savefig(
+        path + "interior_point_example.svg", 
+        format="svg", bbox_inches="tight", 
+        transparent=True
+    )
     plt.show()
 
 
@@ -156,6 +167,6 @@ if __name__ == "__main__":
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams["text.usetex"] = save_global
 
-    # plot_interior_point(save_global)
+    plot_interior_point(save_global)
     # plot_shape_fct_1D(save_global)
-    plot_fluid_models(save_global)
+    # plot_fluid_models(save_global)

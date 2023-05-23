@@ -339,10 +339,10 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 
     gmsh.view.addListData(tag_bd_shear, "VL", n_edge, data_bd_shear.flatten())
     gmsh.view.option.setNumber(tag_bd_shear, "VectorType", 2)
-    gmsh.view.option.setNumber(tag_bd_shear, "Sampling", 1)
-    gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 5.)
+    gmsh.view.option.setNumber(tag_bd_shear, "Sampling", 2)
+    gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 4.)
     gmsh.view.option.setNumber(tag_bd_shear, "ColormapNumber", 23)
-    gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 75)
+    gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 60)
     gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
     gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
     gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
@@ -584,7 +584,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
         gmsh.view.remove(tags_reconstructed[0])
         tags_invisible += [tag_all_steps]
         sim.tag += 1
-    
+
     tags_exact_interface = add_exact_interface(sim)
 
     for tag in tags_invisible:

@@ -100,7 +100,7 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 1
+        mode = 2
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
@@ -111,24 +111,25 @@ if __name__ == "__main__":
     # beta = np.sin(0.)
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectanglerot")
     # parameters = dict(K=1., tau_zero=0.3, f=[0., 0.], element="th", model_name="pipe")
-    # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="cylinder")
-    parameters = dict(K=1., tau_zero=5., f=[0., 0.], element="th", model_name="cavity")
-    # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="opencavity")
+    parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cylinder")
+    # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cavity")
+    # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="opencavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
 
     sim = Simulation_2D(parameters)
 
     if mode == 1:  # Solve problem: ONE SHOT
         u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
-        # sim.save_solution(u_field, p_field, d_field, model_variant='oneshot')
+        # sim.save_solution(u_field, p_field, d_field, model_variant='')
 
     elif mode == 2:  # Solve the problem: ITERATE
         res = solve_interface_tracking(sim, max_it=5, tol_delta=1.e-3, deg=1, strong=False)
         u_field, p_field, d_field = res
-        # sim.save_solution(u_field, p_field, d_field, model_variant=f'bcGood')
+        # sim.save_solution(u_field, p_field, d_field, model_variant=f'classic')
 
     elif mode == 3:  # Load solution from disk
-        model, variant = "rectanglerot", "bcBad"
+        model, variant = "cavity", "cheat"
+        # model, variant = "opencavity", "classic"
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
         # model, variant = "rectanglerot", "bcGood"
         # parameters, u_field2, p_field2, d_field2, coords = load_solution(model, variant)
