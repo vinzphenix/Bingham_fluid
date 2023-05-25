@@ -70,6 +70,7 @@ class Simulation_2D:
         self.v_shape_functions, self.dv_shape_functions_at_v = res[3:5]
         self.q_shape_functions, self.dv_shape_functions_at_q = res[5:7]
         self.inverse_jacobians, self.determinants = res[7:9]
+        self.min_det = np.amin(self.determinants)
 
         self.ng_loc, self.ng_loc_q = len(self.weights), len(self.weights_q)
         self.ng_all = self.n_elem * self.ng_loc
@@ -287,6 +288,7 @@ class Simulation_2D:
         neighs = self.n2n_map[self.n2n_st[node]: self.n2n_st[node + 1]]
         elems = [self.n2e_map[self.n2e_st[neigh]: self.n2e_st[neigh + 1]] for neigh in neighs]
         elems = np.unique(np.concatenate(elems))
+        # elems = self.n2e_map[self.n2e_st[node]: self.n2e_st[node + 1]]
         return elems
 
 
@@ -309,12 +311,17 @@ class Simulation_2D:
         return line_tag, weights_edge, sf_edge
 
 
-    def get_edge_node_tags(self, physical_name):
+    def get_edge_node_tags(self, physical_name, exclude=[]):
         gmsh.model.mesh.createEdges()
         edge_node_tags = np.zeros((0, self.nsf_edge), dtype=int)
 
         if physical_name == "":
             tags = [-1]
+            dim_tags_physical = gmsh.model.getPhysicalGroups(dim=1)
+            physical_tags = [tag for (_, tag) in dim_tags_physical if tag not in exclude]
+            func = gmsh.model.getEntitiesForPhysicalGroup
+            tags = [func(1, physical_tag) for physical_tag in physical_tags]
+            tags = np.unique(np.concatenate(tags))
         else:
             dim_tags_physical = gmsh.model.getPhysicalGroups(dim=1)
             physical_tag = -1

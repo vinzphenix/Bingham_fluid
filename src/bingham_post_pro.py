@@ -28,7 +28,13 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
         n_intervals = (len(slice_node_tags) - 1) // 2
         deg_along_edge = 2
 
-    params = dict(H=H, K=sim.K, tau_zero=sim.tau_zero, f=sim.f[0], degree=deg_along_edge,
+    info = sim.get_edge_node_tags('')
+    edge_node_tags, length, tangent, normal = info
+    gn = np.zeros(edge_node_tags.shape)
+    sim.eval_gn(sim.coords[edge_node_tags], gn)
+    dpdx = sim.f[0] + (np.amax(gn) - np.amin(gn)) / 2.  # to modify if channel length changed
+
+    params = dict(H=H, K=sim.K, tau_zero=sim.tau_zero, f=dpdx, degree=deg_along_edge,
                   n_elem=n_intervals, random_seed=-1, fix_interface=False,
                   save=False, plot_density=25, dimensions=True)
 
@@ -98,7 +104,7 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
     Generates a ListData for gmsh: a force vector at each node of every boundary line segment
     """
 
-    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("")
+    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("", exclude=[5, 6])
     n_edge, n_pts = edge_node_tags.shape
 
     nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
@@ -180,7 +186,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
 
     #############################  -  Boundary source  -  #############################
 
-    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("")
+    edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("", exclude=[5, 6])
     edge_v = u_num[edge_node_tags]
     source_boundary = np.einsum(
         'g,ijn,gj,in,gk,i->ik',

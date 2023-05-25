@@ -14,20 +14,21 @@ def display_elem_edge_node():
     return
 
 
-def create_rectangle(filename, width, height, elemSizeRatio, y_zero=0., cut=False, angle=0.):
+def create_rectangle(
+        filename, width, height, elemSizeRatio, size_field=False,
+        y_zero=0., angle=0., fit=False, cut=False
+    ):
+
     gmsh.initialize()
     factory = gmsh.model.geo
     meshFact = gmsh.model.mesh
 
-    # width, height = 1., 2.
     lc = elemSizeRatio * height
-
-    fit = 0. < y_zero < height / 2.
-    h = y_zero if fit else height / 2.
-    c = width / 2. if cut else width
+    h = y_zero if lc < y_zero < height / 2. - lc else height / 4.
+    c = width / 2.
 
     # Geometry
-    # points
+    angle = np.radians(angle)
     rot_matrix = np.array([
         [np.cos(angle), -np.sin(angle)],
         [np.sin(angle), np.cos(angle)]
@@ -48,108 +49,74 @@ def create_rectangle(filename, width, height, elemSizeRatio, y_zero=0., cut=Fals
     ]).T
     coords = np.dot(rot_matrix, coords)
 
-    p1 = factory.addPoint(*coords[:, 0], 0., lc)
-    p2 = factory.addPoint(*coords[:, 1], 0., lc/3.)
-    p3 = factory.addPoint(*coords[:, 2], 0., lc/3.)
-    p4 = factory.addPoint(*coords[:, 3], 0., lc)
-    pts_no_slip = [p1, p2, p3, p4]
-    pts_inflow = [p1, p4]
-    pts_outflow = [p2, p3]
+    point_tags = []
+    surfc_tags = []
+    pt_2_ln_map = {}
+    phys_2_ln_map = dict(inflow=[], outflow=[], noslip=[], inside=[], cut=[])
 
-    # lines
-    l1 = factory.addLine(p1, p2)
-    l2 = factory.addLine(p2, p3)
-    l3 = factory.addLine(p3, p4)
-    l4 = factory.addLine(p4, p1)
-    lines = [l1, l2, l3, l4]
-    ln_inflow = [l4]
-    ln_outflow = [l2]
-    ln_no_slip = [l1, l3]
+    line_pt_map = dict(
+        noslip = [(5, 6), (6, 11), (12, 7), (7, 8)],
+        inflow = [(8, 4), (4, 1), (1, 5)],
+        outflow = [(11, 9), (9, 10), (10, 12)],
+        cut = [(6, 2), (2, 3), (3, 7)],
+        inside = [(1, 2), (2, 9), (10, 3), (3, 4)],
+    )
 
-    # curve loops
-    cl1 = factory.addCurveLoop([l1, l2, l3, l4])
+    if cut and fit:
+        curve_loops = [
+            (1, 2, 3, 4), (1, 5, 6, 2), (3, 7, 8, 4),
+            (3, 2, 9, 10), (2, 6, 11, 9), (3, 10, 12, 7),
+        ]
+    elif (not cut) and fit:
+        curve_loops = [
+            (1, 5, 6, 11, 9, 2), (1, 2, 9, 10, 3, 4), (4, 3, 10, 12, 7, 8)
+        ]
+    elif cut and (not fit):
+        curve_loops = [
+            (1, 5, 6, 2, 3, 7, 8, 4), (2, 6, 11, 9, 10, 12, 7, 3),
+        ]
+    else:
+        curve_loops = [
+            (1, 5, 6, 11, 9, 10, 12, 7, 8, 4)
+        ]
+    
+    for label, lines in line_pt_map.items():
+        for org, dst in lines:
+            if org not in point_tags:
+                factory.addPoint(*coords[:, org-1], 0., lc, org)
+                point_tags += [org]
+            if dst not in point_tags:
+                factory.addPoint(*coords[:, dst-1], 0., lc, dst)
+                point_tags += [dst]
 
-    # surfaces
-    s1 = factory.addPlaneSurface([cl1])
-    srfs = [s1]
+            exists_fwd = pt_2_ln_map.get((org, dst), -1)
+            exists_bwd = pt_2_ln_map.get((dst, org), -1)
 
-    p5, p6, p7, p8, p9, p10, p11, p12 = [-1] * 8
-    ldr, lur = [-1] * 2
+            if (exists_fwd == -1) and (exists_bwd == -1):
+                line_tag = factory.addLine(org, dst)
+                pt_2_ln_map[(org, dst)] = line_tag
+                phys_2_ln_map[label].append(line_tag)
 
-    if fit:
-        p5 = factory.addPoint(*coords[:, 4], 0., lc)
-        p6 = factory.addPoint(*coords[:, 5], 0., lc)
-        p7 = factory.addPoint(*coords[:, 6], 0., lc)
-        p8 = factory.addPoint(*coords[:, 7], 0., lc)
-        pts_no_slip = [p5, p6, p7, p8]
-        pts_inflow += [p5, p8]
-        pts_outflow += [p6, p7]
-
-        ldl = factory.addLine(p1, p5)
-        ldd = factory.addLine(p5, p6)
-        ldr = factory.addLine(p6, p2, tag=202)
-        lur = factory.addLine(p3, p7, tag=201)
-        luu = factory.addLine(p7, p8)
-        lul = factory.addLine(p8, p4)
-        lines += [ldl, ldd, ldr, lur, luu, lul]
-        ln_inflow += [ldl, lul]
-        ln_outflow += [ldr, lur]
-        ln_no_slip = [ldd, luu]
-
-        cl2 = factory.addCurveLoop([ldl, ldd, ldr, -l1])
-        cl3 = factory.addCurveLoop([lur, luu, lul, -l3])
-
-        s2 = factory.addPlaneSurface([cl2])
-        s3 = factory.addPlaneSurface([cl3])
-        srfs += [s2, s3]
-
-    pts_cut = pts_outflow
-    ln_cut = ln_outflow
-    if cut:
-        p9 = factory.addPoint(*coords[:, 8], 0., lc)
-        p10 = factory.addPoint(*coords[:, 9], 0., lc)
-        pts_no_slip += [] if fit else [p9, p10]
-        pts_outflow = [p9, p10]
-
-        ldw = factory.addLine(p2, p9)
-        lrg = factory.addLine(p9, p10)
-        lup = factory.addLine(p10, p3)
-        lines += [ldw, lrg, lup]
-        ln_outflow = [lrg]
-        ln_no_slip += [] if fit else [ldw, lup]
-
-        cl4 = factory.addCurveLoop([-l2, ldw, lrg, lup])
-        s4 = factory.addPlaneSurface([cl4])
-        srfs += [s4]
-
-        if fit:
-            p11 = factory.addPoint(*coords[:, 10], 0., lc)
-            p12 = factory.addPoint(*coords[:, 11], 0., lc)
-            pts_no_slip += [p11, p12]
-            pts_outflow += [p11, p12]
-
-            ldd_ = factory.addLine(p6, p11)
-            ldr_ = factory.addLine(p11, p9)
-            lur_ = factory.addLine(p10, p12)
-            luu_ = factory.addLine(p12, p7)
-            lines += [ldd_, ldr_, lur_, luu_]
-            ln_outflow += [ldr_, lur_]
-            ln_no_slip += [ldd_, luu_]
-
-            cl5 = factory.addCurveLoop([-ldr, ldd_, ldr_, -ldw])
-            cl6 = factory.addCurveLoop([-lup, lur_, luu_, -lur])
-            s5 = factory.addPlaneSurface([cl5])
-            s6 = factory.addPlaneSurface([cl6])
-            srfs += [s5, s6]
+    for pt_seq in curve_loops:
+        this_curve_loop = []
+        for pt, next_pt in zip(pt_seq, np.roll(pt_seq, -1)):
+            exists_fwd = pt_2_ln_map.get((pt, next_pt), -1)
+            exists_bwd = pt_2_ln_map.get((next_pt, pt), -1)
+            if (exists_fwd != -1):
+                this_curve_loop += [exists_fwd]
+            else:
+                this_curve_loop += [-exists_bwd]
+        
+        curve_loop_tag = factory.addCurveLoop(this_curve_loop)
+        surfc_tags.append(factory.addPlaneSurface([curve_loop_tag]))
 
     factory.synchronize()
 
     # Physical groups for boundary conditions
-    ln_others = np.setdiff1d(lines, ln_cut + ln_inflow + ln_outflow + ln_no_slip)
-
-    lines_bd = ln_no_slip + ln_inflow + ln_outflow
-    lines_set_vn = ln_no_slip
-    lines_set_vt = ln_no_slip + ln_inflow + ln_outflow * 1
+    lines_cut = phys_2_ln_map["cut"] if cut else phys_2_ln_map["outflow"]
+    lines_bd = phys_2_ln_map["noslip"] + phys_2_ln_map["inflow"] + phys_2_ln_map["outflow"]
+    lines_set_vn = phys_2_ln_map["noslip"]
+    lines_set_vt = phys_2_ln_map["noslip"] + phys_2_ln_map["inflow"] + phys_2_ln_map["outflow"] * 1
     lines_set_gn = np.setdiff1d(lines_bd, lines_set_vn)
     lines_set_gt = np.setdiff1d(lines_bd, lines_set_vt)
 
@@ -157,21 +124,32 @@ def create_rectangle(filename, width, height, elemSizeRatio, y_zero=0., cut=Fals
     gmsh.model.addPhysicalGroup(1, lines_set_vt, tag=2, name="setTangentFlow")
     gmsh.model.addPhysicalGroup(1, lines_set_gn, tag=3, name="setNormalForce")
     gmsh.model.addPhysicalGroup(1, lines_set_gt, tag=4, name="setTangentForce")
+    gmsh.model.addPhysicalGroup(1, lines_cut, tag=5, name="cut")
+    # gmsh.model.addPhysicalGroup(1, phys_2_ln_map["inside"], tag=6, name="others")
+    tag_bulk_2d = gmsh.model.addPhysicalGroup(2, surfc_tags, tag=-1, name="bulk")
 
-    gmsh.model.addPhysicalGroup(1, ln_cut, tag=5, name="cut")
-    gmsh.model.addPhysicalGroup(1, ln_others, tag=6, name="others")
+    factory.synchronize()
 
-    tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
+    if size_field:
+        gmsh.model.mesh.field.add("Distance", tag=1)
+        gmsh.model.mesh.field.setNumbers(1, "CurvesList", phys_2_ln_map["inside"])
+        gmsh.model.mesh.field.setNumber(1, "Sampling", 200)
 
-    # Meshing
+        gmsh.model.mesh.field.add("Threshold", 2)
+        gmsh.model.mesh.field.setNumber(2, "InField", 1)
+        gmsh.model.mesh.field.setNumber(2, "SizeMin", lc / 3.)
+        gmsh.model.mesh.field.setNumber(2, "SizeMax", lc)
+        gmsh.model.mesh.field.setNumber(2, "DistMin", height / 50.)
+        gmsh.model.mesh.field.setNumber(2, "DistMax", height / 20.)
 
-    # for li, length in zip(lines, [width, height, width, height]):
-    #     n_nodes = int(np.ceil(length / lc))
-    #     meshFact.setTransfiniteCurve(li, numNodes=n_nodes)
-    # for si in srfs:
-    #     meshFact.setTransfiniteSurface(si)
+        gmsh.model.mesh.field.setAsBackgroundMesh(2)
+        
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+        gmsh.option.setNumber("Mesh.Algorithm", 6)
 
-    meshFact.generate(2)
+    meshFact.generate(2)    
     gmsh.write(filename)
 
     display_elem_edge_node()
@@ -180,23 +158,36 @@ def create_rectangle(filename, width, height, elemSizeRatio, y_zero=0., cut=Fals
     return
 
 
-def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
+def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False, multiple=False):
+
+    if radial and multiple:
+        print("Radial and multiple not possible at same time")
+        return
+
     gmsh.initialize()
     gmsh.model.add("cylinder")
 
     radius = 0.5  # unitary diameter
     height = 7.5 * radius if radial else 10. * radius
-    width = 15. * radius
+    width = 20. * radius
     bottom = 0. if radial else -height / 2.
 
     rect = gmsh.model.occ.add_rectangle(0., bottom, 0., width, height, 0)
-    if sharp:
-        tool = gmsh.model.occ.add_rectangle(
-            width / 2. - radius / 2., -radius, 0., radius, 2. * radius, 1000
-        )
+    
+    if multiple:
+        centers = [(0.4 * width, -0.5 * radius), (0.6 * width, +0.5 * radius)] 
     else:
-        tool = gmsh.model.occ.add_disk(width / 2., 0., 0., radius, radius, 1000)
-    res_cut = gmsh.model.occ.cut([(2, rect)], [(2, tool)])
+        centers = [(0.5 * width, 0.)]
+    
+    tools = []
+    for center_x, center_y in centers:
+        if sharp:
+            args = (center_x - radius / 2., center_y - radius, 0., radius, 2. * radius)
+            tools += [gmsh.model.occ.add_rectangle(*args)]
+        else:
+            tools += [gmsh.model.occ.add_disk(center_x, center_y, 0., radius, radius)]
+
+    res_cut = gmsh.model.occ.cut([(2, rect)], [(2, tool) for tool in tools])
 
     gmsh.model.occ.synchronize()
     gmsh.model.geo.synchronize()
@@ -207,20 +198,24 @@ def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
         if sharp:
             pts_rect = [1, 2, 3, 4]
             pts_tool = [5, 6, 7, 8]
-            ln_inflow, ln_outflow, ln_tool, ln_lateral = [1], [3], [5, 6, 7], [2, 4, 8]
+            ln_tool = [5, 6, 7]
+            ln_inflow, ln_outflow, ln_lateral = [1], [3], [2, 4, 8]
         else:
             pts_rect = [3, 4, 5, 6]
             pts_tool = [1, 2]
-            ln_inflow, ln_outflow, ln_tool, ln_lateral = [3], [5], [1], [2, 4, 6]
+            ln_tool = [1]
+            ln_inflow, ln_outflow, ln_lateral = [3], [5], [2, 4, 6]
     else:
         if sharp:
             pts_rect = [1, 2, 3, 4]
-            pts_tool = [5, 6, 7, 8]
-            ln_inflow, ln_outflow, ln_tool, ln_lateral = [2], [3], [5, 6, 7, 8], [1, 4]
+            pts_tool = [5, 6, 7, 8, 9, 10, 11, 12] if multiple else [5, 6, 7, 8]
+            ln_tool = [5, 6, 7, 8, 9, 10, 11, 12] if multiple else [5, 6, 7, 8]
+            ln_inflow, ln_outflow, ln_lateral = [2], [3], [1, 4]
         else:
             pts_rect = [1, 2, 3, 4]
-            pts_tool = [5]
-            ln_inflow, ln_outflow, ln_tool, ln_lateral = [2], [3], [5], [1, 4]
+            pts_tool = [5, 6] if multiple else [5]
+            ln_tool = [5, 6] if multiple else [5]
+            ln_inflow, ln_outflow, ln_lateral = [2], [3], [1, 4]
 
     # Size field
     lc = elemSizeRatio * height
@@ -231,7 +226,7 @@ def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False):
 
     gmsh.model.mesh.field.add("Threshold", 2)
     gmsh.model.mesh.field.setNumber(2, "InField", 1)
-    gmsh.model.mesh.field.setNumber(2, "SizeMin", lc / 10)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", lc / 8)
     gmsh.model.mesh.field.setNumber(2, "SizeMax", lc)
     gmsh.model.mesh.field.setNumber(2, "DistMin", 0.30)
     gmsh.model.mesh.field.setNumber(2, "DistMax", 2.50)
@@ -562,13 +557,14 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
     coords = center + np.dot(rot_matrix, (coords - center).T).T
 
     mesh_size = elemSizeRatio * width
-    mesh_size_fine = mesh_size / 2.
+    mesh_size_fine = mesh_size * 0.7
+    mesh_size_very_fine = mesh_size * 0.6
 
     p1 = factory.addPoint(0., 0., 0., mesh_size)
-    p2 = factory.addPoint(l1, 0., 0., mesh_size_fine)
+    p2 = factory.addPoint(l1, 0., 0., mesh_size_very_fine)
     p3 = factory.addPoint(l1, width, 0., mesh_size_fine)
     p4 = factory.addPoint(0., width, 0., mesh_size)
-    p5 = factory.addPoint(*coords[0], 0., mesh_size_fine)
+    p5 = factory.addPoint(*coords[0], 0., mesh_size_very_fine)
     p6 = factory.addPoint(*coords[1], 0., mesh_size_fine)
     p7 = factory.addPoint(*coords[2], 0., mesh_size)
     p8 = factory.addPoint(*coords[3], 0., mesh_size)
@@ -588,6 +584,24 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
     s1 = factory.addPlaneSurface([cl])
 
     gmsh.model.geo.synchronize()
+
+
+    pp_1 = factory.addPoint(1.3, 0.4, 0.)
+    pp_2 = factory.addPoint(2.0, 0.4, 0.)
+    ll = factory.addLine(pp_1, pp_2)
+    gmsh.model.mesh.field.add("Distance", tag=1)
+    gmsh.model.mesh.field.setNumbers(1, "CurvesList", [ll])
+    gmsh.model.mesh.field.setNumber(1, "Sampling", 200)
+
+    gmsh.model.mesh.field.add("Threshold", 2)
+    gmsh.model.mesh.field.setNumber(2, "InField", 1)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size / 7)
+    gmsh.model.mesh.field.setNumber(2, "SizeMax", mesh_size)
+    gmsh.model.mesh.field.setNumber(2, "DistMin", 0.20)
+    gmsh.model.mesh.field.setNumber(2, "DistMax", 0.50)
+
+    gmsh.model.mesh.field.setAsBackgroundMesh(2)
+    gmsh.option.setNumber("Mesh.Algorithm", 5)
 
     ln_in_out = [4, 8]
     lines_set_vn = np.setdiff1d(lines, ln_in_out)
@@ -617,16 +631,24 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
 if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
-    # create_rectangle(path_to_dir + "rectangle.msh", width=2., height=1.,
-    #                        elemSizeRatio=1. / 20., y_zero=0., cut=False)
-    # create_rectangle(path_to_dir + "rectanglerot.msh", width=2., height=1.,
-    #                        elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=np.pi / 6.)
+    create_rectangle(
+        path_to_dir + "rectangle.msh", width=2., height=1., elemSizeRatio=1. / 20.,
+        size_field=True, y_zero=0.15, angle=0., fit=False, cut=True,
+    )
+    # create_rectangle(
+    #     path_to_dir + "rectanglerot.msh", width=2., height=1.,
+    #     elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=np.pi / 6.
+    # )
 
-    create_cylinder(path_to_dir + "cylinder.msh", elemSizeRatio=1./18., radial=False, sharp=False)
+    # create_cylinder(
+    #     path_to_dir + "cylinder_new.msh", elemSizeRatio=1./18., 
+    #     radial=True, sharp=False, multiple=False
+    # )
 
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./11., cut=False, size_field=True)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False, size_field=False)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
-    # create_pipe(path_to_dir + "pipe.msh", 1./20., l1=2., l2=1., width=1., radius=0.5, theta=90.)
+    # create_pipe(path_to_dir + "pipe.msh", 1./20., l1=0., l2=0., width=1., radius=0.5, theta=90.)
+    # create_pipe(path_to_dir + "pipe.msh", 1./15., l1=1.5, l2=1.5, width=1., radius=1., theta=180.)

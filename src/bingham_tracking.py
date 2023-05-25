@@ -32,6 +32,12 @@ def build_approximation(sim: Simulation_2D, node, t_num, interface_nodes, deg):
 
     # diamond_elems = sim.n2e_map[sim.n2e_st[node]: sim.n2e_st[node + 1]]
     support_elems = sim.get_support_approx(node)
+    # print(
+    #     f"singular support [{node+1:d}] ?", 
+    #     f"{np.amin(sim.determinants[support_elems]):8.3g} >?<",
+    #     f"{sim.min_det / 100:8.3g}"
+    # )
+    support_elems = support_elems[sim.determinants[support_elems] > sim.min_det / 100]
     support_nodes = np.array([], dtype=int)
 
     max_pts_used = sim.ng_loc * support_elems.size
@@ -49,7 +55,7 @@ def build_approximation(sim: Simulation_2D, node, t_num, interface_nodes, deg):
         # for each gauss point of this element
         for g, (xi, eta, _) in enumerate(sim.uvw):
 
-            if t_num[elem, g] > sim.tol_yield:  # if information is useful
+            if t_num[elem, g] > sim.tol_yield * 1.:  # if information is useful
                 gauss_coords = np.dot(np.array([1. - xi - eta, xi, eta]), corners_coords)
                 matrix[row, [1, 2]] = gauss_coords
                 if deg == 2:
@@ -311,8 +317,9 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
         plot_solution_2D(u_num, p_num, t_num, sim, extra)
 
         # Check if nodes moved enough to require new 'fem solve'
-        res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
-        if (np.amax(delta) < tol_delta) or (res_input == 'n'):
+        # res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
+        # if (np.amax(delta) < tol_delta) or (res_input == 'n'):
+        if (np.amax(delta) < tol_delta):
             break
 
         # Change node positions, jacobians...
@@ -320,6 +327,7 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
 
         # Solve the problem, slightly modified
         u_num, p_num, t_num = solve_FE_mosek(sim, strong=False)
+        # sim.tol_yield = min(2 * sim.tol_yield, 1.e-4)
 
         sim.iteration += 1
 

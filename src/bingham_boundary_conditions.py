@@ -1,7 +1,7 @@
 from bingham_structure import *
 
 tol = 1.e-5
-beta = 1. * np.pi / 6.
+beta = 0. * np.pi / 6.
 
 
 #################################################################################
@@ -210,7 +210,9 @@ def corner_bfs(coords, normals):
 
 #################################################################################
 ###############################  -  Pipe Flow  -  ###############################
-l1, l2, width, radius, theta = 2., 1., 1., 0.5, 90.  # copy-paste depending on pipe
+# l1, l2, width, radius, theta = 2., 1., 1., 0.5, 90.  # copy-paste depending on pipe
+l1, l2, width, radius, theta = 0.1, 0.1, 1., 1.5, 180.  # copy-paste depending on pipe
+
 rot_matrix = np.array([
     [+np.cos(np.radians(theta)), +np.sin(np.radians(theta))],
     [-np.sin(np.radians(theta)), +np.cos(np.radians(theta))]
