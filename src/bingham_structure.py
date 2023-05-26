@@ -357,7 +357,7 @@ class Simulation_2D:
             return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder, corner_cylinder
         elif self.model_name in ["opencavity"]:
             return vn_opencavity, vt_opencavity, gn_opencavity, gt_opencavity, corner_opencavity
-        elif self.model_name in ["bfs"]:
+        elif self.model_name in ["bfs", "pipeneck"]:
             return vn_bfs, vt_bfs, gn_bfs, gt_bfs, corner_bfs
         elif self.model_name in ["pipe"]:
             return vn_pipe, vt_pipe, gn_pipe, gt_pipe, corner_pipe

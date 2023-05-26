@@ -1,6 +1,6 @@
 from bingham_structure import *
 from bingham_fem_mosek import solve_FE_mosek
-from bingham_post_pro import plot_solution_2D
+from bingham_post_pro import plot_solution_2D, plot_1D_slice
 
 
 def find_nodes_interface(sim: Simulation_2D, t_num):
@@ -294,6 +294,7 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
 
     # Solve first time with initial mesh
     u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
+    # plot_1D_slice(u_num, sim, extra_name="2D_init")
     init_coords = np.copy(sim.coords)
     moved_once = np.array([], dtype=int)
 
@@ -311,7 +312,8 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
         ad = np.setdiff1d(nodes_to_move, interface_nodes).size
         print(f"Interface location - predictor (Gauss points) : {interface_nodes.size:d} nodes")
         print(f"Interface location - corrector (Linear apprx) : {rm:d} removed // {ad:d} added")
-        print(f"Maximum node displacement correction : {np.amax(delta):.2e}")
+        print(f"Maximum node displacement : {np.amax(delta):.2e}")
+        print(sim.coords[nodes_to_move[np.argmax(delta)]])
 
         extra = [interface_nodes, strain_rec, coefs, nodes_to_move, new_coords]
         plot_solution_2D(u_num, p_num, t_num, sim, extra)

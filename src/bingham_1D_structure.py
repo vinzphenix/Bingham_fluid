@@ -3,13 +3,17 @@ import numpy as np
 
 ftSz1, ftSz2, ftSz3 = 15, 13, 11
 
-
+# Gauss-Legendre quadrature
 xG_P1 = np.array([0.])  # integration points over [-1, 1]
 wG_P1 = np.array([2.])  # weights over [-1, 1]
-
 xG_P2 = np.array([-1. / np.sqrt(3), 1. / np.sqrt(3)])  # integration points over [-1, 1]
 wG_P2 = np.array([1., 1.])  # weights over [-1, 1]
-# yg = ym[i] + xg * dy[i] / 2.
+
+# Simpson'rule
+# xG_P2 = np.array([-1., 0., 1.])  # integration points over [-1, 1]
+# wG_P2 = np.array([1./3., 4/3., 1./3.])  # weights over [-1, 1]
+# xG_P1, wG_P1 = xG_P2, wG_P2
+
 
 PHI_P1 = [
     lambda xi: (1. - xi) * 0.5,
@@ -57,16 +61,16 @@ class Simulation_1D:
 
         if self.degree == 1:
             self.n_node = self.n_elem + 1
-            self.nG, self.xG, self.wG = 1, xG_P1, wG_P1
+            self.xG, self.wG = xG_P1, wG_P1
             self.PHI, self.DPHI = PHI_P1, DPHI_P1
         elif self.degree == 2:
             self.n_node = 2 * self.n_elem + 1
-            self.nG, self.xG, self.wG = 2, xG_P2, wG_P2
+            self.xG, self.wG = xG_P2, wG_P2
             self.PHI, self.DPHI = PHI_P2, DPHI_P2
         else:
             raise ValueError("Element order should be 1 or 2")
 
-        
+        self.nG = len(self.xG)
         self.n_var = self.n_node + 2 * self.nG * self.n_elem
         # horizontal velocities --- bounds on viscosity term --- bounds on yield-stress term
 

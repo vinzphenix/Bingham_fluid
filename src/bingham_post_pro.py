@@ -3,7 +3,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
 
 
-def plot_1D_slice(u_num, sim: Simulation_2D):
+def plot_1D_slice(u_num, sim: Simulation_2D, extra_name=""):
 
     if sim.model_name[:4] not in ["rect", "test"]:
         return
@@ -36,11 +36,11 @@ def plot_1D_slice(u_num, sim: Simulation_2D):
 
     params = dict(H=H, K=sim.K, tau_zero=sim.tau_zero, f=dpdx, degree=deg_along_edge,
                   n_elem=n_intervals, random_seed=-1, fix_interface=False,
-                  save=False, plot_density=25, dimensions=True)
+                  save=True, plot_density=25, dimensions=False)
 
     sim_1D = Simulation_1D(params)
     sim_1D.set_y(slice_y)
-    plot_solution_1D(sim=sim_1D, u_nodes=slice_u)
+    plot_solution_1D(sim=sim_1D, u_nodes=slice_u, extra_name=extra_name)
     return
 
 
@@ -87,9 +87,10 @@ def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
         dsf_at_nodes = np.append(dsf_at_nodes, bubble_dsf[:, np.newaxis, :], axis=1)
 
     for i in range(sim.n_elem):
-        idx_local_nodes = sim.elem_node_tags[i, :sim.n_local_node]
+        idx_local_nodes = sim.elem_node_tags[i]
         det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        for j, idx_node in enumerate(idx_local_nodes):  # don't evaluate at bubble node
+        # don't evaluate at bubble node 
+        for j, idx_node in enumerate(idx_local_nodes[:sim.n_local_node]):  
             dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
             dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
             l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
@@ -120,8 +121,8 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
         edge_nb = np.argwhere(sim.elem_node_tags[elem, :3] == org)[0, 0]
 
         # Mask that indicates which nodes of the element are on the boundary edge
-        nodes_on_edge = np.in1d(sim.elem_node_tags[elem], edge_node_tags[i])
-        indices = np.arange(sim.nsf)[nodes_on_edge]
+        nodes_on_edge = np.in1d(sim.elem_node_tags[elem, :sim.n_local_node], edge_node_tags[i])
+        indices = np.arange(sim.n_local_node)[nodes_on_edge]
         for j, elem_node_idx in enumerate(indices):
             local_strain = strain_full[elem, elem_node_idx, [[0, 1], [3, 4]]]
             local_norm = 2. * local_strain[0, 0]**2 + 2. * \
@@ -135,14 +136,16 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
             )
             shear_force[i, j] = np.dot(normal[i], local_strain)
 
-    data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3))
+    data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3 * (n_pts == 3)))
     data[:, 0] = sim.coords[edge_node_tags[:, 0], 0]  # x coord node 1
     data[:, 1] = sim.coords[edge_node_tags[:, 1], 0]  # x coord node 2
     data[:, 2] = sim.coords[edge_node_tags[:, 0], 1]  # y coord node 1
     data[:, 3] = sim.coords[edge_node_tags[:, 1], 1]  # y coord node 2
-    data[:, [6, 7, 9, 10, 12, 13]] = np.c_[
-        shear_force[:, 0, :], shear_force[:, 1, :], shear_force[:, 2, :]
-    ]
+    data[:, [6, 7, 9, 10]] = np.c_[shear_force[:, 0, :], shear_force[:, 1, :]]
+    if n_pts == 3:  # line with 3 nodes (vertex - inner - vertex)
+        data[:, [12, 13]] = shear_force[:, 2, :]
+    else:  # n_pts = 2
+        pass
 
     return n_edge, data
 
@@ -167,7 +170,8 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     mass_matrices[rows == 0] = 0.
     mass_matrices[(rows == 0) & (cols == 0)] = 1.
 
-    mass_matrix = csr_matrix((mass_matrices, (rows, cols)), shape=(sim.n_node, sim.n_node))
+    n_node = sim.n_node + sim.n_elem * (sim.element == "mini")
+    mass_matrix = csr_matrix((mass_matrices, (rows, cols)), shape=(n_node, n_node))
 
     #############################  -  Vorticity source  -  ############################
     phi = sim.v_shape_functions
@@ -181,7 +185,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     source = source.flatten()
     rows = sim.elem_node_tags.flatten()
     cols = np.zeros(sim.elem_node_tags.size, dtype=int)
-    rhs_vorticity = csr_matrix((source, (rows, cols)), shape=(sim.n_node, 1))
+    rhs_vorticity = csr_matrix((source, (rows, cols)), shape=(n_node, 1))
     rhs_vorticity = rhs_vorticity.toarray().flatten()
 
     #############################  -  Boundary source  -  #############################
@@ -196,7 +200,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     source_boundary = source_boundary.flatten()
     rows = edge_node_tags.flatten()
     cols = np.zeros(edge_node_tags.size, dtype=int)
-    rhs_boundary = csr_matrix((source_boundary, (rows, cols)), shape=(sim.n_node, 1))
+    rhs_boundary = csr_matrix((source_boundary, (rows, cols)), shape=(n_node, 1))
     rhs_boundary = rhs_boundary.toarray().flatten()
 
     #############################  -  System solve  -  #############################
@@ -210,7 +214,7 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     # plt.spy(mass_matrix.todense()[np.ix_(perm, perm)])
     # plt.show()
 
-    return psi
+    return psi[:sim.n_node]
 
 
 def add_streamfunction(sim: Simulation_2D, u_num):
@@ -264,7 +268,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 
     vorticity = (strain_tensor[:, :, 3] - strain_tensor[:, :, 1]).flatten()
     divergence = (strain_tensor[:, :, 0] + strain_tensor[:, :, 4]).flatten()
-    velocity = np.c_[u_num, np.zeros(sim.n_node)].flatten()
+    velocity = np.c_[u_num[:sim.n_node], np.zeros(sim.n_node)].flatten()
     strain_norm = strain_norm.flatten()
 
     # Compute strain-rate matrix by symmetrizing grad(v)
@@ -476,6 +480,7 @@ def add_reconstruction(sim: Simulation_2D, extra):
     gmsh.view.option.setNumber(view_avg_rec, "CustomMax", 0.)
     gmsh.view.option.setNumber(view_avg_rec, "LineWidth", 2.)
     gmsh.view.option.setNumber(view_avg_rec, "ColormapNumber", 21)
+    gmsh.view.option.setNumber(view_avg_rec, "ShowScale", 0)
 
     # gmsh.view.option.setNumber(view_avg_rec, 'PointSize', 7.5)
     # gmsh.view.option.setNumber(view_avg_rec, 'Boundary', 3)
@@ -567,12 +572,12 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     strain_tensor = np.zeros((sim.n_elem, sim.n_local_node, 9))
     compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) matrix
 
-    if sim.element == "mini":  # remove bubble stuff
-        dsf_rmv = sim.dv_shape_functions_at_v[:, -1, :]
-        elem_node_tags_rmv = sim.elem_node_tags[:, -1]
-        sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
-        sim.elem_node_tags = sim.elem_node_tags[:, :-1]
-        u_num = u_num[:sim.n_node]
+    # if sim.element == "mini":  # remove bubble stuff
+    #     dsf_rmv = sim.dv_shape_functions_at_v[:, -1, :]
+    #     elem_node_tags_rmv = sim.elem_node_tags[:, -1]
+    #     sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
+    #     sim.elem_node_tags = sim.elem_node_tags[:, :-1]
+    #     u_num = u_num[:sim.n_node]
 
     sim.tag = 1
     tags_velocities = add_velocity_views(sim, u_num, strain_tensor, strain_norm)
@@ -613,8 +618,8 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.fltk.run()
     gmsh.fltk.finalize()
 
-    if sim.element == "mini":  # reset as it was
-        sim.dv_shape_functions_at_v = np.insert(sim.dv_shape_functions_at_v, 3, dsf_rmv, axis=1)
-        sim.elem_node_tags = np.c_[sim.elem_node_tags, elem_node_tags_rmv]
+    # if sim.element == "mini":  # reset as it was
+    #     sim.dv_shape_functions_at_v = np.insert(sim.dv_shape_functions_at_v, 3, dsf_rmv, axis=1)
+    #     sim.elem_node_tags = np.c_[sim.elem_node_tags, elem_node_tags_rmv]
 
     return

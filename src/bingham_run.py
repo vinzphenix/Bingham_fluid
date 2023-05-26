@@ -106,11 +106,13 @@ if __name__ == "__main__":
     gmsh.option.set_number("General.Verbosity", 2)
 
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="test")
-    parameters = dict(K=1., tau_zero=0.15, f=[0., 0.], element="th", model_name="rectangle")
+    parameters = dict(K=1., tau_zero=0.20, f=[0., 0.], element="th", model_name="rectangle")
     
     # beta = np.sin(0.)
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectanglerot")
     # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe")
+    # parameters = dict(K=1., tau_zero=0.10, f=[0., 0.], element="th", model_name="pipeneck")
+
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cylinder")
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="opencavity")
@@ -123,9 +125,12 @@ if __name__ == "__main__":
         # sim.save_solution(u_field, p_field, d_field, model_variant='')
 
     elif mode == 2:  # Solve the problem: ITERATE
-        res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-5, deg=1, strong=False)
+        res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-4, deg=1, strong=False)
         u_field, p_field, d_field = res
         # sim.save_solution(u_field, p_field, d_field, model_variant=f'cheat')
+
+    # 0.24714, 0.0737
+    # 
 
     elif mode == 3:  # Load solution from disk
         # model, variant = "cavity", "cheat"
@@ -147,6 +152,6 @@ if __name__ == "__main__":
         # u_field[:, 1] = (0.25 - sim.coords[:, 1] ** 2) * sim.coords[:, 0] * (3. - sim.coords[:, 0])
 
     plot_solution_2D(u_field, p_field, d_field, sim)
-    plot_1D_slice(u_field, sim)
+    # plot_1D_slice(u_field, sim, extra_name="2D_last")
 
     gmsh.finalize()

@@ -236,6 +236,7 @@ It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{e
 
 
 \chapter{1D solution using conic optimization}
+\label{chap:chap1}
 
 \section{Introduction}
 To start, we will study the well know Poiseuille flow: the fluid is pushed forward by a constant pressure gradient in a channel between two infinitely long plates. This flow is of course a bit boring since it is stationary and fully developed. But it has the merit of being simple to introduce the optimization method in a one-dimensional framework.
@@ -346,7 +347,7 @@ The minimization function $J$ of \autoref{eq:minimize} becomes:
 \begin{aligned}
     \mathcal{J}(u^h) &= \int_{\Omega} \left[ \frac{K}{2} \left(\pdv{u^h}{y}\right)^2 + \tau_0 \left|\pdv{u^h}{y}\right| - f u^h \right] \dd y\\
     &= \sum_{i=1}^N \int_{\Omega_i} \left[\frac{K}{2}  \left(\pdv{u^h}{y}\right)^2_{\Omega_i} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{\Omega_i} - f u^h\vert_{\Omega_i} \; \right] \dd y\\
-    &= \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{K}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
+    &\approx \sum_{i=1}^N \sum_{g=1}^{ng} \omega_{g} \left[\frac{K}{2}  \left(\pdv{u^h}{y}\right)^2_{y=y_g} \ + \tau_0 \left|\pdv{u^h}{y}\right|_{y=y_g} - f u^h(y_g) \; \right] \frac{\Delta y_i}{2}
 \end{aligned}
 \end{equation}
 where we used Gauss-Legendre quadrature of appropriate order with weights $\omega_g$ and coordinates $y_g$ in the element $\Omega_i$, mapped from coordinates $\eta_g$ in the reference element $[-1,1]$.
@@ -463,7 +464,7 @@ We minimize this problem over the nodal velocities $U$, and the newly added $S$ 
 
 At this stage, the finite element solution will be relevant only when the interface is represented on the mesh. Therefore, the arbitrary mesh is manually modified such that two nodes are placed at $y=\pm y_0$. The goal of the next section, is to develop an algorithm that moves the nodes without knowing the interface position beforehand.
 
-The optimization problem was solved with the interior-point solver of the open-source software \texttt{CVXOPT}.
+The optimization problem was solved with the interior-point solver of the open-source software \texttt{CVXOPT}. Every simulation presented in this chapter \cref{chap:chap1} was done with $Bn=2$.
 
 \begin{figure}
     \centering
@@ -498,13 +499,8 @@ The discontinuity is to be found in the derivative of the deformation, e.g. the 
 
 We will therefore make this continuity of the strain rate field our primary objective. Sadly, $\mathcal{P}_1$-elements for the velocity only provide piecewise constant strains, which are of course discontinuous. The idea is thus to reconstruct a continuous strain field as a linear approximation of the finite element solution at the Gauss points. This approximation is one-sided at each interface as we should only take the information from the yielded regions.
 
-The choice of gauss points as abscissae of the linear approximation may seem trivial in this 1-dimensional model case, but the topic was seriously investigated for general geometries. Barlow showed that reduced integration points are superconvergent points, i.e. at which the stress is an order of magnitude more accurate than in any other point within the element \cite{Barlow}. Later on, Zienkiewicz and Zhu developed an error estimator by extrapolating values at the integration points \cite{Zienkiewicz}.
-
-The procedure is described in \cref{alg:tacking_1d} and illustrated in \cref{fig:tracking_1D_P1_steps,fig:tracking_1D_P2_steps}. The strain field $\partial_y u$ is shown at each iteration with with its corresponding mesh. The complete overview of the solution is provided for the first and last iterations, for both $\mathcal{P}_1$ and $\mathcal{P}_2$ elements, in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}.
-
-
-\begin{algorithm}[H]
-    \caption{Interface-tracking algorithm in 1 dimension.}
+\begin{algorithm}[!b]
+    \caption{Interface tracking algorithm in 1 dimension.}
     \label{alg:tacking_1d}
     optimalMesh $\gets$ false\;
     $\mathcal{M} \gets $ initial mesh with nodes $y_i$\;
@@ -516,7 +512,7 @@ The procedure is described in \cref{alg:tacking_1d} and illustrated in \cref{fig
             %    break \tcp*{Mesh should be finer to have unyielded elements}
             %}
         optimalMesh $\gets$ true\;
-        \ForAll {$k \in \mathcal{I}$}{
+        \ForEach {$k \in \mathcal{I}$}{
             $\ell_k \gets$ one-sided linear approximation function of the strain close to $y_k$\;
             \If{$\ell_k(y_k) \not\approx 0$} {
                 optimalMesh $\gets$ false \tcp*{since $\partial_y u$ is not continuous at the interface}
@@ -527,45 +523,53 @@ The procedure is described in \cref{alg:tacking_1d} and illustrated in \cref{fig
     \Return $U_j$ 
 \end{algorithm}
 
+The choice of gauss points as abscissae of the linear approximation may seem trivial in this 1-dimensional model case, but the topic was seriously investigated for general geometries. Barlow showed that reduced integration points are superconvergent points, i.e. at which the stress is an order of magnitude more accurate than in any other point within the element \cite{Barlow}. Later on, Zienkiewicz and Zhu developed an error estimator by extrapolating values at the integration points \cite{Zienkiewicz}.
+
+The procedure is described in \cref{alg:tacking_1d} and illustrated in \cref{fig:tracking_1D_P1_steps,fig:tracking_1D_P2_steps}. The strain field $\partial_y u$ is shown at each iteration with with its corresponding mesh. The complete overview of the solution is provided for the first and last iterations, for both $\mathcal{P}_1$ and $\mathcal{P}_2$ elements, in \cref{fig:tracking_1D_P1,fig:tracking_1D_P2}.
+
+
 
 %Initially, with a random mesh, it is almost certain that the interface (a point) is not represented on the mesh with a node. We can however still compute the solution with the finite element code described in \cref{sec:fem_1D}. The nodes will be moved progressively until the continuity of the strain field is ensured.
 
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  start  %%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[H]
+\begin{figure}[hb]
     \centering
     \begin{subfigure}[t]{\textwidth}
-        \includesvg[width=0.98\textwidth]{../figures/res_P1_iteration_01.svg}
+        \includesvg[width=\textwidth]{../figures/res_P1_iteration_01.svg}
         %\caption{From first to second iteration.}
     \end{subfigure}
     \begin{subfigure}[t]{\textwidth}
-        \includesvg[width=0.98\textwidth]{../figures/res_P1_iteration_02.svg}
+        \includesvg[width=\textwidth]{../figures/res_P1_iteration_02.svg}
         %\caption{From second to third iteration.}
     \end{subfigure}
-    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. Mesh with 5 $\mathcal{P}_1$-elements.}
+    \caption{Strain field and its reconstruction during the interface tracking algorithm. First to second iteration above, and second to third iteration below. Mesh with 5 $\mathcal{P}_1$-elements.}
     \label{fig:tracking_1D_P1_steps}
 \end{figure}
 
-\begin{figure}[H]
+\begin{figure}[ht]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P1_first.svg}
         \caption{Initial mesh.}
+        \label{fig:tracking_1D_P1_a}
     \end{subfigure}
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P1_last.svg}
         \caption{Final mesh.}
+        \label{fig:tracking_1D_P1_b}
     \end{subfigure}
     \caption{Finite element solution of the Poiseuille flow at the start, and after convergence of the algorithm. $\mathcal{P}_1$ elements.}
     \label{fig:tracking_1D_P1}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P1  -  end  %%%%%%%%%%%%%%%%%%%%%%
 
-Although the initial velocity profile was far from correct, two iterations were enough to bring the nodes to the interface, and provide an accurate numerical solution with errors around $10^{-6}$.
+\FloatBarrier
+Although the initial velocity profile was far from correct in \cref{fig:tracking_1D_P1_a}, two iterations were enough to bring the nodes to the interface, and provide an accurate numerical solution with errors around $10^{-6}$ in \cref{fig:tracking_1D_P1_b}.
 
 Surprisingly the convergence is faster for $\mathcal{P}_1$-elements (piecewise constant strain rate) than for $\mathcal{P}_2$-elements (piecewise linear strain rate). This can be easily explained by a flaw in \cref{alg:tacking_1d}: the reconstruction is made over all the Gauss points of elements near the current interface. However, one of these gauss point can be inside the unyielded region, as can be seen in \cref{fig:tracking_1D_P2_steps}. In that case, the reconstruction is deteriorated because it uses information from the wrong side, leading to a slower convergence.
 
 %%%%%%%%%%%%%%%%%%%%%%  1D tracking P2  -  start  %%%%%%%%%%%%%%%%%%%%%%
-\begin{figure}[H]
+\begin{figure}[hb]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P2_iteration_01.svg}
@@ -576,11 +580,11 @@ Surprisingly the convergence is faster for $\mathcal{P}_1$-elements (piecewise c
         \includesvg[width=\textwidth]{../figures/res_P2_iteration_02.svg}
         %\caption{From second to third iteration.}
     \end{subfigure}
-    \caption{Strain field and its reconstruction during the interface-tracking algorithm. First to second iteration above, and second to third iteration below. $\mathcal{P}_1$ elements.}
+    \caption{Strain field and its reconstruction during the interface tracking algorithm. First to second iteration above, and second to third iteration below. $\mathcal{P}_1$ elements.}
     \label{fig:tracking_1D_P2_steps}
 \end{figure}
 
-\begin{figure}[b]
+\begin{figure}[ht]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/res_P2_first.svg}
@@ -610,21 +614,35 @@ where the product $U_j (y_{i}-y_{i-1})$ is obviously not convex in the variables
     -f\sum_j U_j \phi_j \Delta y_i &\qquad \text{convex because linear in } y_i
 \end{align}
 
-The second difficulty is even greater: the optimum of this problem (fixing the nodal values or not) is not a mesh with nodes placed at the analytical interface: with $P^1$ elements, the energy functional can be better minimized by \textit{wrongly} placing the nodes. An example is shown in \cref{fig:sensibility_exact,fig:sensibility_exact} with a mesh of only four nodes.
-\begin{figure}
+The second difficulty is even greater: the optimum of this problem (fixing the nodal values or not) is not a mesh with nodes placed at the analytical interface: with $\mathcal{P}_1$ elements, the energy functional can be better minimized by \textit{wrongly} placing the nodes. An example is shown in \cref{fig:sensibility_exact,fig:sensibility_exact} with a mesh of only four nodes.
+
+\begin{figure}[!b]
     \centering
     \includesvg[width=\textwidth]{../figures/sensibility_1D_exact.svg}
     \caption{Nodes at the interface: $\mathcal{J}(u^h) = \mathcal{J}(u^*) + 1.302\times 10^{-3}$.}
     \label{fig:sensibility_exact}
 \end{figure}
-\begin{figure}
+\begin{figure}[!t]
     \centering
     \includesvg[width=\textwidth]{../figures/sensibility_1D_bad.svg}
     \caption{Optimal nodes: $\mathcal{J}(u^h) = \mathcal{J}(u^*) + 5.787\times 10^{-4}$.}
     \label{fig:sensibility_bad}
 \end{figure}
 
-With $P^2$ elements, this energy-based approach would provide the optimal piecewise quadratic velocity field over all possible meshes. Since, by chance, the analytical solution is quadratic, it would also be the solution of the finite element problem. Hence, the minimization would give the exact velocity field and the correct mesh with nodes at the interface. In that case, it would be impossible to further decrease the cost as the exact solution is optimal over all velocity fields in $H^1(\Omega)$. The approach is however not suitable in general where the exact velocity field is not necessarily part of the finite element space.
+\pagebreak
+With $\mathcal{P}_2$, something even stranger happened: a numerical solution $u^h$ claimed to minimize the functional better than the analytical solution $u^*$. This is of course impossible because $u^*$ is the minimum of $\mathcal{J}$ over all fields $u \in H^1(\Omega)$, which includes piecewise quadratic fields (and many more). This nonsense is due to the discrete integration rule, that is unable to exactly integrate the absolute value in the functional: $\mathcal{J} = \dots + \int_{\Omega}\tau_0 \|\gam(\vv^h)\|$. The quadrature succeeds in decreasing the energy with a negative contribution from the integral of a norm, as shown in \cref{fig:sensibility_quad}.
+
+Increasing the number of gauss points helps, but it comes with the prohibitive cost of adding two variables per element to the optimization problem: $T_{i,g}$ and $S_{i,g}$. A cleverer improvement would be to place an integration point at the boundary of each element, with the Simpson's rule for example.
+
+\begin{figure}[!b]
+    \centering
+    \includesvg[width=\textwidth]{../figures/sensibility_1D_quadrature.svg}
+    \caption{Quadrature: $\mathcal{J}(u^h) = \mathcal{J}^* - 2.36\times 10^{-4}$. Exact integration: $\mathcal{J}(u^h) = \mathcal{J}^* + 2.498\times 10^{-3}$.}
+    \label{fig:sensibility_quad}
+\end{figure}
+
+% With $\mathcal{P}_2$ elements, this energy-based approach would provide the optimal piecewise quadratic velocity field over all possible meshes. Since, by chance, the analytical solution is quadratic, it would also be the solution of the finite element problem. Hence, the minimization would give the exact velocity field and the correct mesh with nodes at the interface. In that case, it would be impossible to further decrease the cost as the exact solution is optimal over all velocity fields in $H^1(\Omega)$. The approach is however not suitable in general where the exact velocity field is not necessarily part of the finite element space.
+
 
 
 \chapter{2D problem}
@@ -746,11 +764,11 @@ I ran a first set of simulations with the correct setup, imposing $v_t=0$, and a
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[t]{0.9\textwidth}
+    \begin{subfigure}[t]{0.97\textwidth}
         \includesvg[width=\textwidth,]{../figures/bc_good.svg}
         %\caption{From first to second iteration.}
     \end{subfigure}
-    \begin{subfigure}[t]{0.9\textwidth}
+    \begin{subfigure}[t]{0.97\textwidth}
         \includesvg[width=\textwidth,]{../figures/bc_bad.svg}
         %\caption{From first to second iteration.}
     \end{subfigure}
@@ -781,7 +799,102 @@ One can also wonder if the choice of boundary condition (1-2-3), or the choice o
     \label{tab:setups_compare}
 \end{table}%
 
-\section{Poiseuille flow}
+\section{Interface tracking}
+As in the 1D case, we want to the mesh to be topologically correct: the nodes should be placed along the interface between solid and liquid behavior. This will be done in three steps:
+\begin{enumerate}
+    \item Solve the finite element problem by minimizing the functional $\mathcal{J}$.
+    \item Estimate the interface position based on the strain-rate field $\gam(\vv^h)$.
+    \item Move the nodes of the mesh towards the interface estimation.
+\end{enumerate}
+
+The first challenge is that we want to find an interface that is not the root of a scalar field. In such a case, the interface would have been unambiguously located. Unfortunately, in our case, the interface is instead the boundary of the zero level set of $\|\gam(\vv^h)\|$, the latter being a surface of nonzero measure. The idea is therefore to generate a virtual field whose zero level set would be the interface. It will be done with a predictor–corrector method:
+\begin{itemize}
+    \item Predict an interface as the boundary of a set of elements having zero deformation at every reduced integration point, i.e. $\{i \;\vert\; T_{i,g} = 0 \;\; \forall\, g\}$.
+    \item Construct a virtual field based on the positive values of strain rate norm $\|\gam(\vv^h)\|$ near the predicted interface. This virtual field will be constructed with local linear approximations of $\|\gam(\vv^h)\|$, in the same idea as in the 1D case. The corrector will be the zero level set of the virtual field.
+\end{itemize}
+
+In practice, the norm will never be exactly zero, or close to machine epsilon, as we use an interior-point algorithm. Therefore, yielded and unyielded regions will be distinguished with a tolerance parameter $\epsilon$. $\epsilon$ was tuned to $10^{-4}$, as it provided the best results given that $T_{i,g} \sim 10^{-8}$ inside the unyielded regions, and tends to increases near the interface, even when the mesh is topologically correct.
+
+The procedure described above is detailed in \cref{alg:tacking_2d} and illustrated below for a Poiseuille flow on a mesh with $\sim 2000$ nodes.
+
+\begin{algorithm}[H]
+    \caption{Interface tracking algorithm in 2-dimensions.}
+    \label{alg:tacking_2d}
+    $\mathcal{M} \gets $ initial triangle mesh\;
+    \For{i = 1, 2, 3, \dots} {
+    %\While{\textsf{not optimalMesh}}{
+        \tcp{Step 1}
+        Minimize the energy functional $\mathcal{J}$ on the mesh $\mathcal{M}$ and retrieve the solutions $U_j, T_{i,g}$\;
+        \tcp{Step 2: Reconstruct a strain-rate scalar field with negative values}
+        $\mathcal{I} \gets$ set of unyielded elements, i.e. elements $i$ where the strain rate norm $T_{i,g} < \epsilon \; \forall g$\;
+        $\mathcal{B} \gets$ set of nodes on the boundary of the connected components of $\mathcal{I}$\;
+        \ForEach {$j \in \mathcal{B}$}{
+            $\mathcal{N}_j \gets$ set of nodes $n$ close to $j$, i.e. $\text{dist}(n, j) \leq 2$ in the graph\;
+            $\mathcal{S}_j \gets$ support of $\mathcal{N}_j$, i.e. elements whose all nodes $\in \mathcal{N}_j$\;
+            $\ell_j \gets$ linear approx of $\|\gam(\vv)\|$ on $\mathcal{S}_j$, based on the local $T_{i,g} > \epsilon, \quad \forall i \in \mathcal{S}_j \:\forall g$\;
+            $R_n^{(j)} \gets \ell_j(\xx_n) \quad \forall \: n \in \mathcal{N}_j$ \tcp*{evaluate $\ell_j$ on the local support, and store it}
+        }
+        $\mathcal{N} \gets \cup_{j\in\mathcal{B}} \; \mathcal{N}_j$ \tcp*{compute the union the interface nodes neighbours}
+        \ForEach {$n \in \mathcal{N}$}{
+            $R_n \gets$ average of the reconstructed values $R_n^{(j)} \; \forall j : n\in \mathcal{N}_j$\;
+        }
+        $R \gets$ reconstructed strain-rate field ($\mathcal{P}_1$), based on nodal values $R_n \; \forall n \in \mathcal{N}$\;
+        \tcp{Step 3: move the nodes where the reconstructerd field cancels out}
+        $\mathcal{E} \gets$ edges with origin \texttt{org} and destination \texttt{dst} such that $\sign(R_{\text{org}})\neq \sign(R_{\text{dst}})$\;
+        $\mathcal{C} \gets \cup_{e\in\mathcal{E}} \big(\text{ adjacent node of }e\text{ closest to the root of }R \text{ along } e\big)$\;
+        \ForEach {$c \in \mathcal{C}$}{
+            $e\gets$ adjacent edge of $c$, belonging to $\mathcal{E}$, that has the maximal gradient of $R$\;
+            $\tilde \xx_{c} \gets$ root of $R$ along $e$\;
+        }
+        Update the mesh $\mathcal{M}$ with the new positions $\xx_c \gets \tilde \xx_c \: \forall c \in \mathcal{C}$\;
+        \tcp{Stop to iterate when every node displacement is smaller than a tolerance}
+    }
+    \Return $\mathcal{M}$, $U_j$, $T_{i,g}$
+\end{algorithm}
+
+\vfill
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includesvg[width=\textwidth,]{../figures/rec_2.svg}
+        \caption{Zoom on the upper interface of the Poiseuille flow. Gauss point are represented, in color when above the threshold, in grey scale otherwise. The analytical interface is represented as a red line. The predicted unyielded zone is filled in blue grey.}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includesvg[width=\textwidth,]{../figures/rec_3.svg}
+        \caption{Iso-contours of the linear approximation of the strain-rate field around one of the nodes of the predicted interface. The reconstruction is only based on the values of the colored gauss points}
+        \label{fig:build_approx}
+    \end{subfigure}\vspace{20pt}
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includesvg[width=\textwidth,]{../figures/rec_4.svg}
+        \caption{Evaluation of this linear approximation at every node of the support.}
+        \label{fig:eval_approx}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \includesvg[width=\textwidth,]{../figures/rec_7.svg}
+        \caption{Level sets of the virtual field. The node displacements are shown as black lines, moving towards the zero level set, not far from the analytical interface, in red.}
+        \label{fig:targets}
+    \end{subfigure}
+    \caption{Description of the 2D interface tracking algorithm. The steps \ref{fig:build_approx} and \ref{fig:eval_approx} are repeated for every node on the predicted interface (the boundary of the blue grey region). After the mesh update \ref{fig:targets}, the finite element problem is solved again, and we repeat the process.}
+    \label{fig:rec2d_a}
+\end{figure}
+\vfill
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/rect_init.svg}
+        \caption{Initial mesh.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/rect_last.svg}
+        \caption{Mesh after convergence. After $7$ iterations, every estimated displacement was smaller than $10^{-4}$.}
+    \end{subfigure}
+    \caption{Unyielded elements before and after the interface tracking algorithm. The exact interface is shown in red for comparison. The velocity profile is also shown at the inflow and outflow. This was done on a coarser mesh, with only $\sim 250$ nodes for better visualization.}
+\end{figure}
+
+We could also have shown how the velocity and strain rate errors radically decrease once the mesh matches the interface. But it would start a bit repetitive, as the graphs are no different from \cref{fig:results_1D_P2}. Furthermore, we want to study other, slightly more interesting flows.
+
+\section{Constricted channel flow}
 
 \section{Curved channel flow}
 

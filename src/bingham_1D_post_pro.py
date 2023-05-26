@@ -181,7 +181,8 @@ def plot_solution_1D(
         figsize, dims = (9.5, 5.75), (2, 3)
     else:
         figsize, dims = (12., 8.), (2, 3)
-    
+
+    quadrature = False
     fig, axs = plt.subplots(*dims, figsize=figsize, sharey="all", num=window)
     axs = axs.reshape(dims)
 
@@ -191,7 +192,7 @@ def plot_solution_1D(
     ax.set_title("Velocity profile", fontsize=ftSz1)
     ax.plot(u_ana_dense, y_dense, ls='-', color='C0', alpha=alp, lw=lw, label="Analytical")
     ax.plot(u_dense, y_dense, '-', color='C1')
-    ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
+    ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")  # FEM solution
     ax.plot(u_num[::sim.degree], y_all[::2], marker="o", ls="", color='C1')
     if sim.degree == 2:
         ax.plot(u_num[1::2], y_all[1::2], marker=".", ls="", color='C1')
@@ -199,10 +200,21 @@ def plot_solution_1D(
     ax = axs[0, 1]
     extra_label = r"" if sim.dimensions else r"h / U_{\infty}"
     ax.set_xlabel(r"${:s} \partial_y u $".format(extra_label), fontsize=ftSz2)
-    ax.set_title("Strain rate profile", fontsize=ftSz1)
-    ax.plot(du_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
-    ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
-    ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')
+    if not quadrature:
+        ax.set_title("Strain rate profile", fontsize=ftSz1)
+        ax.plot(du_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+        ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
+        ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')    
+    else:
+        ax.set_title(r"Strain rate norm profile -- $\dot\gamma(u)$", fontsize=ftSz1)
+        ax.plot(np.abs(du_ana_fit), y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+        ax.plot(np.abs(du_gauss), y_gauss, color="C3", ls="", marker='x', ms=10, label='Gauss pt')
+        tmp_x, tmp_y = make_step(du_dense, y_dense, sim.plot_density+1)
+        ax.plot(np.abs(tmp_x), tmp_y, '-', color='C1', lw=3, label='FEM solution')
+        ax.plot(
+            *make_step(du_discrete * np.sign(-y_discrete), y_discrete, 2), 
+            '--', ms=5, color='C2', label='Seen by quadrature'
+        )
 
     if not mini_display:
         ax = axs[0, 2]
@@ -254,9 +266,11 @@ def plot_solution_1D(
     fig.tight_layout()
     if sim.save:
         path = "../figures/"
-        # filename = f"res_P{sim.degree:d}_{extra_name:s}"
-        filename = f"sensibility_1D"
+        filename = f"res_P{sim.degree:d}_{extra_name:s}"
+        # filename = f"sensibility_1D_quadrature"
+        filename = f"result_1D_P{sim.degree:d}"
         fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
+        # plt.show()
     else:
         plt.show()
     return
