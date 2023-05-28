@@ -275,7 +275,7 @@ def create_cavity(filename, elemSizeRatio, cut=True, size_field=False):
 
     width, height = 1., 1.
     lc = elemSizeRatio * width
-    refinement_factor_surface = 1. if size_field else 10.
+    refinement_factor_surface = 1. if size_field else 4.
 
     c = width / 2. if cut else width
 
@@ -551,7 +551,6 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
         [l1 + l2, 0.],
         [l1 + l2, width]
     ])
-    print(coords)
     center = np.array([l1, -radius])[None, :]
     coords = center + np.dot(rot_matrix, (coords - center).T).T
 
@@ -578,30 +577,62 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
     c7 = factory.addLine(p3, p4)
     c8 = factory.addLine(p4, p1)
 
-    lines = [c1, c2, c3, c4, c5, c6, c7, c8]
+    c_cut1 = factory.addLine(p5, p6)
+    c_cut2 = factory.addLine(p3, p2)
+
+
+    if l1 > 0. and l2 > 0.:
+        lines = [c1, c2, c3, c4, c5, c6, c7, c8]
+        ln_in_out = [c8, c4]
+    elif l1 > 0.:  # l2 == 0
+        lines = [c1, c2, c_cut1, c6, c7, c8]
+        ln_in_out = [c8, c_cut1]
+    elif l2 > 0.:
+        lines = [c2, c3, c4, c5, c6, c_cut2]
+        ln_in_out = [c_cut2, c4]
+    else:
+        lines = [c2, c_cut1, c6, c_cut2]
+        ln_in_out = [c_cut1, c_cut2]
     cl = factory.addCurveLoop(lines)
     s1 = factory.addPlaneSurface([cl])
 
     gmsh.model.geo.synchronize()
 
-    pp_1 = factory.addPoint(1.3, 0.4, 0.)
-    pp_2 = factory.addPoint(2.0, 0.4, 0.)
-    ll = factory.addLine(pp_1, pp_2)
+    # Mesh refinement near yield transition
     gmsh.model.mesh.field.add("Distance", tag=1)
-    gmsh.model.mesh.field.setNumbers(1, "CurvesList", [ll])
+    pp_1 = factory.addPoint(2.15, 0.50, 0.)
+    pp_2 = factory.addPoint(2.75, 0.40, 0.)
+    # ll = factory.addLine(pp_1, pp_2)
+    gmsh.model.mesh.field.setNumbers(1, "PointsList", [pp_1, pp_2])
+    gmsh.model.mesh.field.setNumbers(1, "CurvesList", [])
     gmsh.model.mesh.field.setNumber(1, "Sampling", 200)
-
     gmsh.model.mesh.field.add("Threshold", 2)
     gmsh.model.mesh.field.setNumber(2, "InField", 1)
-    gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size / 7)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size * 0.33)
     gmsh.model.mesh.field.setNumber(2, "SizeMax", mesh_size)
-    gmsh.model.mesh.field.setNumber(2, "DistMin", 0.20)
-    gmsh.model.mesh.field.setNumber(2, "DistMax", 0.50)
+    gmsh.model.mesh.field.setNumber(2, "DistMin", width/10.)
+    gmsh.model.mesh.field.setNumber(2, "DistMax", width/2.)
 
-    gmsh.model.mesh.field.setAsBackgroundMesh(2)
+    # Mesh refinement near boundaries
+    gmsh.model.mesh.field.add("Distance", tag=3)
+    gmsh.model.mesh.field.setNumbers(3, "CurvesList", lines)
+    gmsh.model.mesh.field.setNumber(3, "Sampling", 200)
+    gmsh.model.mesh.field.add("Threshold", 4)
+    gmsh.model.mesh.field.setNumber(4, "InField", 3)
+    gmsh.model.mesh.field.setNumber(4, "SizeMin", mesh_size * 0.66)
+    gmsh.model.mesh.field.setNumber(4, "SizeMax", mesh_size)
+    gmsh.model.mesh.field.setNumber(4, "DistMin", width/10.)
+    gmsh.model.mesh.field.setNumber(4, "DistMax", width/5.)
+    
+    gmsh.model.mesh.field.add("Min", 5)
+    gmsh.model.mesh.field.setNumbers(5, "FieldsList", [2, 4])
+    gmsh.model.mesh.field.setAsBackgroundMesh(5)
+    
+    gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
     gmsh.option.setNumber("Mesh.Algorithm", 5)
 
-    ln_in_out = [4, 8]
     lines_set_vn = np.setdiff1d(lines, ln_in_out)
     lines_set_vt = lines
     lines_set_gn = np.setdiff1d(lines, lines_set_vn)
@@ -642,7 +673,7 @@ def create_pipe_contraction(filename, elemSizeRatio, l1, l2, w1, w2, delta, shar
         delta = 0.
         n_nodes = int(np.ceil(4 * (max(w1, w2) / 2. - min(w1, w2) / 2.) / lc))
     else:
-        n_nodes = int(np.ceil(2 * delta / lc))
+        n_nodes = int(np.ceil(4 * delta / lc))
 
     # Geometry
     p1 = factory.addPoint(0., -w1 / 2., 0.)
@@ -653,10 +684,10 @@ def create_pipe_contraction(filename, elemSizeRatio, l1, l2, w1, w2, delta, shar
     p6 = factory.addPoint(l1 + delta + l2, -w2 / 2., 0.)
     p7 = factory.addPoint(l1 + delta + l2, +w2 / 2., 0.)
     p8 = factory.addPoint(l1 + delta + 0., +w2 / 2., 0.)
-    q1 = factory.addPoint(l1 + delta / 2., -w1 / 2., 0.)
-    q2 = factory.addPoint(l1 + delta / 2., -w2 / 2., 0.)
-    q3 = factory.addPoint(l1 + delta / 2., +w1 / 2., 0.)
-    q4 = factory.addPoint(l1 + delta / 2., +w2 / 2., 0.)
+    q1 = factory.addPoint(l1 + delta / 3., -w1 / 2., 0.)
+    q2 = factory.addPoint(l1 + delta / 3., -w2 / 2., 0.)
+    q3 = factory.addPoint(l1 + delta / 3., +w1 / 2., 0.)
+    q4 = factory.addPoint(l1 + delta / 3., +w2 / 2., 0.)
 
     if sharp == 0:
         links = np.array([
@@ -718,7 +749,7 @@ def create_pipe_contraction(filename, elemSizeRatio, l1, l2, w1, w2, delta, shar
         gmsh.model.mesh.field.setNumbers(3, "PointsList", [p5, p8])
         gmsh.model.mesh.field.add("Threshold", 4)
         gmsh.model.mesh.field.setNumber(4, "InField", 3)
-        gmsh.model.mesh.field.setNumber(4, "SizeMin", 0.2 * lc)
+        gmsh.model.mesh.field.setNumber(4, "SizeMin", 0.15 * lc)
         gmsh.model.mesh.field.setNumber(4, "SizeMax", 1. * lc)
         gmsh.model.mesh.field.setNumber(4, "DistMin", 0.5 * (w1 - w2) / 2.)
         gmsh.model.mesh.field.setNumber(4, "DistMax", 1.5 * (w1 - w2) / 2.)
@@ -741,10 +772,10 @@ def create_pipe_contraction(filename, elemSizeRatio, l1, l2, w1, w2, delta, shar
 if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
-    create_rectangle(
-        path_to_dir + "rectangle.msh", width=2., height=1., elemSizeRatio=1. / 8.,
-        size_field=False, y_zero=0.35, angle=0., fit=False, cut=False,
-    )
+    # create_rectangle(
+    #     path_to_dir + "rectangle.msh", width=2., height=1., elemSizeRatio=1. / 28.,
+    #     size_field=False, y_zero=0.35, angle=0., fit=False, cut=False,
+    # )
     # create_rectangle(
     #     path_to_dir + "rectanglerot.msh", width=2., height=1.,
     #     elemSizeRatio=1. / 20., y_zero=0.0, cut=False, angle=np.pi / 6.
@@ -755,12 +786,14 @@ if __name__ == "__main__":
     #     radial=True, sharp=False, multiple=False
     # )
 
+    # to keep for all simulations with increasing Bn
+    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., cut=False, size_field=False)
+
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./11., cut=False, size_field=True)
-    # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False, size_field=False)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
-    # create_pipe(path_to_dir + "pipe.msh", 1./20., l1=0., l2=0., width=1., radius=0.5, theta=90.)
-    # create_pipe(path_to_dir + "pipe.msh", 1./15., l1=1.5, l2=1.5, width=1., radius=1., theta=180.)
+    # create_pipe(path_to_dir + "pipe.msh", 1./28., l1=2.5, l2=0., width=1., radius=1., theta=90.)
 
-    # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./10., 1., 1., 1., 0.5, 0.5, sharp=0)
+    # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./10., 1.5, 1.5, 1., 0.5, 0.5, sharp=0)
+    # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)

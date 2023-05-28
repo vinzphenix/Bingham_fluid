@@ -1,3 +1,6 @@
+# Very slow
+# Kept for benchmark only
+
 from bingham_structure import *
 from cvxopt import solvers, matrix, spmatrix
 
@@ -254,6 +257,10 @@ def build_objective_and_socp(sim: Simulation_2D, IS, IT):
 
 def set_boundary_conditions_sparse(sim: Simulation_2D, start_idx):
     idx_bd_condition = 0
+    sim.nodes_zero_u, = np.where(np.abs(sim.coords[:, 1]) > 0.5 - 1e-5)
+    sim.nodes_zero_v = np.union1d(sim.nodes_boundary, sim.nodes_corner)
+    sim.nodes_with_u = np.array([])
+
     nb_constraints_bd = len(sim.nodes_zero_u) + len(sim.nodes_zero_v) + len(sim.nodes_with_u)
     nb_constraints_bd *= 2  # >= and <=
 
@@ -360,6 +367,10 @@ def solve_FE_sparse(sim: Simulation_2D, solver_name='mosek', strong=False):
     # solve the conic optimization problem with 'mosek', or 'conelp'
     start_time = perf_counter()
     print(sim.n_var)
+    print(sim.n_var + 10 * sim.ng_all)
+    print(n_div_constraints//2, n_bd_constraints//2, n_div_constraints//2 + n_bd_constraints//2)
+    print(len(Gq))
+
     res = solvers.socp(matrix(cost), Gl=Gl, hl=hl, Gq=Gq, hq=hq, solver=solver_name)
     end_time = perf_counter()
 
@@ -369,6 +380,10 @@ def solve_FE_sparse(sim: Simulation_2D, solver_name='mosek', strong=False):
     u_num = np.array(res['x'])[:IS].reshape((sim.n_node + sim.n_elem * (sim.element=='mini'), 2))
     # u_bbl = np.array(res['x'])[IB:IS].reshape((sim.n_elem * (sim.degree == 3), 2))
     # s_num = np.array(res['x'])[IS:IT].reshape((sim.n_elem, sim.ng_loc))
-    # t_num = np.array(res['x'])[IT:].reshape((sim.n_elem, sim.ng_loc))
+    t_num = np.array(res['x'])[IT:].reshape((sim.n_elem, sim.ng_loc))
 
-    return u_num
+
+    # print(res)
+    p_num = np.zeros(n_div_constraints//2)
+
+    return u_num, p_num, t_num

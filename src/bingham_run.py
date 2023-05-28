@@ -106,15 +106,15 @@ if __name__ == "__main__":
     gmsh.option.set_number("General.Verbosity", 2)
 
     # parameters = dict(K=1., tau_zero=0., f=[1., 0.], element="th", model_name="test")
-    parameters = dict(K=1., tau_zero=0.20, f=[0., 0.], element="th", model_name="rectangle")
+    # parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], element="th", model_name="rectangle")
     
     # beta = np.sin(0.)
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectanglerot")
     # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe")
-    # parameters = dict(K=1., tau_zero=0.10, f=[0., 0.], element="th", model_name="pipeneck")
+    # parameters = dict(K=1., tau_zero=0.1, f=[0., 0.], element="th", model_name="pipeneck")
 
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cylinder")
-    # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cavity")
+    parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="opencavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
 
@@ -124,19 +124,21 @@ if __name__ == "__main__":
         u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
         # sim.save_solution(u_field, p_field, d_field, model_variant='')
 
+        # sim.f[0] = 1.
+        # u_field, p_field, d_field = solve_FE_sparse(sim, strong=False, solver_name='mosek')
+
     elif mode == 2:  # Solve the problem: ITERATE
         res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-4, deg=1, strong=False)
         u_field, p_field, d_field = res
-        # sim.save_solution(u_field, p_field, d_field, model_variant=f'cheat')
-
-    # 0.24714, 0.0737
-    # 
+        sim.save_solution(u_field, p_field, d_field, model_variant=f'update')
 
     elif mode == 3:  # Load solution from disk
-        # model, variant = "cavity", "cheat"
+        model, variant = "cavity", "test"
         # model, variant = "opencavity", "classic"
         # model, variant = "cylinder", "double"
-        # model, variant = "pipe", "double"
+        # model, variant = "pipe", "classic"
+        # model, variant = "pipeneck", "smooth"
+        # model, variant = "pipeneck", "sharp"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
         # model, variant = "rectanglerot", "bcGood"

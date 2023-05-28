@@ -27,7 +27,7 @@ def gn_poiseuille(coords, res):
     x_min, x_max = np.amin(rot_coords[:, :, 0]), np.amax(rot_coords[:, :, 0])
     mask_inflow = np.abs(rot_coords[:, :, 0] - x_min) <= tol
     mask_outflow = np.abs(rot_coords[:, :, 0] - x_max) <= tol
-    p_inflow, p_outflow = x_max - x_min, 0.
+    p_inflow, p_outflow = (x_max - x_min), 0.
     res[mask_inflow] = -p_inflow + 0.
     res[mask_outflow] = -p_outflow + 0.
     return
@@ -181,7 +181,7 @@ def gn_bfs(coords, res):
     x_min, x_max = np.amin(coords[:, :, 0]), np.amax(coords[:, :, 0])
     mask_inflow = np.abs(coords[:, :, 0] - x_min) <= tol
     mask_outflow = np.abs(coords[:, :, 0] - x_max) <= tol
-    p_inflow, p_outflow = x_max - x_min, 0.
+    p_inflow, p_outflow = (x_max - x_min), 0.
     res[mask_inflow] = -p_inflow + 0.
     res[mask_outflow] = -p_outflow + 0.
     return

@@ -1,6 +1,7 @@
 from bingham_structure import *
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import spsolve
+from analyze_pipe import save_profiles
 
 
 def plot_1D_slice(u_num, sim: Simulation_2D, extra_name=""):
@@ -286,7 +287,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag + 4)
     tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag + 5)
 
-    tag_strain = gmsh.view.add("Strain tensor", tag=sim.tag + 6)
+    tag_strain = gmsh.view.add("Strain rate tensor", tag=sim.tag + 6)
     tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
@@ -391,8 +392,10 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 def add_pressure_view(sim: Simulation_2D, p_num):
     if p_num.size == 0:
         return []
-    if sim.model_name not in ["rectangle", "rectanglerot"]:
-        p_num -= np.mean(p_num)
+    if sim.model_name in ["cavity", "opencavity", "cylinder"]:
+        p_num -= (np.amax(p_num) + np.amin(p_num)) / 2.
+    else:
+        p_num -= np.amin(p_num)
 
     weak_pressure_nodes = np.setdiff1d(sim.primary_nodes, sim.nodes_singular_p)
     tag_pressure = gmsh.view.add("Pressure", tag=sim.tag)
@@ -414,9 +417,9 @@ def add_pressure_view(sim: Simulation_2D, p_num):
 
     gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 24)
     gmsh.view.option.setNumber(tag_pressure, "IntervalsType", 3)
-    gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
-    gmsh.view.option.setNumber(tag_pressure, "CustomMin", 0.)
-    gmsh.view.option.setNumber(tag_pressure, "CustomMax", 2.)
+    # gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
+    # gmsh.view.option.setNumber(tag_pressure, "CustomMin", 0.)
+    # gmsh.view.option.setNumber(tag_pressure, "CustomMax", 2.)
 
     return [tag_pressure]
 
@@ -572,13 +575,6 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     strain_tensor = np.zeros((sim.n_elem, sim.n_local_node, 9))
     compute_gradient_at_nodes(sim, u_num, strain_tensor)  # filled with grad(v) matrix
 
-    # if sim.element == "mini":  # remove bubble stuff
-    #     dsf_rmv = sim.dv_shape_functions_at_v[:, -1, :]
-    #     elem_node_tags_rmv = sim.elem_node_tags[:, -1]
-    #     sim.dv_shape_functions_at_v = sim.dv_shape_functions_at_v[:, :-1, :]
-    #     sim.elem_node_tags = sim.elem_node_tags[:, :-1]
-    #     u_num = u_num[:sim.n_node]
-
     sim.tag = 1
     tags_velocities = add_velocity_views(sim, u_num, strain_tensor, strain_norm)
     tags_unstrained = add_unstrained_zone(sim, t_num)
@@ -604,22 +600,15 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.set_number("Mesh.SurfaceEdges", 0)
     gmsh.option.set_number("Mesh.Lines", 1)
     gmsh.option.set_number("Mesh.Points", 0)
-    # gmsh.option.set_number("Mesh.ColorCarousel", 0)
+    gmsh.option.set_number("Mesh.ColorCarousel", 2)
     gmsh.option.set_number("Mesh.NodeLabels", 0)
+    gmsh.option.set_number("Geometry.Points", 0)
 
-    # for yi in [-sim.tau_zero/sim.f[0], sim.tau_zero/sim.f[0]]:
-    #     gmsh.plugin.set_string('CutParametric', option="X", value="u")
-    #     gmsh.plugin.set_string('CutParametric', option="Y", value=f"{yi}")
-    #     gmsh.plugin.set_string('CutParametric', option="Z", value=f"{0}")
-    #     gmsh.plugin.set_number('CutParametric', option="MaxU", value=np.amax(sim.coords[:, 0]))
-    #     gmsh.plugin.set_number('CutParametric', option="View", value=1)
-    #     gmsh.plugin.run('CutParametric')
+    # if extra is None:  # used to show pipe velocity profile
+    #     tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
+    #     save_profiles(tags, "../figures/pipe_profiles", n_pts=150)
 
     gmsh.fltk.run()
     gmsh.fltk.finalize()
-
-    # if sim.element == "mini":  # reset as it was
-    #     sim.dv_shape_functions_at_v = np.insert(sim.dv_shape_functions_at_v, 3, dsf_rmv, axis=1)
-    #     sim.elem_node_tags = np.c_[sim.elem_node_tags, elem_node_tags_rmv]
 
     return
