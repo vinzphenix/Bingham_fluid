@@ -580,7 +580,6 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
     c_cut1 = factory.addLine(p5, p6)
     c_cut2 = factory.addLine(p3, p2)
 
-
     if l1 > 0. and l2 > 0.:
         lines = [c1, c2, c3, c4, c5, c6, c7, c8]
         ln_in_out = [c8, c4]
@@ -600,18 +599,19 @@ def create_pipe(filename, elemSizeRatio, l1, l2, width, radius, theta):
 
     # Mesh refinement near yield transition
     gmsh.model.mesh.field.add("Distance", tag=1)
-    pp_1 = factory.addPoint(2.15, 0.50, 0.)
-    pp_2 = factory.addPoint(2.75, 0.40, 0.)
-    # ll = factory.addLine(pp_1, pp_2)
+    pp_1 = factory.addPoint(2.20, 0.44, 0.)
+    pp_2 = factory.addPoint(2.80, 0.35, 0.)
+    ll = factory.addLine(pp_1, pp_2)
     gmsh.model.mesh.field.setNumbers(1, "PointsList", [pp_1, pp_2])
-    gmsh.model.mesh.field.setNumbers(1, "CurvesList", [])
+    gmsh.model.mesh.field.setNumbers(1, "CurvesList", [ll])
     gmsh.model.mesh.field.setNumber(1, "Sampling", 200)
     gmsh.model.mesh.field.add("Threshold", 2)
     gmsh.model.mesh.field.setNumber(2, "InField", 1)
-    gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size * 0.33)
+    # gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size * 0.33)
+    gmsh.model.mesh.field.setNumber(2, "SizeMin", mesh_size * 0.10)
     gmsh.model.mesh.field.setNumber(2, "SizeMax", mesh_size)
-    gmsh.model.mesh.field.setNumber(2, "DistMin", width/10.)
-    gmsh.model.mesh.field.setNumber(2, "DistMax", width/2.)
+    gmsh.model.mesh.field.setNumber(2, "DistMin", width/30.)
+    gmsh.model.mesh.field.setNumber(2, "DistMax", width/4.)
 
     # Mesh refinement near boundaries
     gmsh.model.mesh.field.add("Distance", tag=3)
@@ -794,6 +794,7 @@ if __name__ == "__main__":
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
     # create_pipe(path_to_dir + "pipe.msh", 1./28., l1=2.5, l2=0., width=1., radius=1., theta=90.)
+    create_pipe(path_to_dir + "pipe_dense.msh", 1./28., l1=2.5, l2=0., width=1., radius=1., theta=90.)
 
     # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./10., 1.5, 1.5, 1., 0.5, 0.5, sharp=0)
     # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)

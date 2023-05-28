@@ -47,7 +47,7 @@ class Simulation_2D:
 
         self.run_time = 0.
         self.iteration = 0
-        self.tol_yield = 1.e-4
+        self.tol_yield = 1.e-7
         self.tag = 0
 
         res = self.get_elements_info()
@@ -359,7 +359,7 @@ class Simulation_2D:
             return vn_opencavity, vt_opencavity, gn_opencavity, gt_opencavity, corner_opencavity
         elif self.model_name in ["bfs", "pipeneck"]:
             return vn_bfs, vt_bfs, gn_bfs, gt_bfs, corner_bfs
-        elif self.model_name in ["pipe"]:
+        elif self.model_name in ["pipe", "pipe_dense"]:
             return vn_pipe, vt_pipe, gn_pipe, gt_pipe, corner_pipe
         else:
             warning_msg = f"Boundary conditions not yet implemented for model '{self.model_name}'"

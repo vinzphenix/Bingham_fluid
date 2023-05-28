@@ -110,11 +110,11 @@ if __name__ == "__main__":
     
     # beta = np.sin(0.)
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectanglerot")
-    # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe")
+    parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe_dense")
     # parameters = dict(K=1., tau_zero=0.1, f=[0., 0.], element="th", model_name="pipeneck")
 
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cylinder")
-    parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity")
+    # parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="opencavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
 
@@ -130,13 +130,14 @@ if __name__ == "__main__":
     elif mode == 2:  # Solve the problem: ITERATE
         res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-4, deg=1, strong=False)
         u_field, p_field, d_field = res
-        sim.save_solution(u_field, p_field, d_field, model_variant=f'update')
+        sim.save_solution(u_field, p_field, d_field, model_variant=f'')
 
     elif mode == 3:  # Load solution from disk
-        model, variant = "cavity", "test"
+        # model, variant = "cavity", "test"
         # model, variant = "opencavity", "classic"
         # model, variant = "cylinder", "double"
-        # model, variant = "pipe", "classic"
+        model, variant = "pipe", "classic"
+        model, variant = "pipe_dense", ""
         # model, variant = "pipeneck", "smooth"
         # model, variant = "pipeneck", "sharp"
 

@@ -66,7 +66,7 @@ Before looking for a closure equation for the shear stress tensor, let us first 
 To be exhaustive:
 \begin{itemize}[label=---]
     \item $\mathbf{D}$ is the strain-rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
-    \item $\mathbf{W}$ is the spin tensor that indicates the axis around which the flow is locally rotating, as well as the speed of this rotation.
+    \item $\mathbf{W}$ is the spin tensor that indicates the axis around which the flow is locally rotating, as well as the speed of this rotation. It contains the same information as the vorticity vector $\boldsymbol\omega = \nabla \times \vv$.
 \end{itemize} 
 
 \section{Constitutive equations of Bingham fluids}
@@ -739,7 +739,7 @@ The minimization problem can for Cartesian coordinate systems is given hereunder
 \end{empheqboxed}
 where $\tilde \omega_g$, $\tilde \xx_g$ are the integration weights and positions on the edges, while $\ell_e$ indicates its length.
 
-For this larger scale problem, I switched from \texttt{CVXOPT} to the \texttt{MOSEK} interior-point solver \cite{mosek} because of performance issues as explained in \cref{tab:solvers}.
+For this larger scale problem, I switched from \texttt{CVXOPT} to the \texttt{MOSEK} interior-point solver \cite{mosek} that handles sparse matrices more efficiently, and performs better overall as explained in \cref{tab:solvers}.
 \begin{table}[h]
     \centering
     \begin{tabular}[t]{cccc}
@@ -863,13 +863,15 @@ Using some vector calculus, one can obtain a relation between the vorticity $\om
 \end{equation}
 
 This is the classical Poisson equation, that is easily solved with finite elements, once expressed under its weak formulation. The streamfunction is also discretized with $\mathcal{P}_2$ elements.
-\begin{equation}
-    \begin{aligned}
-        \psi^h(x,y) &= \sum_{j} \Psi_j \phi_j(x,y) && \text{discretization}\\
-        \pdv[2]{\psi}{x} + \pdv[2]{\psi}{y} &= -\omega = \pdv{v}{x} - \pdv{u}{y} && \text{strong form}\\
-        \int_{\Omega} \nabla \psi^h \cdot \nabla \phi_j \;\dd x &= \int_{\Omega} \omega^h \:\phi_j\; \dd x - \int_{\partial \Omega} \phi_j \: \vv^h \cdot \nn^\perp \;\dd \ell \quad \forall \phi_j\qquad && \text{weak form}
-    \end{aligned}
-\end{equation}
+\begin{empheqboxed}
+    \begin{equation}
+        \begin{aligned}
+            \psi^h(x,y) &= \sum_{j} \Psi_j \phi_j(x,y) && \text{discretization}\\
+            \pdv[2]{\psi}{x} + \pdv[2]{\psi}{y} &= -\omega = -\pdv{v}{x} + \pdv{u}{y} && \text{strong form}\\
+            \int_{\Omega} \nabla \psi^h \cdot \nabla \phi_j \;\dd x &= \int_{\Omega} \omega^h \:\phi_j\; \dd x - \int_{\partial \Omega} \phi_j \: \vv^h \cdot \nn^\perp \;\dd \ell \quad \forall \phi_j\qquad && \text{weak form}
+        \end{aligned}
+    \end{equation}
+\end{empheqboxed}
 The boundary term $\phi_j \:\vv^h\cdot \nn^\perp$ was deduced from $\phi_j (\nabla \psi^h) \cdot \nn $, so that it can be computed immediately from the velocity field, as $\psi$ is the unknown we are looking for. Since Neumann boundary conditions are used everywhere, the solution $\psi^h$ is defined up to a constant. This can be resolved by imposing $\Psi_j=0$ at for an arbitrary node $j$.
 
 \section{Interface tracking}
@@ -1045,11 +1047,15 @@ The type of transition between the smallest and largest width does not significa
 
 
 \section{Curved channel flow}
-\begin{figure}[H]
+In this section, we will finally discover a flow with a rigid rotating zone. To achieve this, we will simulate a flow in a pipe that changes direction along a circular arc of $180^\circ$ after a straight section. Only the upper part of the pipe has been meshed, since the situation is symmetrical.
+
+The features of the flow will be similar to the straight Poiseuille flow: a plug region in the center of the channel, surrounded by two liquid zones near the walls. There is one notable difference, however: the velocity field is not uniform in the solid plug of the turn, it follows a rigid body rotation $\vv(\xx) = \mathbf{W} \times (\xx - \xx_{\text{center}})$.
+
+\begin{figure}[!b]
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/pipe_vorticity.svg}
-        \caption{Iso-contours of the vorticity.}
+        \caption{Iso-contours of the vorticity. Dashed lines indicate the location of the profiles of \cref{fig:pipeProfiles}.}
         \label{fig:pipeVorticity}
     \end{subfigure}
     \begin{subfigure}[t]{\textwidth}
@@ -1057,17 +1063,66 @@ The type of transition between the smallest and largest width does not significa
         \caption{Average strain rate per element, with a logarithmic scale.}
         \label{fig:pipeStrain}
     \end{subfigure}
-    \caption{Visualization of the flow in a in a curved channel. Mesh with $20\,000$ elements, denser near the boundaries, and near the transition from unyielded to yielded.}
+    \caption{Visualization of the flow in a in a curved channel. Mesh with $20\,000$ elements, denser near the boundaries, and near the transition from unyielded to yielded. $K=1$, $\tau_0=0.2$, $\text{width}=1$.}
     \label{fig:pipe}
 \end{figure}
 
-\begin{figure}[H]\continuedfloat
+It can be easily demonstrated that zero deformation implies a constant spin:
+\begin{equation}
+    \Big[ \gam = \mathbf{0} \quad\text{in}\quad \Omega_s \subseteq \Omega  \;\text{ s.t.}\; \textrm{vol}(\Omega_s) > 0 \Big] \implies \Big[ \nabla \boldsymbol\omega = \mathbf{0} \quad\text{in}\quad \Omega_s\Big]
+    \label{eq:constantSpin}
+\end{equation}
+
+Hence, in order to modify the vorticity from the staight section plug to the rotating plug, there must be a transition with nonzero deformation, as observed in \cref{fig:pipeStrain}. This deformation is however two orders of magnitude smaller than the one observed near the walls. Furthemore, there seems to be a filament connecting the unyielded regions, with deformations going as low as $10^{-7}$. This does not contradict \cref{eq:constantSpin}, as our curve with vorticity gradient and zero strain rate has zero measure in $\mathbb{R}^2$.
+
+In general, the numerical values of deformation in the solid region typically increase the closer we get to the interface: $\sim 10^{-10}$ deeply inside it and $\sim 10^{-7}$ at the interface. Since the filament exhibits deformations of this order ($\sim 10^{-7}$), and is accompanied by a pressure jump, we can legitimately assume that it is the physical solution, and not an artefact of the interior-point solver.
+
+\begin{figure}[!b]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/pipe_filament_1.svg}
+        \caption{Gauss points with deformation $T_{i,g} < 10^{-4} = \epsilon$, the yield tolerance we set before.}
+        \label{fig:pipeFilament1}
+    \end{subfigure}\vspace{10pt}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/pipe_filament_2.svg}
+        \caption{Gauss points with deformation $T_{i,g} < 10^{-8}$.}
+        \label{fig:pipeFilament2}
+    \end{subfigure}
+    \caption{Zoom in transition region, on the filament with zero strain rate. Note the streamlines (white curves) going through it, and the discontinuous pressure field (filled iso-contours). The mesh was strongly refined near the filament, with elements $100$ times smaller than the average.}
+    \label{fig:pipeFilament}
+\end{figure}
+
+\begin{figure}[t]
     \centering
     \includesvg[width=\textwidth]{../figures/pipe_profiles.svg}
     \caption{Slice of different fields in two unyielded regions and in the yielded transition zone.}
     \label{fig:pipeProfiles}
 \end{figure}
 
+\Cref{fig:pipeProfiles} illustrates the main features we observed previously:
+\begin{itemize}
+    \item A velocity profile flat in the straight channel, and inclined towards the outer radius to respect the solid body motion where $\|\vv\| \propto \xx-\xx_{\text{center}}$.
+    \item A strain rate profile that is zero over a whole interval at the inflow and outflow. In the transition region however, the strain rate is only zero locally.
+    \item The vorticity being constant, either zero for the inflow solid plug or strictly negative for the outflow solid plug.
+\end{itemize}
+
+We can derive \cref{eq:pipeCheck} to perform a sanity check of the outflow profile:
+\begin{equation}
+    \gam=\mathbf{0} \implies 
+    \left\{\begin{aligned}
+        &\pdv{v}{x} + \pdv{u}{y} = 0\\
+        &\pdv{v}{x} - \pdv{u}{y} = \omega_0\\
+    \end{aligned}\right\}
+    \implies \pdv{v}{x} = -\pdv{u}{y} = \frac{\omega_0}{2}
+    \label{eq:pipeCheck}
+\end{equation}
+\begin{equation}
+    2\,\left.\pdv{v}{x}\right\vert_{\text{solid}} \approx 2\,\frac{-0.033 - (-0.024)}{0.6-0.15} = -0.04 \approx \omega\vert_{\text{solid}}
+\end{equation}
+
+
+An analytical solution also exists for the rotating flow of yield stress fluids \cite{circularProfile}. It provides velocity profiles similar to the outflow profile of \cref{fig:pipeProfiles}. The present model could be further validated by precisely quantifying the difference between the numerical and analytical solutions.
 
 
 \section{Lid-driven cavity}
