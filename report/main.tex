@@ -218,7 +218,15 @@ The total energy of the system $J$ is the work of internal forces diminished by 
 \end{equation}
 \end{empheqboxed}
 
-In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}. Furthermore, in this study, only homogeneous Neumann boundary conditions will be considered. The boundary integral will therefore be neglected from now on.
+In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}. A scaling analysis shows that the system has only one parameter, the Bingham number $Bn$:
+%\begin{equation}
+    \begin{gather}
+        \vv = U_{\infty}\vv^* \qquad \xx = L \xx^* \qquad \gam = \frac{U}{L} \gam^* \qquad f = \frac{K U_{\infty}}{L^2}f^* \qquad (p,g) = \frac{K U_{\infty}}{L}(p^*,g^*)\\
+        Bn = \frac{\tau_0 L}{K U_{\infty}} \qquad \text{yield forces / viscous forces}\\
+        \mathcal{J}(\vv^*) = \frac{1}{2}\int_{\Omega} \|\gam^*(\vv^*)\|^2 \;\dd x^* + Bn \, \int_{\Omega} \|\gam^*(\vv^*)\| \;\dd x^* - \int_{\Omega} \ff^*\cdot \vv^* \; \dd x^* - \int_{\Gamma_N} \mathbf{g^*} \cdot \vv^* \;\dd s^*
+    \end{gather}
+%\end{equation}
+% Furthermore, in this study, only homogeneous Neumann boundary conditions will be considered. The boundary integral will therefore be neglected from now on.
 
 We can show that the weak formulation and the energy minimization problem are equivalent. This can be done with a Gâteau derivative of the energy function around its minimum $(\uu, p)$.
 
@@ -1129,6 +1137,11 @@ An analytical solution also exists for the rotating flow of yield stress fluids 
 \input{./schema_cavity}
 
 The lid-driven cavity is a well known benchmark problem for viscous incompressible fluid flow \cite{FEMfluid}. The geometry and boundary conditions are detailled in \cref{fig:cavitySetup}, along with a modified version of the benchmark inspired from \cite{hoffmann}, that will be studied in a second step.
+
+\subsection{Original geometry -- closed cavity}
+
+
+\subsection{Modified geometry -- open cavity}
 
 
 \section{Flow around cylinder}

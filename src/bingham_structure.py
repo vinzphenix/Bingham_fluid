@@ -47,7 +47,7 @@ class Simulation_2D:
 
         self.run_time = 0.
         self.iteration = 0
-        self.tol_yield = 1.e-7
+        self.tol_yield = 1.e-4
         self.tag = 0
 
         res = self.get_elements_info()
@@ -129,8 +129,8 @@ class Simulation_2D:
         bd_nodes = np.array(bd_nodes).astype(int) - 1
         corner_nodes = np.array(corner_nodes).astype(int) - 1
         cut_nodes = np.array(cut_nodes).astype(int) - 1
-        # nodes_singular_p = np.array(nodes_singular_p).astype(int) - 1
-        nodes_singular_p = np.array([], dtype=int)
+        nodes_singular_p = np.array(nodes_singular_p).astype(int) - 1
+        # nodes_singular_p = np.array([], dtype=int)
 
         return node_tags, coords, nodes_singular_p, corner_nodes, bd_nodes, cut_nodes
 
@@ -351,7 +351,7 @@ class Simulation_2D:
     def bind_bc_functions(self):
         if self.model_name in ["rectangle", "rectanglerot"]:
             return vn_poiseuille, vt_poiseuille, gn_poiseuille, gt_poiseuille, corner_poiseuille
-        elif self.model_name in ["cavity"]:
+        elif self.model_name in ["cavity", "cavity_cheat"]:
             return vn_cavity, vt_cavity, gn_cavity, gt_cavity, corner_cavity
         elif self.model_name in ["cylinder"]:
             return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder, corner_cylinder

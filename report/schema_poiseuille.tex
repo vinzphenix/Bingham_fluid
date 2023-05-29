@@ -5,12 +5,12 @@
       \tikzstyle{ground2}=[fill,pattern=north east lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
   
       \node (wall_up) [ground1, minimum width=12cm, yshift=2cm] {};
-      \node[anchor=east] (wall_up_left) at (-6, 2) {$y=H$};
+      \node[anchor=east] (wall_up_left) at (-6, 2) {$y=H/2$};
       \draw (wall_up.south east) -- (wall_up.south west);
       %\draw[gray, thick] (-6,2) node[black,anchor=east]{$y=H$} -- (6,2) ;
   
       \node (wall_down) [ground2, minimum width=12cm, yshift=-2cm] {};
-      \node[anchor=east] (wall_down_left) at (-6, -2) {$y=-H$};
+      \node[anchor=east] (wall_down_left) at (-6, -2) {$y=-H/2$};
       \draw (wall_down.north east) -- (wall_down.north west);
       %\draw[gray, thick] (-6,-2) node[black,anchor=east]{$y=-H$} -- (6,-2) ;
   

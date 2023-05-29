@@ -5,8 +5,8 @@ from bingham_run import load_solution
 
 
 def get_profile(model, variant, x, y, n_pts):
-    if variant == "test":
-        model += "_bis"
+    if variant == 500:
+        model += "_cheat"
 
     gmsh.initialize()
 
@@ -73,7 +73,7 @@ def plot_profiles(model, variants, n_pts=200, save=False):
         return ym * (1. - alpha) + yp * alpha
 
     fig, axs = plt.subplots(1, 2, figsize=(7., 7.*2./3.), constrained_layout=True, sharey='all')
-    colors = plt.get_cmap("turbo")(np.linspace(0., 1., len(variants)))
+    colors = plt.get_cmap(cmap_name)(np.linspace(0., 1., len(variants)))
 
     for i, (variant, color) in enumerate(zip(variants, colors)):
         print(i)
@@ -116,7 +116,7 @@ def plot_profiles(model, variants, n_pts=200, save=False):
 
 def plot_comparison(model, variants, n_pts=200, save=False):
 
-    n_variants_overall = 7
+    n_variants_overall = 6
     kwargs1 = dict(marker="^", ls="",)
     kwargs2 = dict(marker="o", ls="", markerfacecolor=(1., 1., 1., 0.), markeredgewidth=1.)
     papers = ["Syrakos et al.", "Bleyer et al."]
@@ -127,8 +127,8 @@ def plot_comparison(model, variants, n_pts=200, save=False):
     y_papers = data_papers[:, 2::2] - 1.
 
     fig, ax = plt.subplots(1, 1, figsize=(6., 4.), constrained_layout=True)
-    colors = plt.get_cmap("turbo")(np.linspace(0., 1., n_variants_overall))
-    colors = colors[[0, 3, 6]]
+    colors = plt.get_cmap(cmap_name)(np.linspace(0., 1., n_variants_overall))
+    colors = colors[[0, 3, 5]]
 
     for i, (variant, color) in enumerate(zip(variants, colors)):
         data, bn = get_profile(model, variant, x=[0.5], y=[-1., 0.], n_pts=n_pts)
@@ -163,11 +163,12 @@ def plot_comparison(model, variants, n_pts=200, save=False):
 
 if __name__ == "__main__":
 
-    save_global = False
+    save_global = True
     path = "../figures/"
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams["text.usetex"] = True
     ftSz1, ftSz2, ftSz3 = 16, 14, 12
+    cmap_name = "Spectral_r"
 
-    # plot_profiles("cavity", [0, 1, 2, 5, 10, 20, 50, 200, 500], n_pts=500, save=save_global)
-    # plot_comparison("cavity", [0, 20, 500], n_pts=500, save=save_global)
+    plot_profiles("cavity", [0, 1, 5, 20, 100, 500], n_pts=500, save=save_global)
+    plot_comparison("cavity", [0, 20, 500], n_pts=500, save=save_global)

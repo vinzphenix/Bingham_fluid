@@ -268,7 +268,7 @@ def create_cylinder(filename, elemSizeRatio, radial=False, sharp=False, multiple
     gmsh.finalize()
 
 
-def create_cavity(filename, elemSizeRatio, cut=True, size_field=False):
+def create_cavity(filename, elemSizeRatio, cut=True, size_field=False, cheat=False):
     gmsh.initialize()
     factory = gmsh.model.geo
     meshFact = gmsh.model.mesh
@@ -277,103 +277,78 @@ def create_cavity(filename, elemSizeRatio, cut=True, size_field=False):
     lc = elemSizeRatio * width
     refinement_factor_surface = 1. if size_field else 4.
 
-    c = width / 2. if cut else width
-
     p1 = factory.addPoint(0., 0., 0., lc / refinement_factor_surface)
     p2 = factory.addPoint(0., -height, 0., lc)
     p3 = factory.addPoint(width, -height, 0., lc)
     p4 = factory.addPoint(width, 0., 0., lc / refinement_factor_surface)
-    # pts_u_zero = [p2, p3, p1, p4]  # p1, p4 corners --> can be zero / one
-    # pts_v_zero = [p1, p2, p3, p4]
-    # pts_u_one = [p1, p4]
-    # pts_cut = []
-    # lines_u_zero, lines_v_zero, lines_u_one, lines_cut = [], [], [], []
-    lengths, lines, lines_bd, lines_cut = [], [], [], []
 
-    if cut:
-        p5 = factory.addPoint(c, -height, 0., lc)
-        p6 = factory.addPoint(c, 0., 0., lc / refinement_factor_surface)
-        # pts_u_zero += [p5]
-        # pts_v_zero += [p5, p6]
-        # pts_u_one += [p6]
-        # pts_cut += [p5, p6]
+    l1 = factory.addLine(p1, p2)
+    l2 = factory.addLine(p2, p3)
+    l3 = factory.addLine(p3, p4)
+    l4 = factory.addLine(p4, p1)
+    lengths = [height, width, height, width]
+    lines = [l1, l2, l3, l4]
+    lines_bd = [l1, l2, l3, l4]
 
-        l1 = factory.addLine(p1, p2)
-        l2 = factory.addLine(p2, p5)
-        l3 = factory.addLine(p5, p3)
-        l4 = factory.addLine(p3, p4)
-        l5 = factory.addLine(p4, p6)
-        l6 = factory.addLine(p6, p1)
-        l7 = factory.addLine(p5, p6)
-        # lines_u_zero += [l1, l2, l3, l4]
-        # lines_v_zero += [l1, l2, l3, l4, l5, l6]
-        # lines_u_one += [l5, l6]
-        lengths += [height, width / 2., width / 2., height, width / 2., width / 2., height]
-        lines += [l1, l2, l3, l4, l5, l6, l7]
-        lines_bd += [l1, l2, l3, l4, l5, l6]
-        lines_cut += [l7]
-
-        cl1 = factory.addCurveLoop([l1, l2, l7, l6])
-        cl2 = factory.addCurveLoop([l3, l4, l5, -l7])
-        s1 = factory.addPlaneSurface([cl1])
-        s2 = factory.addPlaneSurface([cl2])
-        srfs = [s1, s2]
-
-    else:
-        l1 = factory.addLine(p1, p2)
-        l2 = factory.addLine(p2, p3)
-        l3 = factory.addLine(p3, p4)
-        l4 = factory.addLine(p4, p1)
-        # lines_u_zero += [l1, l2, l3]
-        # lines_v_zero += [l1, l2, l3, l4]
-        # lines_u_one += [l4]
-        lengths += [height, width, height, width]
-        lines += [l1, l2, l3, l4]
-        lines_bd += [l1, l2, l3, l4]
-
-        cl1 = factory.addCurveLoop([l1, l2, l3, l4])
-        s1 = factory.addPlaneSurface([cl1])
-        srfs = [s1]
+    cl1 = factory.addCurveLoop([l1, l2, l3, l4])
+    s1 = factory.addPlaneSurface([cl1])
+    srfs = [s1]
 
     factory.synchronize()
 
-    if (size_field) and (not cut):
-        # Set mesh size field
-        p_solid_lf = factory.addPoint(0.20, -0.10, 0.)
-        p_solid_rg = factory.addPoint(0.80, -0.10, 0.)
-        p_center_top = factory.addPoint(0.50, 0., 0.)
-        diag_lf = factory.addLine(p1, p_solid_lf)
-        diag_rg = factory.addLine(p4, p_solid_rg)
-        # line_solid = factory.addLine(p_solid_lf, p_solid_rg)
-        factory.synchronize()
+    if size_field:
+        fields = []
 
         gmsh.model.mesh.field.add("Distance", tag=1)
-        gmsh.model.mesh.field.setNumbers(1, "CurvesList", [diag_lf, diag_rg, l4])
+        gmsh.model.mesh.field.setNumbers(1, "CurvesList", [l4])
         gmsh.model.mesh.field.setNumber(1, "Sampling", 100)
+        gmsh.model.mesh.field.add("Threshold", 2)
+        gmsh.model.mesh.field.setNumber(2, "InField", 1)
+        gmsh.model.mesh.field.setNumber(2, "SizeMin", lc / 4.)
+        gmsh.model.mesh.field.setNumber(2, "SizeMax", lc / 1.)
+        gmsh.model.mesh.field.setNumber(2, "DistMin", 0.10)
+        gmsh.model.mesh.field.setNumber(2, "DistMax", 0.50)
 
-        gmsh.model.mesh.field.add("Distance", tag=2)
-        gmsh.model.mesh.field.setNumbers(2, "PointsList", [p1, p4, p_center_top])
-        # gmsh.model.mesh.field.setNumbers(2, "CurvesList", [line_solid])
-        gmsh.model.mesh.field.setNumber(2, "Sampling", 100)
-
-        gmsh.model.mesh.field.add("Threshold", 3)
-        gmsh.model.mesh.field.setNumber(3, "InField", 1)
-        gmsh.model.mesh.field.setNumber(3, "SizeMin", lc / 15)
-        gmsh.model.mesh.field.setNumber(3, "SizeMax", lc)
-        gmsh.model.mesh.field.setNumber(3, "DistMin", 0.05)
-        gmsh.model.mesh.field.setNumber(3, "DistMax", 0.10)
-
+        gmsh.model.mesh.field.add("Distance", tag=3)
+        gmsh.model.mesh.field.setNumbers(3, "PointsList", [p1, p4])
+        gmsh.model.mesh.field.setNumber(3, "Sampling", 100)
         gmsh.model.mesh.field.add("Threshold", 4)
-        gmsh.model.mesh.field.setNumber(4, "InField", 2)
-        gmsh.model.mesh.field.setNumber(4, "SizeMin", lc / 5.)
+        gmsh.model.mesh.field.setNumber(4, "InField", 3)
+        gmsh.model.mesh.field.setNumber(4, "SizeMin", lc / 6.)
         gmsh.model.mesh.field.setNumber(4, "SizeMax", lc / 1.)
-        gmsh.model.mesh.field.setNumber(4, "DistMin", 0.40)
-        gmsh.model.mesh.field.setNumber(4, "DistMax", 0.50)
+        gmsh.model.mesh.field.setNumber(4, "DistMin", 0.10)
+        gmsh.model.mesh.field.setNumber(4, "DistMax", 0.25)
+        
+        fields += [2, 4]
+    
+        if cheat:
+            # Set mesh size field
+            p_solid_lf = factory.addPoint(0., -0.1767, 0.)
+            p_solid_rg = factory.addPoint(1., -0.1767, 0.)
+            p_solid_center = factory.addPoint(0.5, +0.05, 0.)
+            arc = factory.addCircleArc(p_solid_lf, p_solid_center, p_solid_rg)
+            # p_center_top = factory.addPoint(0.50, 0., 0.)
+            # diag_lf = factory.addLine(p1, p_solid_lf)
+            # diag_rg = factory.addLine(p4, p_solid_rg)
+            # line_solid = factory.addLine(p_solid_lf, p_solid_rg)
+            factory.synchronize()
 
-        gmsh.model.mesh.field.add("Min", 5)
-        gmsh.model.mesh.field.setNumbers(5, "FieldsList", [3, 4])
-        gmsh.model.mesh.field.setAsBackgroundMesh(5)
-        gmsh.option.setNumber("Mesh.Algorithm", 5)
+            gmsh.model.mesh.field.add("Distance", tag=5)
+            gmsh.model.mesh.field.setNumbers(5, "CurvesList", [arc])
+            gmsh.model.mesh.field.setNumber(5, "Sampling", 100)
+            gmsh.model.mesh.field.add("Threshold", 6)
+            gmsh.model.mesh.field.setNumber(6, "InField", 5)
+            gmsh.model.mesh.field.setNumber(6, "SizeMin", lc / 3)
+            gmsh.model.mesh.field.setNumber(6, "SizeMax", lc)
+            gmsh.model.mesh.field.setNumber(6, "DistMin", 0.08)
+            gmsh.model.mesh.field.setNumber(6, "DistMax", 0.15)
+            
+            fields += [6]
+
+        min_field = gmsh.model.mesh.field.add("Min")
+        gmsh.model.mesh.field.setNumbers(min_field, "FieldsList", fields)
+        gmsh.model.mesh.field.setAsBackgroundMesh(min_field)
+        gmsh.option.setNumber("Mesh.Algorithm", 6)
 
     # Physical groups for boundary conditions
 
@@ -383,13 +358,14 @@ def create_cavity(filename, elemSizeRatio, cut=True, size_field=False):
     lines_set_gt = np.setdiff1d(lines_bd, lines_set_vt)  # []
 
     gmsh.model.addPhysicalGroup(0, [p1, p4], tag=5, name="singular")
+    # gmsh.model.addPhysicalGroup(0, [], tag=5, name="singular")
 
     gmsh.model.addPhysicalGroup(1, lines_set_vn, tag=1, name="setNormalFlow")
     gmsh.model.addPhysicalGroup(1, lines_set_vt, tag=2, name="setTangentFlow")
     gmsh.model.addPhysicalGroup(1, lines_set_gn, tag=3, name="setNormalForce")
     gmsh.model.addPhysicalGroup(1, lines_set_gt, tag=4, name="setTangentForce")
 
-    gmsh.model.addPhysicalGroup(1, lines_cut, tag=5, name="cut")
+    gmsh.model.addPhysicalGroup(1, [], tag=5, name="cut")
 
     tag_bulk_2d = gmsh.model.addPhysicalGroup(2, srfs, tag=-1, name="bulk")
 
@@ -789,7 +765,7 @@ if __name__ == "__main__":
     # to keep for all simulations with increasing Bn
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., cut=False, size_field=False)
 
-    create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./20., cut=False, size_field=False)
+    create_cavity(path_to_dir + "cavity_cheat.msh", elemSizeRatio=1./35., size_field=True, cheat=True)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
