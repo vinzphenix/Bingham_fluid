@@ -1,8 +1,86 @@
-@book{Saramito,
-    author = {Saramito, P.},
-    title = {Complex fluids : modeling and algorithms},
+@book{saramito2016complex,
+    title={Complex fluids: Modeling and Algorithms},
+    author={Saramito, P.},
+    isbn={9783319443621},
+    series={Math{\'e}matiques et Applications},
+    year={2016},
+    publisher={Springer International Publishing}
+}
+
+@inbook{FEMfluid,
+    author={
+        Zienkiewicz, Olek C 
+        and Taylor, Robert L 
+        and Nithiarasu, P
+    },
+    title          = {The finite element method for fluid dynamics},
+    chapter        = {4},
+    booktitle      = {Incompressible Newtonian laminar flows},
+    year           = {2005},
+    edition        = {6},
+    publisher      = {Elsevier Science \& Technology},
+    address        = {Amsterdam},
+    pages          = {581},
+    isbn           = {0080951376},
+}
+
+@inbook{Geophysical,
+    author = {Balmforth, Neil and Craster, Richard},
+    year = {2008},
+    month = {01},
+    pages = {34-51},
+    title = {Geophysical Aspects of Non-Newtonian Fluid Mechanics},
+    volume = {582},
+    publisher = {Springer},
+    isbn = {978-3-540-42968-5},
+    doi = {10.1007/3-540-45670-8_2}
+}
+
+@inbook{bird1987dynamics,
+    title={Dynamics of Polymeric Liquids, Volume 1: Fluid Mechanics},
+    author={
+        Bird, R.Byron
+        and Armstrong, Robert C.
+        and Hassager, Ole
+    },
+    isbn={9780471802457},
+    series={Dynamics of Polymeric Liquids},
+    year={1987},
+    publisher={Wiley},
+    pages = {170},
+}
+
+@book{hoffmann,
+    title={Computational Fluid Dynamics},
+    author={Hoffmann, K.A. and Chiang, S.T.},
+    number={vol.~1},
+    isbn={9780962373107},
+    series={Computational Fluid Dynamics},
+    year={2000},
+    pages={349},
+    publisher={Engineering Education System}
+}
+
+@incollection{SHE2016383,
+    booktitle = {Handbook of Numerical Methods for Hyperbolic Problems},
+    title = {Chapter 15 - Front-Tracking Methods},
+    editor = {Rémi Abgrall and Chi-Wang Shu},
+    series = {Handbook of Numerical Analysis},
+    publisher = {Elsevier},
+    volume = {17},
+    pages = {383},
     year = {2016},
-    publisher = {Springer}
+    issn = {1570-8659},
+    doi = {10.1016/bs.hna.2016.07.004},
+    author = {
+        D. She 
+        and R. Kaufman 
+        and H. Lim 
+        and J. Melvin 
+        and A. Hsu 
+        and J. Glimm
+    },
+    keywords = {Front tracking, Conservation laws, Multiphase flow, 35L65, 74S10, 76T99},
 }
 
 @article{Bleyer,
@@ -35,21 +113,6 @@
     pages={83--110},
     year={1986},
     publisher={Elsevier}
-}
-
-@incollection{SHE2016383,
-    title = {Chapter 15 - Front-Tracking Methods},
-    editor = {Rémi Abgrall and Chi-Wang Shu},
-    series = {Handbook of Numerical Analysis},
-    publisher = {Elsevier},
-    volume = {17},
-    pages = {383},
-    year = {2016},
-    booktitle = {Handbook of Numerical Methods for Hyperbolic Problems},
-    issn = {1570-8659},
-    doi = {10.1016/bs.hna.2016.07.004},
-    author = {D. She and R. Kaufman and H. Lim and J. Melvin and A. Hsu and J. Glimm},
-    keywords = {Front tracking, Conservation laws, Multiphase flow, 35L65, 74S10, 76T99},
 }
 
 @article{Barlow,
@@ -85,38 +148,11 @@
     publisher={Springer}
 }
 
-
-@inbook{Geophysical,
-    author = {Balmforth, Neil and Craster, Richard},
-    year = {2008},
-    month = {01},
-    pages = {34-51},
-    title = {Geophysical Aspects of Non-Newtonian Fluid Mechanics},
-    volume = {582},
-    publisher = {Springer},
-    isbn = {978-3-540-42968-5},
-    doi = {10.1007/3-540-45670-8_2}
-}
-
 @misc{Bangerth,
     author = {Bangerth, Wolfgang},
     title = {Finite element methods in scientific computing: Boundary conditions},
     url = {https://www.math.colostate.edu/~bangerth/videos/676/slides.21.5.pdf},
     year = {2014},
-}
-
-@inbook{bird1987dynamics,
-    title={Dynamics of Polymeric Liquids, Volume 1: Fluid Mechanics},
-    author={
-        Bird, R.Byron
-        and Armstrong, Robert C.
-        and Hassager, Ole
-    },
-    isbn={9780471802457},
-    series={Dynamics of Polymeric Liquids},
-    year={1987},
-    publisher={Wiley},
-    pages = {170},
 }
 
 @article{Coussot,
@@ -151,18 +187,28 @@
     doi = {10.1090/qam/1534}
 }
 
-@unpublished{circularProfile,
-    author = {Roberts, Tirion and Cox, S.},
-    year = {2019},
-    month = {09},
-    pages = {6},
-    title = {Semi-analytic velocity profile for a Bingham fluid in a curved channel}
+@article{circularProfile,
+    title={Semi-analytic velocity profile for a Bingham fluid in a curved channel},
+    author={Roberts, Tirion G and Cox, Simon J},
+    journal={arXiv preprint arXiv:1909.06173},
+    year={2019}
 }
 
+@article{KAZAKIA1988903,
+    title = {Orthogonal transformation of a trace free symmetric matrix into one with zero diagonal elements},
+    journal = {International Journal of Engineering Science},
+    volume = {26},
+    number = {8},
+    pages = {903-906},
+    year = {1988},
+    issn = {0020-7225},
+    doi = {10.1016/0020-7225(88)90041-9},
+    author = {Jacob Y. Kazakia},
+}
 
 Papers that obtain parameter values for yield stress...
 
-@Article{Lee2011,
+@article{Lee2011,
     author={
         Lee, Byung-Kwon 
         and Xue, Shubin
@@ -173,12 +219,11 @@ Papers that obtain parameter values for yield stress...
     title={Determination of the blood viscosity and yield stress with a pressure-scanning capillary hemorheometer using constitutive models},
     journal={Korea-Australia Rheology Journal},
     year={2011},
-    month={Mar},
+    month={03},
     day={01},
     volume={23},
     number={1},
     pages={5},
-    abstract={We investigated the applicability of two non-Newtonian constitutive models (Casson and Herschel-Bulkley models) in the determination of the blood viscosity and yield stress using a pressure-scanning microfluidic hemorheometer. The present results were compared with the measurements through a precision rheometer (ARES2). For a Newtonian fluid (standard oil), the two constitutive models showed excellent agreement with a reference value and the measurement of ARES2. For human blood as a non-Newtonian fluid, both the Casson and Herschel-Bulkley models exhibited similar viscosity results over a range of shear rates and showed excellent agreement with the ARES2 results. The Herschel-Bulkley model yielded a slightly higher value than other results at low shear rates ({\$}{\$}{\backslash}dot {\backslash}gamma {\$}{\$}< 10), which may be due to the relatively high value of the yield stress. The yield stress values for whole blood were 14.4 mPa for the Casson model and 32.5 mPa for the Herschel-Bulkley model, respectively. Thus, the present study showed that the Casson model would be better than the Herschel-Bulkley model for representing the non-Newtonian characteristics of blood viscosity.},
     issn={1226-119X},
     doi={10.1007/s13367-011-0001-y},
 }
@@ -258,8 +303,8 @@ Papers that obtain parameter values for yield stress...
 }
 
 @techreport{gel,
-    author      = {NETZSCH-Gerätebau},
-    institution = {NETZSCH-Gerätebau},
+    author      = {{NETZSCH-Gerätebau GmbH}},
+    institution = {{NETZSCH-Gerätebau GmbH}},
     title       = {Determination of Yield Stress of Complex Fluids by Model Fitting using a Rotational Rheometer},
     year        = {2022},
     url         = {https://analyzing-testing.netzsch.com/_Resources/Persistent/5/1/6/5/51659abc829511ca44f93d7159ed1c74a3274975/AN145_~1.pdf},

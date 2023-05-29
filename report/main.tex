@@ -124,7 +124,7 @@ where $\dot \gamma$ and $\tau$ are the square root the second invariant tensor o
     \label{fig:fluid-classification}
 \end{figure}
 
-Common values of $n$ generally lies between $0.3$ and $0.5$, especially for Carbopol gels (e.g. hair gel) and emulsions (e.g. mustard, mayonnaise). The Bingham model ($n = 1$) is thus very rarely obtained when it is fitted over more than two orders of magnitude of shear rates. The yield stress value $\tau_0$ generally lies in the range [1, 100 Pa]. \cite{Coussot}. To give a feel of how common substances fit in this model, several sets of parameters are provided in \cref{tab:parameters}.
+Common values of $n$ generally lies between $0.3$ and $0.5$, especially for Carbopol gels (e.g. hair gel) and emulsions (e.g. mustard, mayonnaise). The Bingham model ($n = 1$) is thus very rarely obtained when it is fitted over more than two orders of magnitude of shear rates. The yield stress value $\tau_0$ generally lies in the range [1, 100 Pa] \cite{Coussot}. To give a feel of how common substances fit in this model, several sets of parameters are provided in \cref{tab:parameters}.
 
 Those values are not universal. It is in fact hard to find unanimous parameters values of the Herschel-Bulkley model in the literature, especially for food products because their composition may depend on the brand, e.g. the yield stress of mayonnaise is inversely proportional to its fat content \cite{mayonnaiseFat}. The values may also depend on the test methodology, and on the model for which the experimental data is fitted, which is not always Herschel-Bulkley.
 
@@ -193,7 +193,7 @@ On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function
 
 \section{Energy functional}
 
-The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $\mathcal{J}(\vv)$ \cite{Saramito, Bleyer}. As viscous forces dominate the physics of the problem, we can assume that viscous dissipation is the only source of internal energy. As in linear elasticity for solids, the infinitesimal work of internal stresses in the deformation is
+The velocity field $\uu$ solution of this weak formulation can also be found through an energy functional $\mathcal{J}(\vv)$ \cite{saramito2016complex, Bleyer}. As viscous forces dominate the physics of the problem, we can assume that viscous dissipation is the only source of internal energy. As in linear elasticity for solids, the infinitesimal work of internal stresses in the deformation is
 \begin{equation}
     \begin{aligned}
         W_{\textrm{internal}}(D_{ij}) &= \int_{0}^{D_{ij}} \sigma_{ij} \:\dd D_{ij}'\\
@@ -277,7 +277,7 @@ The threshold shear-stress is reached at $y=\pm y_0$ when
     \tau_{xy}(\pm y_0) = \mp f \, y_0 = \mp \tau_0 \iff y_0 = \frac{\tau_0}{f} \label{eq:threshold}
 \end{align}
 
-In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state when $\frac{\tau_0}{f} \geq \frac{h}{2}$. In that case, its velocity is zero everywhere to satisfy boundary conditions: the fluid is said to be in the \textit{arrested state} \cite{Saramito}.
+In view of \eqref{eq:threshold}, the fluid can be totally in the unyielded state when $\frac{\tau_0}{f} \geq \frac{h}{2}$. In that case, its velocity is zero everywhere to satisfy boundary conditions: the fluid is said to be in the \textit{arrested state} \cite{saramito2016complex}.
 
 In the lower zone $[-\frac{h}{2}, -y_0]$, we find the velocity profile $u_3(y)$ by integration equations \eqref{eq:tau_xy} and \eqref{eq:tau_xy_cases}:
 \begin{align}
@@ -305,7 +305,7 @@ The velocity profile can then be expressed as follows, in the presence of a yiel
     \frac{u(\eta)}{U_{\infty}} &= -\frac{Bn}{2}(1+\eta) + (1-\eta^2) & -1 \leq \eta < -\eta_0
 \end{align}
 
-\input{./schema_1D}
+\input{./schema_poiseuille}
 
 \section{Finite element formulation}
 
@@ -773,12 +773,12 @@ No-slip walls are easily handled, with homogeneous Dirichlet boundary conditions
     \item Impose the pressure gradient over the domain $\Omega$ (Body force)
 \end{enumerate}
 
-However, care must be taken because we are only providing the normal force on the boundary, due to the pressure gradient, but not the tangential force due to the shear stress that is not known yet. If we prescribe only the normal component of the traction $\mathbf{g}=(\nn\cdot\mathbf{\sigma}\cdot\nn)\nn$, we also need to prescribe the tangential component of the velocity $\vv\cdot\nn^\perp$, as can be derived from the weak formulation \cref{eq:weak_formulation} \cite{Bangerth}.
+However, care must be taken because we are only providing the normal force on the boundary, due to the pressure gradient, but not the tangential force due to the shear stress that is not known yet. If we prescribe only the normal component of the traction $\mathbf{g}=(\nn\cdot\mathbf{\sigma}\cdot\nn)\nn$, we also need to prescribe the tangential component of the velocity $\vv\cdot\tgt$, as can be derived from the weak formulation \cref{eq:weak_formulation} \cite{Bangerth}.
 
 Each description must then be completed in order to obtain a correct physical flow.
 \begin{enumerate}[topsep=0pt]
     \setlength{\itemsep}{0pt}
-    \item At the inflow, impose the velocity profile with $\vv \cdot \nn = v_n$ and $\vv \cdot \nn^\perp = v_t = 0$. At the outflow, set zero tangential velocity $v_t = 0$, along with a normal force $\mathbf{g} = (-p + \nn\cdot\boldsymbol\tau\cdot\nn)\,\nn = -p_{\text{out}}\nn$. It is not very suitable for Bingham fluids because it requires the knowledge of the velocity profile beforehand.
+    \item At the inflow, impose the velocity profile with $\vv \cdot \nn = v_n$ and $\vv \cdot \tgt = v_t = 0$. At the outflow, set zero tangential velocity $v_t = 0$, along with a normal force $\mathbf{g} = (-p + \nn\cdot\boldsymbol\tau\cdot\nn)\,\nn = -p_{\text{out}}\nn$. It is not very suitable for Bingham fluids because it requires the knowledge of the velocity profile beforehand.
     \item Impose the normal boundary force at the inflow and outflow, made up of the pressure and normal shear stress: $\mathbf{g} \cdot \nn = -p_{\text{in/out}}$. Also set $v_t=0$ at the two boundaries.
     \item Set the pressure gradient as body force $\mathbf{f} = -\partial_x p$. It still requires to specify the normal shear stress and tangential velocity: $\mathbf{g} = 0 \,\nn$, and $v_t=0$.
 \end{enumerate}
@@ -868,11 +868,11 @@ This is the classical Poisson equation, that is easily solved with finite elemen
         \begin{aligned}
             \psi^h(x,y) &= \sum_{j} \Psi_j \phi_j(x,y) && \text{discretization}\\
             \pdv[2]{\psi}{x} + \pdv[2]{\psi}{y} &= -\omega = -\pdv{v}{x} + \pdv{u}{y} && \text{strong form}\\
-            \int_{\Omega} \nabla \psi^h \cdot \nabla \phi_j \;\dd x &= \int_{\Omega} \omega^h \:\phi_j\; \dd x - \int_{\partial \Omega} \phi_j \: \vv^h \cdot \nn^\perp \;\dd \ell \quad \forall \phi_j\qquad && \text{weak form}
+            \int_{\Omega} \nabla \psi^h \cdot \nabla \phi_j \;\dd x &= \int_{\Omega} \omega^h \:\phi_j\; \dd x - \int_{\partial \Omega} \phi_j \: \vv^h \cdot \tgt \;\dd \ell \quad \forall \phi_j\qquad && \text{weak form}
         \end{aligned}
     \end{equation}
 \end{empheqboxed}
-The boundary term $\phi_j \:\vv^h\cdot \nn^\perp$ was deduced from $\phi_j (\nabla \psi^h) \cdot \nn $, so that it can be computed immediately from the velocity field, as $\psi$ is the unknown we are looking for. Since Neumann boundary conditions are used everywhere, the solution $\psi^h$ is defined up to a constant. This can be resolved by imposing $\Psi_j=0$ at for an arbitrary node $j$.
+The boundary term $\phi_j \:\vv^h\cdot \tgt$ was deduced from $\phi_j (\nabla \psi^h) \cdot \nn $, so that it can be computed immediately from the velocity field, as $\psi$ is the unknown we are looking for. Since Neumann boundary conditions are used everywhere, the solution $\psi^h$ is defined up to a constant. This can be resolved by imposing $\Psi_j=0$ at for an arbitrary node $j$.
 
 \section{Interface tracking}
 As in the 1D case, we want to the mesh to be topologically correct: the nodes should be placed along the interface between solid and liquid behavior. This will be done in three steps:
@@ -1124,8 +1124,12 @@ We can derive \cref{eq:pipeCheck} to perform a sanity check of the outflow profi
 
 An analytical solution also exists for the rotating flow of yield stress fluids \cite{circularProfile}. It provides velocity profiles similar to the outflow profile of \cref{fig:pipeProfiles}. The present model could be further validated by precisely quantifying the difference between the numerical and analytical solutions.
 
-
+\pagebreak
 \section{Lid-driven cavity}
+\input{./schema_cavity}
+
+The lid-driven cavity is a well known benchmark problem for viscous incompressible fluid flow \cite{FEMfluid}. The geometry and boundary conditions are detailled in \cref{fig:cavitySetup}, along with a modified version of the benchmark inspired from \cite{hoffmann}, that will be studied in a second step.
+
 
 \section{Flow around cylinder}
 

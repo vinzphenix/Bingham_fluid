@@ -21,9 +21,14 @@
 %\usepackage{siunitx}
 %\sisetup{reset-math-version = false}
 
-\usepackage{xcolor}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{calc,patterns,decorations.pathmorphing,decorations.markings,shapes}
+\usetikzlibrary{
+  calc, patterns, angles, quotes,
+  decorations.pathmorphing, decorations.markings, decorations.text,
+  shapes, shapes.multipart
+}
+
 \usepackage{empheq}
 \usepackage[many]{tcolorbox}
 %\usepackage{asymptote}
@@ -55,7 +60,7 @@
 \usepackage{listings}
 \usepackage[hidelinks]{hyperref}
 \usepackage[noabbrev]{cleveref}
-%\usepackage[backend=biber,sorting=none]{biblatex}
+%\usepackage[backend=bibtex,style=]{biblatex}
 %\addbibresource{main.bib}
 %%\renewcommand\mkbibnamefamily[1]{\textsc{#1}}
 
@@ -80,6 +85,7 @@
 \newcommand{\ff}{\mathbf{f}}
 \newcommand{\gam}{\boldsymbol{\dot \gamma}}
 \newcommand{\nn}{\mathbf{\hat n}}
+\newcommand{\tgt}{\mathbf{\hat t}}
 \newcommand{\taub}{\boldsymbol{\tau}}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\minimize}{minimize}

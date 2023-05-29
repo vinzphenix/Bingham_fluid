@@ -1,0 +1,98 @@
+\begin{figure}[htb]
+    \centering
+    \begin{tikzpicture}
+        \pgfmathsetmacro{\x}{4.}
+        \pgfmathsetmacro{\l}{2.5}
+        \tikzstyle{groundDw}=[fill,pattern=north east lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+        \tikzstyle{groundLf}=[fill,pattern=north east lines,draw=none, minimum width=0.2cm,minimum height=0.75cm]
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        \draw[dashed, line width=1mm, red!60] (-\x-\l,\l) -- (-\x+\l,\l);
+
+        \node at (-\x, 0) (wall_down) [groundDw, minimum width=2*\l cm, yshift=-\l cm,anchor=north] {};
+        \draw[line width=1mm, blue!80] (-\x-\l,-\l) -- (-\x+\l,-\l);
+        
+        \node at (-\x, 0.) (midL) [groundLf, minimum height=2.1*\l cm, xshift=-\l cm, yshift=-0.05*\l cm, anchor=east] {};
+        \draw[line width=1mm, blue!80] (-\x-\l,-\l) -- (-\x-\l,+\l);
+        
+        \node at (-\x, 0.) (midR) [groundLf, minimum height=2.1*\l cm, xshift=+\l cm, yshift=-0.05*\l cm, anchor=west] {};
+        \draw[line width=1mm, blue!80] (-\x+\l,-\l) -- (-\x+\l,+\l);
+        
+        \node at (-\x-\l, \l) (topL) [groundDw, minimum width=0.3*\l cm, xshift=-0.1*\l cm, yshift=-0.05*\l cm, anchor=east] {};
+        \node at (-\x+\l, \l) (topR) [groundDw, minimum width=0.3*\l cm, xshift=0.1*\l cm, yshift=-0.05*\l cm, anchor=west] {};
+        
+        \draw[ultra thick, red!60, ->] (-\x-1,\l*1.1) -- (-\x+1,\l*1.1);
+        \draw[ultra thick, ->] (-\x,\l*0.6) arc (90:-180:1);
+        
+        \node [
+            opacity=0.2, shading=axis, rectangle, shading angle=180,
+            left color=gray,  right color=gray!20!white,
+            minimum width=2*\l cm,  minimum height=2*\l cm
+            ] (box) at (-\x, 0.){};
+            
+        %%%%%%%%%%%%%%%%%%%%%
+        \draw[dashed, line width=1mm, red!60] (\x-\l,\l) -- (\x+\l,\l);
+
+        \node at (\x, 0) (wall_down) [groundDw, minimum width=2*\l cm, yshift=-\l cm,anchor=north] {};
+        \draw[line width=1mm, blue!80] (\x-\l,-\l) -- (\x+\l,-\l);
+
+        \node at (\x, 0.) (midL) [groundLf, minimum height=(7./6.+0.1)*\l cm, xshift=-\l cm, yshift=1./6.*\l cm, anchor=north east] {};
+        \draw[line width=1mm, blue!80] (\x-\l,-\l) -- (\x-\l,+\l/6);
+
+        \node at (\x, 0.) (midR) [groundLf, minimum height=7./6.*\l cm, xshift=+\l cm, yshift=-1./6.*\l cm, anchor=south west] {};
+        \draw[line width=1mm, blue!80] (+\x+\l,-\l/6) -- (+\x+\l,+\l);
+
+        \node at (\x-\l, \l) (topL) [groundDw, minimum width=0.4*\l cm, xshift=-0*\l cm, yshift=-0.05*\l cm, anchor=east] {};
+        \node at (\x+\l, \l) (topR) [groundDw, minimum width=0.3*\l cm, xshift=0.1*\l cm, yshift=-0.05*\l cm, anchor=west] {};
+        
+        \draw[ultra thick, red!60, ->] (\x-1,\l*1.1) -- (\x+1,\l*1.1);
+        \draw[ultra thick, ->] (\x,\l*0.6) arc (90:-180:1);
+        \draw[ultra thick, ->, Green!100] (\x-1.1*\l,0.45*\l) -- (\x-0.8*\l,0.45*\l);
+        \draw[ultra thick, ->, Green!100] (\x-1.1*\l,0.65*\l) -- (\x-0.8*\l,0.65*\l);
+        \draw[ultra thick, ->, Green!100] (\x+0.8*\l,-0.45*\l) -- (\x+1.1*\l,-0.45*\l);
+        \draw[ultra thick, ->, Green!100] (\x+0.8*\l,-0.65*\l) -- (\x+1.1*\l,-0.65*\l);
+
+        \node [
+            opacity=0.2, shading=axis, rectangle, shading angle=180,
+            left color=gray,  right color=gray!20!white,
+            minimum width=2*\l cm,  minimum height=2*\l cm
+            ] (box) at (\x, 0.){};
+            
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        \node (label) at (0., 0.6*\l) [minimum width=3cm, color=red!60]{
+            $
+            \begin{aligned}
+                \vv \cdot \nn &= 0\\
+                \vv \cdot \tgt &= 1
+            \end{aligned}
+            $
+        };
+
+        \node (label) at (0., -0.*\l) [minimum width=3cm, color=Green!100]{
+            $
+            \begin{aligned}
+                \mathbf{g} &= -p\nn \\
+                \vv \cdot \tgt &= 0
+            \end{aligned}
+            $
+        };
+
+        \node (label) at (0., -0.6*\l) [minimum width=3cm, color=blue!80]{
+            $\vv = \mathbf{0}$
+        };
+    
+    \end{tikzpicture}
+    \vspace{6pt}
+    \caption{Description of the lid-driven cavity geometry. On the left, the classical setup with no-slip walls in {\color{blue!80} blue} and the upper surface with imposed velocity in {\color{red!60} red}. On the right, the modified setup with inflow/outflow in {\color{Green} green}.}
+    \label{fig:cavitySetup}
+\end{figure}
+
+
+% \begin{subfigure}[b]{0.45\textwidth}
+%     \begin{tikzpicture}
+%         \draw (-6,0.75) node[black,anchor=east]{$y=y_0$};
+%     \end{tikzpicture}
+%     \caption{caption}
+%     \label{fig:4b}
+% \end{subfigure}

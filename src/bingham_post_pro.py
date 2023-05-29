@@ -393,7 +393,22 @@ def add_pressure_view(sim: Simulation_2D, p_num):
     if p_num.size == 0:
         return []
     if sim.model_name in ["cavity", "opencavity", "cylinder"]:
-        p_num -= (np.amax(p_num) + np.amin(p_num)) / 2.
+        n_values_keep = p_num.size * 19 // 20
+        p_small_partition = np.argpartition(p_num, n_values_keep)
+        p_large_partition = np.argpartition(-p_num, n_values_keep)
+        p_intmd_partition = np.intersect1d(p_small_partition, p_large_partition)
+        p_intmd_partition = p_num[p_intmd_partition]
+
+        pmax = p_num[p_small_partition[n_values_keep]]
+        pmin = p_num[p_large_partition[n_values_keep]]
+        p_num -= np.mean(p_intmd_partition)
+        pmax = max(abs(pmax), abs(pmin))
+
+        # pmax, pmin = np.amax(p_num), np.amin(p_num)
+        # range_p = pmax - pmin
+        # delta_p = np.mean(p_num[(pmin + 0.1 * range_p < p_num)  & (p_num < pmax - 0.1 * range_p)])
+        # pmax, pmin = pmax - delta_p, pmin - delta_p
+        # p_num -= delta_p
     else:
         p_num -= np.amin(p_num)
 
@@ -417,9 +432,11 @@ def add_pressure_view(sim: Simulation_2D, p_num):
 
     gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 24)
     gmsh.view.option.setNumber(tag_pressure, "IntervalsType", 3)
-    # gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
-    # gmsh.view.option.setNumber(tag_pressure, "CustomMin", 0.)
-    # gmsh.view.option.setNumber(tag_pressure, "CustomMax", 2.)
+    if sim.model_name in ["cavity", "opencavity", "cylinder"]:
+        pmax = np.amax(np.abs([pmax, pmin]))
+        gmsh.view.option.setNumber(tag_pressure, "RangeType", 2)
+        gmsh.view.option.setNumber(tag_pressure, "CustomMin", -pmax)
+        gmsh.view.option.setNumber(tag_pressure, "CustomMax", pmax)
 
     return [tag_pressure]
 

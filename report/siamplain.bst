@@ -1072,31 +1072,66 @@ FUNCTION {editor.organization.sort}
 }
 
 FUNCTION {presort}
-{ type$ "book" =
-  type$ "inbook" =
-  or
-    'author.editor.sort
-    { type$ "proceedings" =
-    'editor.organization.sort
-    { type$ "manual" =
-        'author.organization.sort
-        'author.sort
-      if$
-    }
+% { type$ "book" =
+%   type$ "inbook" =
+%   or
+%     'author.editor.sort
+%     { type$ "proceedings" =
+%     'editor.organization.sort
+%     { type$ "manual" =
+%         'author.organization.sort
+%         'author.sort
+%       if$
+%     }
+%       if$
+%     }
+%   if$
+%   "    "
+%   *
+%   year field.or.null sortify
+%   *
+%   "    "
+%   *
+%   title field.or.null
+%   sort.format.title
+%   *
+%   #1 entry.max$ substring$
+%   'sort.key$ :=
+{
+  type$ "book" = 
+    {
+      "01-" sort.key$ *
+      'sort.key$ := 
+    } 
+    {
+      type$ "inbook" = 
+        {
+          "02-" sort.key$ *
+          'sort.key$ := 
+        }
+        {
+          type$ "incollection" = 
+          {
+            "03-" sort.key$ *
+            'sort.key$ :=
+          }
+          {
+            type$ "article" =
+            {
+              "04-" sort.key$ *
+              'sort.key$ :=
+            }
+            {
+              "99-" sort.key$ *
+              'sort.key$ := 
+            }
+            if$
+          }
+          if$
+        }
       if$
     }
   if$
-  "    "
-  *
-  year field.or.null sortify
-  *
-  "    "
-  *
-  title field.or.null
-  sort.format.title
-  *
-  #1 entry.max$ substring$
-  'sort.key$ :=
 }
 
 ITERATE {presort}
