@@ -107,6 +107,10 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
     """
 
     edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("", exclude=[5, 6])
+    mid_x = 0.5 * (np.amin(sim.coords[:, 0]) + np.amax(sim.coords[:, 0]))
+    mask =(sim.coords[edge_node_tags, 0] - mid_x) ** 2 + sim.coords[edge_node_tags, 1] ** 2 < 1.
+    mask = np.all(mask, axis=1)
+    edge_node_tags, length, tangent, normal = edge_node_tags[mask], length[mask], tangent[mask], normal[mask]
     n_edge, n_pts = edge_node_tags.shape
 
     nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
@@ -114,6 +118,8 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
     data = []
 
     # Loop over the edges on the boundary
+    simpson = np.array([1., 4., 1.]) / 6.
+    resultant = np.array([0., 0.])
     for i, (org, dst) in enumerate(edge_node_tags[:, :2]):
         # locate the element on which is the current edge (using neighbours: fast)
         elems_org = sim.n2e_map[sim.n2e_st[org]: sim.n2e_st[org + 1]]
@@ -136,6 +142,7 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
                 0. * local_strain
             )
             shear_force[i, j] = np.dot(normal[i], local_strain)
+            resultant[:] += simpson[j] * shear_force[i, j] * length[i]
 
     data = np.zeros((n_edge, 2 + 2 + 2 + 3 + 3 + 3 * (n_pts == 3)))
     data[:, 0] = sim.coords[edge_node_tags[:, 0], 0]  # x coord node 1
@@ -147,6 +154,12 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
         data[:, [12, 13]] = shear_force[:, 2, :]
     else:  # n_pts = 2
         pass
+
+    print(f"Force resultant = ({resultant[0]:.3e}, {resultant[1]:.3e})")
+    with open("../cylinder_force.txt", "a") as f:
+        l = np.amax(sim.coords[:, 0]) - np.amin(sim.coords[:, 0])
+        h = np.amax(sim.coords[:, 1]) - np.amin(sim.coords[:, 1])
+        f.write(f"{l:.3e} {h:.3e} {resultant[0]:.3e} {resultant[1]:.3e}\n")
 
     return n_edge, data
 
@@ -236,7 +249,7 @@ def add_streamfunction(sim: Simulation_2D, u_num):
     gmsh.view.option.set_number(tag_psi, "ColormapNumber", 0)
     gmsh.view.option.set_number(tag_psi, "ColormapInvert", 1)
 
-    return [tag_psi]
+    return 0*[tag_psi]
 
 
 def add_unstrained_zone(sim: Simulation_2D, t_num):
@@ -287,7 +300,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag + 4)
     tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag + 5)
 
-    tag_strain = gmsh.view.add("Strain rate tensor", tag=sim.tag + 6)
+    tag_strain = gmsh.view.add("Strain rate tensor"*0, tag=sim.tag + 6)
     tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
@@ -296,7 +309,8 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 
     tags = [
         tag_velocity, tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
-        tag_strain, tag_strain_norm_avg, tag_vorticity, tag_divergence, tag_bd_shear
+        tag_strain, tag_strain_norm_avg, 
+        tag_vorticity, tag_divergence, tag_bd_shear
     ]
     sim.tag += 11
 
@@ -354,9 +368,9 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 4.)
     gmsh.view.option.setNumber(tag_bd_shear, "ColormapNumber", 23)
     gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 60)
-    gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
-    gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
-    gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
+    # gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
+    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
+    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
 
     v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
     strain_normal_raise = 0.5 / np.amax(strain_norm)
@@ -383,8 +397,15 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
         gmsh.view.option.setNumber(tag, "CustomMin", -0.25)
         gmsh.view.option.setNumber(tag, "CustomMax", 0.25)
 
-    # for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
-    #     gmsh.view.option.setNumber(tag, "", )
+    gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
+    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-11)
+    gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+1)
+    gmsh.view.option.setNumber(tag_strain, "IntervalsType", 3)
+    gmsh.view.option.setNumber(tag_strain, "NbIso", 12)
+    gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
+    gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_strain, "ScaleType", 2)
+    gmsh.view.option.setString(tag_strain, "Format", r"%.0e")
 
     return tags
 
@@ -393,22 +414,20 @@ def add_pressure_view(sim: Simulation_2D, p_num):
     if p_num.size == 0:
         return []
     if sim.model_name in ["cavity", "opencavity", "cylinder"]:
-        n_values_keep = p_num.size * 19 // 20
-        p_small_partition = np.argpartition(p_num, n_values_keep)
-        p_large_partition = np.argpartition(-p_num, n_values_keep)
-        p_intmd_partition = np.intersect1d(p_small_partition, p_large_partition)
-        p_intmd_partition = p_num[p_intmd_partition]
+        # n_values_keep = p_num.size * 19 // 20
+        # p_small_partition = np.argpartition(p_num, n_values_keep)
+        # p_large_partition = np.argpartition(-p_num, n_values_keep)
+        # p_intmd_partition = np.intersect1d(p_small_partition, p_large_partition)
+        # p_intmd_partition = p_num[p_intmd_partition]
+        # pmax = p_num[p_small_partition[n_values_keep]]
+        # pmin = p_num[p_large_partition[n_values_keep]]
+        # p_num -= np.mean(p_intmd_partition)
+        # pmax = max(abs(pmax), abs(pmin))
 
-        pmax = p_num[p_small_partition[n_values_keep]]
-        pmin = p_num[p_large_partition[n_values_keep]]
-        p_num -= np.mean(p_intmd_partition)
-        pmax = max(abs(pmax), abs(pmin))
-
-        # pmax, pmin = np.amax(p_num), np.amin(p_num)
-        # range_p = pmax - pmin
-        # delta_p = np.mean(p_num[(pmin + 0.1 * range_p < p_num)  & (p_num < pmax - 0.1 * range_p)])
-        # pmax, pmin = pmax - delta_p, pmin - delta_p
-        # p_num -= delta_p
+        pmax, pmin = np.amax(p_num), np.amin(p_num)
+        p_avg = np.mean(p_num)
+        pmax = max(pmax - p_avg, p_avg - pmin)
+        p_num -= p_avg
     else:
         p_num -= np.amin(p_num)
 
@@ -620,6 +639,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.set_number("Mesh.ColorCarousel", 2)
     gmsh.option.set_number("Mesh.NodeLabels", 0)
     gmsh.option.set_number("Geometry.Points", 0)
+    gmsh.option.set_number("General.GraphicsFontSize", 24)
 
     # if extra is None:  # used to show pipe velocity profile
     #     tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity

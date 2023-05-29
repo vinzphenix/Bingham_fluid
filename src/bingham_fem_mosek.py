@@ -407,7 +407,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         # set solver options
         task.putatruncatetol(1e-12)
         task.putintparam(mosek.iparam.num_threads, 6)
-        task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas, 1.e-12)
+        # task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas, 1.e-12)
         # task.putdouparam(mosek.dparam.intpnt_co_tol_pfeas, 1.e-12)
 
         # Solve the minimization problem

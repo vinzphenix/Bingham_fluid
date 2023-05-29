@@ -71,8 +71,9 @@ def gn_cylinder(coords, res):
     x_min, x_max = np.amin(coords[:, :, 0]), np.amax(coords[:, :, 0])
     mask_inflow = np.abs(coords[:, :, 0] - x_min) <= tol
     mask_outflow = np.abs(coords[:, :, 0] - x_max) <= tol
-    dp = 6. * np.pi / 10.  # should produce a inflow velocity of 1 (Stokes law)
+    # dp = 6. * np.pi / 10.  # should produce a inflow velocity of 1 (Stokes law)
     # delta_x = x_max - x_min
+    dp = 1.
     p_inflow, p_outflow = dp / 2., -dp / 2.
     res[mask_inflow] = -p_inflow + 0.
     res[mask_outflow] = -p_outflow + 0.

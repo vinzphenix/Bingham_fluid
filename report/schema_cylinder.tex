@@ -1,0 +1,66 @@
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}
+        \tikzstyle{ground1}=[fill,pattern=north west lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+        \tikzstyle{ground2}=[fill,pattern=north east lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+
+        \node (wall_up) [ground1, minimum width=10cm, yshift=2cm, anchor=south] {};
+        % \node[anchor=east] (wall_up_left) at (-6, 2) {}
+        \draw[line width=1mm, blue!80] (wall_up.south east) -- (wall_up.south west);
+        %\draw[gray, thick] (-6,2) node[black,anchor=east]{$y=H$} -- (6,2) ;
+
+        \node (wall_down) [ground2, minimum width=10cm, yshift=-2cm, anchor=north] {};
+        % \node[anchor=east] (wall_down_left) at (-6, -2) {}
+        \draw[line width=1mm, blue!80] (wall_down.north east) -- (wall_down.north west);
+        %\draw[gray, thick] (-6,-2) node[black,anchor=east]{$y=-H$} -- (6,-2) ;
+
+        % \filldraw [color=black, fill=gray!30!white] (0., 0.) circle (1);
+        \filldraw [color=black, fill=gray!30!white] (-0.5, -1.) rectangle (0.5,1);
+
+        \draw[<->] (-3.0,-1.75) -- (-3.0,1.75) node [midway, right] {$H=5 h$};
+        \draw[<->] (0.65,-0.95) -- (0.65,0.95) node [midway, right] {$h$};
+        \draw[<->] (-0.45,1.15) -- (0.45,1.15) node [midway, above] {$h/2$};
+        \draw[<->] (-4.75,-1.8) -- (4.75,-1.8) node [midway, above] {$L=10h$};
+
+        \draw[dashed, line width=1mm, Green!100] (wall_down.north east) -- (wall_up.south east);
+        \draw[dashed, line width=1mm, Red!60] (wall_down.north west) -- (wall_up.south west);
+
+        \draw[ultra thick, ->, Red!60] (-5.5,+1.) -- (-4.5, +1.);
+        \draw[ultra thick, ->, Red!60] (-5.5,+0.) -- (-4.5, +0.);
+        \draw[ultra thick, ->, Red!60] (-5.5,-1.) -- (-4.5, -1.);
+        \draw[ultra thick, ->, Green!100] (+4.5,+1.) -- (+5.5, +1.);
+        \draw[ultra thick, ->, Green!100] (+4.5,+0.) -- (+5.5, +0.);
+        \draw[ultra thick, ->, Green!100] (+4.5,-1.) -- (+5.5, -1.);
+
+        \node (label) at (-6.5, 0.) [minimum width=3cm, color=red!60]{
+            $
+            \begin{aligned}
+                \vv \cdot \nn &= -1\\
+                \vv \cdot \tgt &= 0
+            \end{aligned}
+            $
+        };
+
+        \node (label) at (2.85, 1.15) [minimum width=3cm, color=blue!80]{
+            $
+            \begin{aligned}
+                \vv\cdot \nn &= \mathbf{0}\\
+                \mathbf{g} &= 0 \tgt
+            \end{aligned}
+            $
+        };
+
+        \node (label) at (6.5, 0.) [minimum width=3cm, color=Green!100]{
+            $
+            \begin{aligned}
+                \mathbf{g} &= 0\nn\\
+                \vv \cdot \tgt &= 0
+            \end{aligned}
+            $
+        };
+
+    \end{tikzpicture}
+    \vspace{6pt}
+    \caption{Flow around a cylinder. The inflow velocity is uniform. The outflow pressure is uniform and set to $0$. The lateral boundaries are slip-walls.}
+    \label{fig:cylinderSetup}
+\end{figure}

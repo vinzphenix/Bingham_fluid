@@ -88,15 +88,15 @@ def plot_profiles(model, variants, n_pts=200, save=False):
         axs[1].plot(np.gradient(x_data, y_data), y_data, color=color, zorder=-i)
 
     axs[0].set_title(r"Velocity profile", fontsize=ftSz1)
-    axs[0].set_xlabel(r"$u/U_{\infty}$", fontsize=ftSz2)
-    axs[0].set_ylabel(r"$y/H$", fontsize=ftSz2)
+    axs[0].set_xlabel(r"$u$", fontsize=ftSz2)
+    axs[0].set_ylabel(r"$y$", fontsize=ftSz2)
     axs[0].axvline(x=0., ls='--', color='k', alpha=0.75)
     axs[0].set_xlim(axs[0].get_xlim()[0], 0.45)
     axs[0].set_ylim(-1., 0.)
     axs[0].legend(fontsize=ftSz3, ncols=1)
 
     axs[1].set_title(r"Velocity gradient profile", fontsize=ftSz1)
-    axs[1].set_xlabel(r"$H/U_{\infty} \partial_y u$", fontsize=ftSz2)
+    axs[1].set_xlabel(r"$\partial_y u$", fontsize=ftSz2)
     # axs[1].set_ylabel(r"$y/H$", fontsize=ftSz2)
     axs[1].set_xlim(-1.5, 8.5)
     axs[1].axvline(x=0., ls='--', color='k', alpha=0.75)
@@ -144,8 +144,8 @@ def plot_comparison(model, variants, n_pts=200, save=False):
             y_data = y_papers[3 * i + j]
             ax.plot(x_data, y_data, color=color, markeredgecolor=color, **kwargs)
 
-    ax.set_xlabel(r"$u/U_{\infty}$", fontsize=ftSz2)
-    ax.set_ylabel(r"$y/H$", fontsize=ftSz2)
+    ax.set_xlabel(r"$u$", fontsize=ftSz2)
+    ax.set_ylabel(r"$y$", fontsize=ftSz2)
     ax.axvline(x=0., ls='--', color='k', alpha=0.75)
     ax.set_xlim(ax.get_xlim()[0], 0.65)
     ax.set_ylim(-1., 0.)
@@ -163,7 +163,7 @@ def plot_comparison(model, variants, n_pts=200, save=False):
 
 if __name__ == "__main__":
 
-    save_global = True
+    save_global = False
     path = "../figures/"
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams["text.usetex"] = True

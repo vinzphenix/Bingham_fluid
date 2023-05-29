@@ -1134,17 +1134,129 @@ An analytical solution also exists for the rotating flow of yield stress fluids 
 
 \pagebreak
 \section{Lid-driven cavity}
-\input{./schema_cavity}
 
 The lid-driven cavity is a well known benchmark problem for viscous incompressible fluid flow \cite{FEMfluid}. The geometry and boundary conditions are detailled in \cref{fig:cavitySetup}, along with a modified version of the benchmark inspired from \cite{hoffmann}, that will be studied in a second step.
 
+\input{./schema_cavity}
+
 \subsection{Original geometry -- closed cavity}
 
+With a Newtonian fluid, the strain rate cancels at a position slightly below the stagnation point along the center vertical line, and in the two lower corners as shown in \cref{fig:cavity0}. As soon as the Bingham number becomes positive, these three points become surfaces. The two unyielded regions in the corners merge for $Bn\in[1,1.5]$. There, the velocity must be zero to satisfy the no-slip boundary conditions. In the central region however, the fluid follows a solid body rotation, clearly visible in \cref{fig:cavity100} with the circular streamlines.
 
+Higher $Bn$ leads to larger unyielded regions: this has already been observed many times in the literature \cite{Bleyer,Syrakos,Treskatis}. Specifically, the velocity profiles obtained by the present method, by Bleyer et al. \cite{Bleyer} and by Syrakos et al. \cite{Syrakos} are compared in \cref{fig:compareCavity}. 
+
+The mesh used for the simulations contains $12\,000$ elements, denser closer to the upper boundary and the upper corners. The simulation with $Bn=500$ was however done on a finer mesh with $9\,000$ elements, refined inside the the yielded region because the interface tracking did not orginally succeeded. We will come back to the robustness of the algorithm in more detail in the conclusion.
+
+Again, there appears to be curves with small deformation emerging from the corners of unyielded region. 
+\pagebreak
+
+\vfill
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        %\includesvg[width=\textwidth]{../figures/cavity_0.svg}
+        \includegraphics[width=\textwidth]{../figures/cavity_0.pdf}
+        \caption{$Bn=0$ (Newtonian fluid)}
+        \label{fig:cavity0}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cavity_1.pdf}
+        \caption{$Bn=1$.}
+        \label{fig:cavity1}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cavity_5.pdf}
+        \caption{$Bn=5$}
+        \label{fig:cavity5}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cavity_100.pdf}
+        \caption{$Bn=100$}
+        \label{fig:cavity100}
+    \end{subfigure}
+    \caption{Streamlines in white, and colormap of the strain rate norm using a logarithmic scale.}
+    \label{fig:cavity}
+\end{figure} 
+\vfill
+
+\pagebreak
+\vfill
+\begin{figure}[t]
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \centering
+        \includesvg[width=0.9\textwidth]{../figures/profile_cavity.svg}
+        \caption{Velocity profile and its derivative.}
+        \label{fig:profilesCavity}
+    \end{subfigure}\vspace{15pt}
+    \begin{subfigure}[t]{\textwidth}
+        \centering
+        \includesvg[width=0.80\textwidth]{../figures/profile_papers_cavity.svg}
+        \caption{Comparison with the litterature.}
+        \label{fig:compareCavity}
+    \end{subfigure}\vspace{15pt}
+    \caption{Horizontal velocity profile along the center vertical line.}
+\end{figure}
+\vfill
+\pagebreak
+
+\FloatBarrier
 \subsection{Modified geometry -- open cavity}
 
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        %\includesvg[width=\textwidth]{../figures/cavity_0.svg}
+        \includegraphics[width=\textwidth]{../figures/opencavity_0.pdf}
+        \caption{$Bn=0$ (Newtonian fluid)}
+        \label{fig:opencavity0}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/opencavity_100.pdf}
+        \caption{$Bn=100$.}
+        \label{fig:opencavity100}
+    \end{subfigure}
+    \caption{Streamlines in white, and colormap of the strain rate norm using a logarithmic scale. The mesh is made up of $14\,000$ elements, and is refined along the top and right boundaries.}
+    \label{fig:opencavity}
+\end{figure} 
 
-\section{Flow around cylinder}
+In this exotic lid-driven cavity, there are open boundaries on the left and on the right of the cavity where no pressure difference is imposed. In the Newtonian case (\cref{fig:opencavity0}), we can also observe that the left boundary is both an inflow and an outflow, as a streamline goes around the stagnation point and goes back. 
+
+There are 5 unyielded regions in \cref{fig:opencavity100}: a large one with no flow, 3 medium-sized ones, and a small one close to the outflow and stuck to the wall. The 4 largest seem to emerge once again from the roots of the strain rate of the Newtonian fluid flow. The pattern is broken, however, as the last, smallest region emerges from nowhere.
+
+Finally, we observe that the two solid regions above are connected by a curve of low strain rate. It once again comes with a pressure discontinuity.
+
+\pagebreak
+\section{Flow past an obstacle}
+\input{./schema_cylinder.tex}
+In this last section, we will consider another widely used benchmark problem.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cylinder_0.pdf}
+        %\caption{$Bn=0$}
+        \label{fig:cylinder0}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cylinder_1.pdf}
+        %\caption{$Bn=1$}
+        \label{fig:cylinder1}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cylinder_10.pdf}
+        %\caption{$Bn=10$}
+        \label{fig:cylinder10}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/cylinder_100.pdf}
+        %\caption{$Bn=100$}
+        \label{fig:cylinder100}
+    \end{subfigure}
+    \caption{Strain rate tensor norm in log-scale, near the obstacle, for $Bn=0,1,10,100$.}
+    \label{fig:cylinder}
+\end{figure}
+
 
 \addcontentsline{toc}{chapter}{Conclusion}
 \chapter*{Conclusion}
