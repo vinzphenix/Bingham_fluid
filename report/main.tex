@@ -988,7 +988,7 @@ Regardless of the Bingham model, the velocity must increase from the widest to t
     \end{aligned}
 \end{equation}
 
-As $h_1>h_2$, we find $Bn_1>Bn_2$, which is no surprise as the flow downstream is more likely to be unyielded, as the velocity, and thus shear force, are smaller. We can also imagine a situation where $Bn_1>Bn_{\text{crit}}>Bn_2$, where the upstream flow could have been partially liquid, while the downstream flow is beyond the critical Bingham, totally unyielded, and therefore preventing any flow. In fact, if $\dot\gamma=0$ enforces uniform motion in translation, or rotation, and the no-slip condition reduces it to $\vv=0$ throughout the solid region.
+As $h_1>h_2$, we find $Bn_1>Bn_2$, which is no surprise as the flow upstream is more likely to be unyielded, as the velocity, and thus shear force, are smaller. We can also imagine a situation where $Bn_1>Bn_{\text{crit}}>Bn_2$, where the downstream flow could have been partially liquid, while the upstream flow is beyond the critical Bingham, totally unyielded, and therefore preventing any flow. In fact, $\dot\gamma=0$ enforces uniform motion in translation, or rotation, and the no-slip condition reduces it to $\vv=0$ throughout the solid region.
 
 The results of a simulation are shown in \cref{fig:smoothNeck}, with parameters $K=1$, $\tau_0=0.1$, $h_1=2h_2=1$. We observe that the solid plug we had found in the Poiseuille flow is discontinued in the narrowing region. This is confirmed with the velocity profile in \cref{fig:smoothNeckV}, that is not flat when the channel narrows. 
 
@@ -1148,6 +1148,9 @@ Higher $Bn$ leads to larger unyielded regions: this has already been observed ma
 The mesh used for the simulations contains $12\,000$ elements, denser closer to the upper boundary and the upper corners. The simulation with $Bn=500$ was however done on a finer mesh with $9\,000$ elements, refined inside the the yielded region because the interface tracking did not orginally succeeded. We will come back to the robustness of the algorithm in more detail in the conclusion.
 
 Again, there appears to be curves with small deformation emerging from the corners of unyielded region. 
+
+We can also note that the rotating behavior is verified with the velocity profile of \cref{fig:profilesCavity}. Using relation \eqref{eq:pipeCheck} that we derived previously, it comes with no surprise that $\partial_y u$ is constant in the solid rotating region.
+
 \pagebreak
 
 \vfill
@@ -1226,10 +1229,24 @@ There are 5 unyielded regions in \cref{fig:opencavity100}: a large one with no f
 
 Finally, we observe that the two solid regions above are connected by a curve of low strain rate. It once again comes with a pressure discontinuity.
 
-\pagebreak
 \section{Flow past an obstacle}
+
+In our first physics lessons, we learned the usefull approximation that the drag force experienced by an object moving through a fluid is either proportional to its speed, or to the square of its speed, depending on the Reynolds number.
+
+For a low Reynolds Newtonian fluid flow, the drag can even be exactly computed with Stokes' equations. After a few calculations, the expression of the drag force around a sphere of radius $a$ boils down to $6\pi K U_{\infty} a$ \cite{stokesSphere,stokesExpansion}: this law was already derived back in 1851 by Stokes himself. However, a dimensional analysis shows that there is always a distance $r \gtrsim a / Re$ where the convective term start to dominate \cite{lamb1945hydrodynamics,stokesExpansion}. 
+
+For three dimensional flow, the approximation $Re\ll 1$ is of no major consequence, but in 2D, the story is quite different. There exists in fact no solution to the Stokes problem for a an unbounded flow around a disk that respects both boundary conditions far away ($\vv=U_{\infty}\mathbf{e}_1$) and around the sphere ($\vv=0$): this is the Stokes' paradox. Progress can however be made with an asymptotic expansion of the convective term of the Navier-Stokes equations \cite{stokesExpansion}.
+
+To summarize, the flow we are going to simulate contains boundaries (slip-walls) and does not attempt to reproduce an unbounded flow that is impossible to solve because of Stokes' paradox. Furthermore, the disk was replaced by a square because it generates bigger "Bingham features", and therefore easier to visualize, cf. \cref{fig:cylinderSetup}.
+
 \input{./schema_cylinder.tex}
-In this last section, we will consider another widely used benchmark problem.
+
+\begin{figure}[!hb]
+    \centering
+    \includegraphics[width=0.85\textwidth]{../figures/cylinder_mesh.pdf}
+    \caption{First step of the interface tracking. Predictor is colored blue, and the zero level set of the corrector is the red line. The node displacements are shown in green. The mesh size grows from $l \sim h/40$ around the obstacle, to $l \sim h/3$ in the far field (outside the figure).}
+    \label{fig:cylinderTracking}
+\end{figure}
 
 \begin{figure}
     \centering

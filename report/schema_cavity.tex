@@ -60,16 +60,16 @@
             
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        \node (label) at (0., 0.6*\l) [minimum width=3cm, color=red!60]{
+        \node (label) at (0., 1.35*\l) [minimum width=3cm, color=red!60]{
             $
             \begin{aligned}
                 \vv \cdot \nn &= 0\\
-                \vv \cdot \tgt &= 1
+                \vv \cdot \tgt &= -1
             \end{aligned}
             $
         };
 
-        \node (label) at (0., -0.*\l) [minimum width=3cm, color=Green!100]{
+        \node (label) at (0., 0.35*\l) [minimum width=3cm, color=Green!100]{
             $
             \begin{aligned}
                 \mathbf{g} &= -p\nn \\
@@ -78,13 +78,13 @@
             $
         };
 
-        \node (label) at (0., -0.6*\l) [minimum width=3cm, color=blue!80]{
+        \node (label) at (0., -0.55*\l) [minimum width=3cm, color=blue!80]{
             $\vv = \mathbf{0}$
         };
     
     \end{tikzpicture}
     \vspace{6pt}
-    \caption{Description of the lid-driven cavity geometry. On the left, the classical setup with no-slip walls in {\color{blue!80} blue} and the upper surface with imposed velocity in {\color{red!60} red}. On the right, the modified setup with inflow/outflow in {\color{Green} green}, where $p=0$.}
+    \caption{Description of the lid-driven cavity geometry. On the left, the classical setup with no-slip walls in {\color{blue!80} blue} and the upper surface with imposed velocity in {\color{red!60} red}. On the right, the modified setup with inflow/outflow in {\color{Green} green}, where $p=0$. The normal $\nn$ is pointing outwards, and the tangent vector $\tgt$ is oriented anti-clockwise.}
     \label{fig:cavitySetup}
 \end{figure}
 
