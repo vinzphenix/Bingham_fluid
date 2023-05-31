@@ -325,7 +325,18 @@ The velocity profile can then be expressed as follows, in the presence of a yiel
     \frac{u(\eta)}{U_{\infty}} &= -\frac{Bn}{2}(1+\eta) + (1-\eta^2) & -1 \leq \eta < -\eta_0
 \end{align}
 
-\input{./schema_poiseuille}
+\begin{figure}
+    \centering
+    \begin{subfigure}[b]{0.41\textwidth}
+        \input{./schema_poiseuille}
+        \vspace{15pt}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.58\textwidth}
+        \includesvg[width=\textwidth]{../figures/poiseuille_bn.svg}
+    \end{subfigure}
+    \caption{1D problem channel situation, with the velocity and shear-stress profiles.} \label{fig:1D_situation}
+\end{figure}
+
 
 \section{Finite element formulation}
 

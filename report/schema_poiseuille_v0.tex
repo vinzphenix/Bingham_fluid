@@ -1,0 +1,52 @@
+\begin{figure}
+    \centering
+    \begin{tikzpicture}
+      \tikzstyle{ground1}=[fill,pattern=north west lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+      \tikzstyle{ground2}=[fill,pattern=north east lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+  
+      \node (wall_up) [ground1, minimum width=12cm, yshift=2cm] {};
+      \node[anchor=east] (wall_up_left) at (-6, 2) {$y=H/2$};
+      \draw (wall_up.south east) -- (wall_up.south west);
+      %\draw[gray, thick] (-6,2) node[black,anchor=east]{$y=H$} -- (6,2) ;
+  
+      \node (wall_down) [ground2, minimum width=12cm, yshift=-2cm] {};
+      \node[anchor=east] (wall_down_left) at (-6, -2) {$y=-H/2$};
+      \draw (wall_down.north east) -- (wall_down.north west);
+      %\draw[gray, thick] (-6,-2) node[black,anchor=east]{$y=-H$} -- (6,-2) ;
+  
+      \fill [gray, opacity=0.25] (-6,-0.75) rectangle (6,0.75);
+  
+      \draw (-6,0.75) node[black,anchor=east]{$y=y_0$} -- (6,0.75) ;
+      \draw[dashed] (-6,0) node[black,anchor=east]{$y=0$} -- (-1.5,0) ;
+      \draw (-6,-0.75) node[black,anchor=east]{$y=-y_0$} -- (6,-0.75) ;
+      
+      %\node (z1) at (-2, 1.375) {Zone 1};
+      %\node (z2) at (-2, 0) {Zone 2};
+      %\node (z3) at (-2, -1.375) {Zone 3};
+  
+      % Velocity profile    
+      \draw (0, -1.9) -- (0, 1.9);
+      \draw (1.5, -0.75) -- (1.5, 0.75);
+      \draw  plot[smooth,domain=0:1] ({1.5*(1-\x^2)}, 0.75+1.15*\x);
+      \draw  plot[smooth,domain=0:1] ({1.5*(1-\x^2)}, -0.75-1.15*\x);
+      \draw[-stealth] (0, 1.5) -- ({1.5*(1-((1.5-0.75)/1.15)^2)}, 1.5);
+      \draw[-stealth] (0, 1.0) -- ({1.5*(1-((1.-0.75)/1.15)^2)}, 1.);
+      \draw[-stealth] (0, 0.5) -- (1.5, 0.5);
+      \draw[-stealth] (0, 0.0) -- (1.5, 0.0);
+      \draw[-stealth] (0, -0.5) -- (1.5, -0.5);
+      \draw[-stealth] (0, -1.0) -- ({1.5*(1-((-1.+0.75)/1.15)^2)}, -1.);
+      \draw[-stealth] (0, -1.5) -- ({1.5*(1-((-1.5+0.75)/1.15)^2)}, -1.5);
+      
+      % Stress profile
+      \draw (4.5, -1.9) -- (2.5, 1.9);
+      \draw (3.5, -1.9) -- (3.5, 1.9);
+      \draw[-stealth] (3.5, 1.5) -- ({3.5-1.5/1.9}, 1.5);
+      \draw[-stealth] (3.5, 1.0) -- ({3.5-1./1.9}, 1.);
+      \draw[-stealth] (3.5, 0.5) -- ({3.5-0.5/1.9}, 0.5);
+      \draw[-stealth] (3.5, -0.5) -- ({3.5+0.5/1.9}, -0.5);
+      \draw[-stealth] (3.5, -1.0) -- ({3.5+1./1.9}, -1.);
+      \draw[-stealth] (3.5, -1.5) -- ({3.5+1.5/1.9}, -1.5);
+      
+    \end{tikzpicture}
+    \caption{1D problem channel situation, with the velocity and shear-stress profiles.} \label{fig:1D_situation}
+  \end{figure}

@@ -125,9 +125,8 @@ if __name__ == "__main__":
         u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
 
     elif mode == 2:  # Solve the problem: ITERATE
-        parameters, u_field, p_field, d_field, coords = load_solution("cavity_test", "50")
-        sim = Simulation_2D(parameters, new_coords=coords, save_variant=f"{parameters['tau_zero']:.0f}")
-
+        # parameters, u_field, p_field, d_field, coords = load_solution("cavity_test", "50")
+        # sim = Simulation_2D(parameters, new_coords=coords, save_variant=f"{parameters['tau_zero']:.0f}")
         res = solve_interface_tracking(sim, max_it=20, tol_delta=1.e-8, deg=1, strong=False, supp=[u_field, p_field, d_field])
         u_field, p_field, d_field = res
 

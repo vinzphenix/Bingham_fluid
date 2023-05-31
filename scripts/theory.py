@@ -56,12 +56,60 @@ def plot_interior_point(save=False):
         ax.legend(fontsize=ftSz2, loc="lower right")
 
     axs[0].set_ylabel(r"$y$", fontsize=ftSz2)
-    plt.savefig(
-        path + "interior_point_example.svg", 
-        format="svg", bbox_inches="tight", 
-        transparent=True
-    )
+
+    if save:
+        plt.savefig(
+            path + "interior_point_example.svg",
+            format="svg", bbox_inches="tight",
+            transparent=True
+        )
+    else:
+        plt.show()
+
+    return
+
+
+def plot_poiseuille_profiles(save=False):
+    def eval_velocity(bn, eta):
+        u_ana, du_ana = np.zeros(eta.size), np.zeros(eta.size)
+        e0 = bn / 4.
+        m_bot = eta <= -e0
+        m_mid = (-e0 < eta) & (eta < e0)
+        m_top = e0 <= eta
+        u_ana[m_top] = -bn / 2. * (1. - eta[m_top]) + (1. - np.square(eta[m_top]))
+        u_ana[m_bot] = -bn / 2. * (1. + eta[m_bot]) + (1. - np.square(eta[m_bot]))
+        u_ana[m_mid] = (1. - bn / 4.) ** 2
+        return u_ana
+
+    fig, ax = plt.subplots(1, 1, figsize=(6.*0.9, 3.5*0.9))
+    ax.locator_params(axis='x', nbins=6)
+    ax.locator_params(axis='y', nbins=5)
+    ax.axis([0., 1., -1., 1.])
+    ax.grid(ls=':')
+    ax.set_xlabel(r"$u/U_{\infty}$", fontsize=ftSz2)
+    ax.set_ylabel(r"$2y/H$", fontsize=ftSz2)
+    ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
+    
+    eta = np.linspace(-1., 1., 150)
+    for i, bn in enumerate([0., 1., 2., 3., 4.]):
+        c, lw = (f'C{i:d}', 1.) if i < 4 else ('k', 3.)
+        u = eval_velocity(bn, eta)
+        umax = (1. - bn / 4.) ** 2
+        eta_zero = np.full(2, bn / 4.)
+        ax.plot(u, eta, color=c, label=f"$Bn = {bn:.0f}$", lw=lw)
+        ax.fill_between([0., umax], +eta_zero, -eta_zero, color=c, ls='', alpha=0.50)
+    
+    lgd = ax.legend(fontsize=ftSz3, ncols=1, labelspacing=1., bbox_to_anchor=(1., .86),)
+    for legobj in lgd.legend_handles:
+        legobj.set_linewidth(3.0)
+    fig.tight_layout()
+
+    # if save:
+    plt.savefig(path + "poiseuille_bn.svg", bbox_inches="tight", transparent=True)
+    # else:
     plt.show()
+
+    return
 
 
 def plot_shape_fct_1D(save=False):
@@ -103,7 +151,7 @@ def plot_shape_fct_1D(save=False):
 
 def plot_fluid_models(save=False):
     fig, axs = plt.subplots(
-        1, 2, figsize=(7., 4.*0.875), constrained_layout=True, sharey='all', sharex='all'
+        1, 2, figsize=(7., 4. * 0.875), constrained_layout=True, sharey='all', sharex='all'
     )
 
     powers = [0.4, 2., 1.]
@@ -120,13 +168,13 @@ def plot_fluid_models(save=False):
     axs[0].set_ylim([-0.05, tau_y + strain[-1]])
 
     for ax, tau, title, lbs in zip(axs, [0., tau_y], titles, labels):
-    
+
         for i, (power, label) in enumerate(zip(powers, lbs)):
             alpha, lw = (1., 2.5) if power == 1. else (0.75, 1.5)
             stress = np.r_[0., tau + strain ** power]
             ls = "--" if (tau == 1. and power == 1.) else "-"
             ax.plot(np.r_[0., strain], stress, f'C{i:d}{ls:s}', lw=lw, label=label, alpha=alpha)
-        
+
         # loc = "upper left" if tau == 0. else "lower right"
         # ax.legend(fontsize=ftSz3, loc=loc)
         ax.set_title(title, fontsize=ftSz1)
@@ -137,9 +185,9 @@ def plot_fluid_models(save=False):
     # _, idxs = np.unique(labels, return_index=True)
 
     _ = axs[0].legend(
-        lines, labels, #bbox_to_anchor=(1.0, 0.25, 0.18, 0.5),
+        lines, labels,  # bbox_to_anchor=(1.0, 0.25, 0.18, 0.5),
         facecolor='wheat', framealpha=0.25, fancybox=True,
-        #labelspacing=1., mode='expand', 
+        # labelspacing=1., mode='expand',
         fontsize=ftSz2, ncol=1,
     )
 
@@ -149,7 +197,7 @@ def plot_fluid_models(save=False):
         length_includes_head=True, edgecolor="none", facecolor='black'
     )
     axs[1].text(
-        arrow_x + 0.05, tau_y / 2., r"$\tau_0$", 
+        arrow_x + 0.05, tau_y / 2., r"$\tau_0$",
         fontsize=1.2 * ftSz1, ha='left', va='center'
     )
     # plt.arrow
@@ -162,11 +210,12 @@ def plot_fluid_models(save=False):
 
 
 if __name__ == "__main__":
-    save_global = True
+    save_global = False
     path = "./figures/"
     plt.rcParams['font.family'] = 'serif'
-    plt.rcParams["text.usetex"] = save_global
+    plt.rcParams["text.usetex"] = True
 
-    plot_interior_point(save_global)
+    # plot_interior_point(save_global)
+    plot_poiseuille_profiles(save_global)
     # plot_shape_fct_1D(save_global)
     # plot_fluid_models(save_global)
