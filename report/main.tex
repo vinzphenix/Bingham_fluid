@@ -16,17 +16,29 @@
 
 % FOR introduction
 %The flow characteristics of such materials are difficult to predict as they involve [...] solid and liquid regions that are generally impossible to locate a priori. CITE Coussot if used so  -->  use X-MESH
+% Déboires
+%Let us finally get to the crux of this study: the simulation of two-dimensional flows.
+
 
 % Index i: element
 % Index j: node
 % Index e: edge
 % Index g: Gauss point
 
+
+\clearpage
 \addcontentsline{toc}{chapter}{Introduction}
 \chapter*{Introduction}
-An introduction
+In the fluid mechanics community, the Newtonian model is so widely used that we often forget that it is a constitutive law, and therefore an approximation. Its assumption is simple, yet accurate for many fluids: the strain rate, the velocity of deformation of its flow, is a linear response to the viscous stress. Its popularity relegates all other fluids to the status of non-Newtonians only, although there are a whole host of them. Here, we will be looking at yield stress fluids, a model that covers substances as common as blood, mayonnaise, hair gel or cement. These fluids are distinguished by their ability to behave like solids when subjected to low stresses.
+
+We could fool you if we said that the research was carried out because of the importance of these fluids in industry. They may be very present, but what interested us here was the technical aspect of simulating such flows. Indeed, they present an interface between liquid and solid regions, which cannot be localized a priori, as the stresses are initially unknown. Numerical methods, which rely almost exclusively on a discretization of a study domain, therefore generally fail to represent this interface correctly. The aim of this thesis is therefore to couple the flow resolution with an adequate interface tracking.
+
+To achieve this, we first set the scene in \cref{chap:chapEq}, where we derive the conservation equations along with the constitutive model of the yield stress fluid, to arrive at an energy-minimization problem. Then, in \cref{chap:chap1D}, we focus on a flow that is simple enough to be studied in a one-dimensional framework. This allows us to get our bearings, and to develop a beta version of interface tracking. Finally, in \cref{chap:chap2D}, we tackle the interface capture problem in earnest. This is also an opportunity to observe the surprising properties of yield stress fluid flows.
+
+More personally, it is an opportunity to put to music the skills I have acquired over the last 5 years as an engineer in applied mathematics, such as numerical methods, optimization, fluid mechanics and programming. The code developed for this thesis can be found on the following github repository: \url{github.com/vinzphenix/Bingham\_fluid}.
 
 \chapter{Governing equations}
+\label{chap:chapEq}
 
 \section{General notions of continuum mechanics}
 Let $\Omega \in \mathbb{R}^3$ denote the domain of interest and $\Gamma=\partial \Omega$ its boundary. Let $\mathbf{u}$ be the fluid velocity, and $\boldsymbol{\sigma}=-p\mathbf{I}+\boldsymbol{\tau}$ be the stress tensor with its deviatoric contribution $\boldsymbol\tau$.
@@ -66,12 +78,12 @@ Before looking for a closure equation for the shear stress tensor, let us first 
 To be exhaustive:
 \begin{itemize}[label=---]
     \item $\mathbf{D}$ is the strain rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
-    \item $\mathbf{W}$ is the spin tensor that indicates the axis around which the flow is locally rotating, as well as the speed of this rotation. It contains the same information as the vorticity vector $\boldsymbol\omega = \nabla \times \vv$.
+    \item $\mathbf{W}$ is the spin tensor indicating the axis around which the flow is locally rotating, as well as the speed of this rotation. It contains the same information as the vorticity vector $\boldsymbol\omega = \nabla \times \vv$.
 \end{itemize} 
 
 \section{Constitutive equations of Bingham fluids}
 
-Newtonian fluid behavior is the most simple one can find in fluid mechanics because it assumes that the fluid deformation, or strain rate, is is directly proportional to the shear stress it undergoes. It is very accurate for many liquids and gases such as air, water, gasoline or alcohol, under normal conditions. However, this model cannot characterize a variety of well known substances from blood to toothpaste to ketchup to name a few.
+The Newtonian fluid is one of the simplest model of fluid mechanics, as it assumes that fluid deformation, or strain rate, is directly proportional to the shear stress it undergoes. This model is highly accurate in describing the behavior of many liquids and gases, such as air, water, gasoline or alcohol, under normal conditions. However, it cannot be used to characterize a variety of other well-known substances, such as blood, toothpaste or ketchup, to name a few.
 
 Such fluids are much better described as \textit{generalized Newtonian} \cite{Geophysical}. This model extends Newtonian fluids with a nonlinear constitutive law between the stress $\boldsymbol\tau$ and strain rate $\gam$:
 \begin{equation}
@@ -244,7 +256,7 @@ It is clear that $\uu$ is a minimum of $J$ when \eqref{eq:gateau_1} and \eqref{e
 
 
 \chapter{1D solution using conic optimization}
-\label{chap:chap1}
+\label{chap:chap1D}
 
 \section{Introduction}
 To start, we will study the well know Poiseuille flow: the fluid is pushed forward by a constant pressure gradient in a channel between two infinitely long plates. This flow is of course a bit boring since it is stationary and fully developed. But it has the merit of being simple to introduce the optimization method in a one-dimensional framework.
@@ -443,7 +455,7 @@ Let us take a basic example in 2 dimensions.
 \begin{figure}[ht]
     \centering
     \includesvg[width=\textwidth]{../figures/interior_point_example.svg}
-    \caption{Solution of the basic example using the interior point method}
+    \caption{Solution of the basic example using the interior-point method}
     \label{fig:interior_pt}
 \end{figure}
 
@@ -473,7 +485,7 @@ We minimize this problem over the nodal velocities $U$, and the newly added $S$ 
 
 At this stage, the finite element solution will be relevant only when the interface is represented on the mesh. Therefore, the arbitrary mesh is manually modified such that two nodes are placed at $y=\pm y_0$. The goal of the next section, is to develop an algorithm that moves the nodes without knowing the interface position beforehand.
 
-The optimization problem was solved with the interior-point solver of the open-source software \texttt{CVXOPT}. Every simulation presented in this chapter \cref{chap:chap1} was done with $Bn=2$.
+The optimization problem was solved with the interior-point solver of the open-source software \texttt{CVXOPT} \cite{cvxopt}. Every simulation presented in this chapter \cref{chap:chap1D} was done with $Bn=2$.
 
 \begin{figure}
     \centering
@@ -655,10 +667,7 @@ Increasing the number of Gauss points helps, but it comes with the prohibitive c
 
 
 \chapter{2D problem}
-
-%INTRODUCTION
-% Déboires
-%Let us finally get to the crux of this study: the simulation of two-dimensional flows.
+\label{chap:chap2D}
 
 \section{Finite element formulation}
 It is well known that velocity-pressure fields discretized with $\mathcal{P}_1$--$\mathcal{P}_0$ and $\mathcal{P}_1$--$\mathcal{P}_1$ elements do not provide stable discretizations of the Stokes equations, or equivalently of the incompressible linear elasticity equations. A first option is to enrich the velocity space with a bubble function: this is the MINI element \cite{ministable}. A second option is to use Taylor-Hood elements, i.e. $\mathcal{P}_k$--$\mathcal{P}_{k-1}$ for $2 \leq k$. This element was implemented in the code for $k=2$, along with the MINI element. The simulations presented here were done with Taylor-Hood elements unless otherwise specified.
@@ -671,15 +680,15 @@ The shape functions $\phi_j$ are represented graphically in \cref{fig:shape_func
 \begin{figure}[t]
     \centering
     \begin{subfigure}[t]{0.495\textwidth}
-        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P1.svg}
+        \includesvg[width=\textwidth]{../figures/shape_fcts_2d_P1.svg}
         \caption{Lagrange $\mathcal{P}_1$}
     \end{subfigure}
     \begin{subfigure}[t]{0.495\textwidth}
-        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_bubble.svg}
-        \caption{Bubble enriched Lagrange}
+        \includesvg[width=\textwidth]{../figures/shape_fcts_2d_bubble.svg}
+        \caption{Bubble enriched Lagrange $\mathcal{P}_1$}
     \end{subfigure}
     \begin{subfigure}[b]{\textwidth}
-        \includesvg[width=\textwidth, draft]{../figures/shape_fcts_2d_P2.svg}
+        \includesvg[width=\textwidth]{../figures/shape_fcts_2d_P2.svg}
         \caption{Lagrange $\mathcal{P}_2$}
     \end{subfigure}
     \caption{Shape functions used for the pressure and velocity fields in 2-dimensions.}
@@ -747,7 +756,7 @@ The minimization problem can for Cartesian coordinate systems is given hereunder
 \end{empheqboxed}
 where $\tilde \omega_g$, $\tilde \xx_g$ are the integration weights and positions on the edges, while $\ell_e$ indicates its length.
 
-For this larger scale problem, I switched from \texttt{CVXOPT} to the \texttt{MOSEK} interior-point solver \cite{mosek} that handles sparse matrices more efficiently, and performs better overall as explained in \cref{tab:solvers}.
+For this larger scale problem, I switched from \texttt{CVXOPT} \cite{cvxopt} to the \texttt{MOSEK} interior-point solver \cite{mosek} that handles sparse matrices more efficiently, and performs better overall as explained in \cref{tab:solvers}.
 \begin{table}[h]
     \centering
     \begin{tabular}[t]{cccc}
@@ -890,13 +899,13 @@ As in the 1D case, we want to the mesh to be topologically correct: the nodes sh
     \item Move the nodes of the mesh towards the interface estimation.
 \end{enumerate}
 
-The first challenge is that we want to find an interface that is not the root of a scalar field. In such a case, the interface would have been unambiguously located. Unfortunately, in our case, the interface is instead the boundary of the zero level set of $\|\gam(\vv^h)\|$, the latter being a surface of nonzero measure. The idea is therefore to generate a virtual field whose zero level set would be the interface. It will be done with a predictor–corrector method:
+The first challenge is that we want to find an interface that is not the root of a scalar field. In such a case, the interface would have been unambiguously located. Unfortunately, in our case, the interface is instead the boundary of the zero level set of $\|\gam(\vv^h)\|$, the latter being a surface of nonzero measure. The idea is therefore to generate a virtual field $\varphi: X \subseteq \Omega \to \mathbb{R}$ whose zero level set would be the interface. It will be done with a predictor–corrector method:
 \begin{itemize}
     \item Predict an interface as the boundary of a set of elements having zero deformation at every reduced integration point, i.e. $\{i \;\vert\; T_{i,g} = 0 \;\; \forall\, g\}$.
-    \item Construct a virtual field based on the positive values of strain rate norm $\|\gam(\vv^h)\|$ near the predicted interface. This virtual field will be constructed with local linear approximations of $\|\gam(\vv^h)\|$, in the same idea as in the 1D case. The corrector will be the zero level set of the virtual field.
+    \item Construct a virtual field $\varphi$ based on the positive values of strain rate norm $\|\gam(\vv^h)\|$ near the predicted interface. This virtual field will be constructed with local linear approximations of $\|\gam(\vv^h)\|$, in the same idea as in the 1D case. The corrector will be the zero level set of the virtual field: $\{\xx \; \vert\; \varphi(\xx) = 0\}$.
 \end{itemize}
 
-In practice, the norm will never be exactly zero, or close to machine epsilon, as we use an interior-point algorithm. Therefore, yielded and unyielded regions will be distinguished with a tolerance parameter $\epsilon$. $\epsilon$ was tuned to $10^{-4}$, as it provided the best results given that $T_{i,g} \sim 10^{-8}$ inside the unyielded regions, and tends to increases near the interface, even when the mesh is topologically correct.
+In practice, the norm will never be exactly zero, or close to machine epsilon, as we use an interior-point algorithm. Therefore, yielded and unyielded regions will be distinguished with a tolerance parameter $\epsilon$. This $\epsilon$ was tuned to $10^{-4}$, as it provided the best results given that $T_{i,g} \sim 10^{-8}$ inside the unyielded regions, and tends to increases near the interface, even when the mesh is topologically correct.
 
 The procedure described above is detailed in \cref{alg:tacking_2d} and illustrated below for a Poiseuille flow on a mesh with $\sim 2000$ nodes.
 
@@ -1145,7 +1154,7 @@ With a Newtonian fluid, the strain rate cancels at a position slightly below the
 
 Higher $Bn$ leads to larger unyielded regions: this has already been observed many times in the literature \cite{Bleyer,Syrakos,Treskatis}. Specifically, the velocity profiles obtained by the present method, by Bleyer et al. \cite{Bleyer} and by Syrakos et al. \cite{Syrakos} are compared in \cref{fig:compareCavity}. 
 
-The mesh used for the simulations contains $12\,000$ elements, denser closer to the upper boundary and the upper corners. The simulation with $Bn=500$ was however done on a finer mesh with $9\,000$ elements, refined inside the the yielded region because the interface tracking did not orginally succeeded. We will come back to the robustness of the algorithm in more detail in the conclusion.
+The mesh used for the simulations contains $12\,000$ elements, denser closer to the upper boundary and the upper corners. The simulation with $Bn=500$ was however done on a finer mesh with $9\,000$ elements, refined inside the the yielded region because the interface tracking did not orginally succeeded. We will come back to the robustness of the algorithm in more detail in \cref{sec:failures}.
 
 Again, there appears to be curves with small deformation emerging from the corners of unyielded region. 
 
@@ -1297,47 +1306,32 @@ The interface tracking is illustrated in \cref{fig:cylinderTracking} for $Bn=\fr
     \label{fig:cylinderTracking}
 \end{figure}
 
+\section{Failures of the interface tracking}
+\label{sec:failures}
+The algorithm provides convincing results for different flows in various geometries, as shown in the previous sections. However, it is not yet sufficiently robust. A few examples will demonstrate this.
 
-\section{Failures of the algorithm}
+\subsection{Zero measure elements}
+Some elements may end up with an area close to zero. In this case, the symmetrical velocity gradient $\gam$ becomes inconsistent, with a norm much higher than its neighbors. The \textit{caps}, triangles with two angles $\to 0$, seem to pose the most problems. Less troublesome, but still problematic, are the \textit{needles}, with one angle $\to 0$. 
+
+An example is given in \cref{fig:failureCap}, in the simulation of a flow around a cylinder. Linear approximations in the vicinity of such triangles are unphysical, and so is the resulting interface corrector. The problem has been corrected, with relative success, by discarding the values of $\dot \gamma$ over those elements, by fixing a threshold.
+
+In the simplest Poiseuille flow situation, a similar situation can unfortunately arise. By iterating the algorithm more than necessary, we obtain elements with negative aera. This makes the optimization problem \eqref{eq:functional2D} non-convex, and thus impossible to solve by the interior-point algorithm.
 
 \begin{figure}
     \centering
-    \begin{subfigure}[t]{0.495\textwidth}
-        \includesvg[width=\textwidth]{../figures/negative_1.svg}
-        \caption{Colormap of the strain rate tensor norm.}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.495\textwidth}
-        \includegraphics[width=\textwidth]{../figures/negative_2.pdf}
-        \caption{.}
+    \begin{subfigure}[t]{0.55\textwidth}
+        \centering
+        \includesvg[width=0.90\textwidth]{../figures/negative_1.svg}
+        \caption{Upper interface of the solid plug of a Poiseuille flow. The triangle with negative Jacobian is colored red. The numerical values indicate the average of $\dot\gamma$ over each element. The node displacements (upwards) are magnified 100 times.}
     \end{subfigure}\vspace{6pt}
-    \caption{}
+    \begin{subfigure}[t]{0.55\textwidth}
+        \centering
+        \includegraphics[width=0.90\textwidth]{../figures/negative_2.pdf}
+        \caption{Colormap of the velocity field $\|\vv\|$ after the next iteration. The finite element solution is deteriorated, along with the next interface corrector.}
+    \end{subfigure}\vspace{6pt}
+    \caption{Impact of a negative Jacobian on the solution accuracy.}
     \label{fig:failureNegative}
 \end{figure}
-
-\begin{figure}
-    \centering
-    \begin{subfigure}[t]{0.495\textwidth}
-        %\includesvg[width=\textwidth]{../figures/corner_5.svg}
-        \includegraphics[width=\textwidth]{../figures/corner_5.pdf}
-        \caption{Colormap of the strain rate tensor norm.}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.495\textwidth}
-        \includesvg[width=\textwidth]{../figures/corner_4.svg}
-        \caption{Colormap of the virtual field, whose zero level set is the interface corrector.}
-    \end{subfigure}\vspace{6pt}
-    \begin{subfigure}[t]{0.325\textwidth}
-        \includesvg[width=\textwidth]{../figures/corner_1.svg}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.325\textwidth}
-        \includesvg[width=\textwidth]{../figures/corner_2.svg}
-    \end{subfigure}
-    \begin{subfigure}[t]{0.325\textwidth}
-        \includesvg[width=\textwidth]{../figures/corner_3.svg}
-    \end{subfigure}
-    \caption{The interface predictor and corrector are shown respectively as black and red curves. The lower figures show the linear approximation on three neighbouring patches (note the difference in scale).}
-    \label{fig:failureCorner}
-\end{figure}
-
 
 \begin{figure}
     \centering
@@ -1356,9 +1350,41 @@ The interface tracking is illustrated in \cref{fig:cylinderTracking} for $Bn=\fr
     \begin{subfigure}[t]{0.495\textwidth}
         \includesvg[width=\textwidth]{../figures/issue_4.svg}
         \caption{Inconsistent linear approximation.}
-    \end{subfigure}
-    \caption{}
+    \end{subfigure}\vspace{6pt}
+    \caption{Bad estimation of the interface due to deformation anomalies in degenerate triangles.}
     \label{fig:failureCap}
+\end{figure}
+
+\subsection{Deformations $\dot\gamma$ of totally different scales}
+%This second issue concerns the very idea of the method rather than its implementation. 
+Based on a $C^2$ discontinuity, the algorithm searches for the tangent plane to $\dot \gamma$ from the yielded side. However, the slope of this plane can cover several orders of magnitude at different locations of the interface, and in a non continuous way.
+
+Let's start with flow in a curved channel. The deformation varies significantly radially, and much less in the tengential direction. Near corners, the linear approximation has no chance of being accurate. This is detailled in \cref{fig:failureCorner}. The average of those different linear approximation generates a bulge instead the desired sharp corner.
+
+A second illustration is provided with the lid-driven cavity flow. For the occasion, a new simulation was carried out, with a mesh size $250$ times smaller than the height of the cavity near the corners. \Cref{fig:failureRoot} shows that $\dot \gamma$ does not vary at all with the same intensity at different positions around the solid region. Along the black circles, the strong variations allow us to easily determine the interface: $5$ to $6$ orders of magnitude spanned over a short distance. However, along the white lines, the situation is less clear-cut as the change is smoother: only three $3$ orders of magnitude over a comparable distance. More importantly, linear approximations in this zone generate a virtual field $\varphi$ positive everywhere on its support. This issue could perphaps be resolved by extending the support.
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        %\includesvg[width=\textwidth]{../figures/corner_5.svg}
+        \includegraphics[width=\textwidth]{../figures/corner_5.pdf}
+        \caption{Colormap of the strain rate tensor norm. The relevant corner is circle in white.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_4.svg}
+        \caption{Colormap of the virtual field, whose zero level set (red) is the interface corrector.}
+    \end{subfigure}\vspace{6pt}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_1.svg}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_2.svg}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_3.svg}
+    \end{subfigure}\vspace{6pt}
+    \caption{Misestimation of the interface near sharp corners. The interface predictor and corrector are the black and red curves. The lower figures show the linear approximation on three neighbouring patches. Note the difference in scale for each patch.}
+    \label{fig:failureCorner}
 \end{figure}
 
 
@@ -1378,13 +1404,29 @@ The interface tracking is illustrated in \cref{fig:cylinderTracking} for $Bn=\fr
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/correction_4.svg}
     \end{subfigure}
-    \caption{Interrogations about the smoothness of the strain-rate norm $\|D\|$. The parametric curves are shown above in the domain $\Omega$, and the evaluation of $\|D\|$ along them is shown below.}
+    \caption{Interrogations about the smoothness of the strain-rate norm $\|\mathbf{D}\|=\dot \gamma/2$. Parametric curves are shown above in the domain $\Omega$, and the evaluation of $\|\mathbf{D}\|$ along them is shown below.}
     \label{fig:failureRoot}
 \end{figure}
 
+\FloatBarrier
 \addcontentsline{toc}{chapter}{Conclusion}
 \chapter*{Conclusion}
 
+In this study, we modeled the flow of yield stress fluid, which, as a reminder, behaves as a solid under low stress, and as a liquid otherwise. More specifically, we considered the Bingham constitutive model to close our system of PDE's. The resulting non-linearity was handled by expressing the problem as an energy minimization, that was later solved with an interior-point algorithm.
+
+This study focused on the correct management of the physical interface, that arise due to Bingham's constitutive law. The aim was therefore to obtain a topologically correct mesh, by placing nodes precisely on the interface. 
+
+On one hand, the 1D case allowed us to familiarize ourselves with the equations and the optimization solver, but also to develop a technique that recovers the interface. The core of this thesis, on the other hand, is the simulation of various 2D flows with the astonishing features, typical of yield stress fluids, like the rigid rotating regions. %and the filaments of pressure discontinuities.
+
+However, the algorithm is not yet mature. It is not yet capable of iterating and stopping autonomously while maintaining a conformal mesh. Each simulation was therefore stopped manually based on a visual check. The cases of failure examined in detail in \cref{sec:failures} give a good idea of the avenues to follow to make it more robust. 
+
+The treatment of interface corners is probably the first task at hand, as they appear in almost every case. A better understanding of filaments with pressure discontinuities, which regularly appear at the corners, is the first step towards improvement. It is fair to assume that those corners are generally kinks (instantaneous change of direction), and maybe cusps (instantaneous u-turn) when filaments emerge from the rigid zone.
+
+An equally important work is to seriously investigate the regularity of the solution. Ideally, we would like to obtain a proof of the discontinuity level (always $C^1$, never $C^2$ ?) to ensure a solid mathematical foundation for the reconstruction method.
+
+If a third improvement had to be mentionned, it would undoubtedly concern the yield tolerance parameter $\epsilon$. The algorithm would be much more efficient and accurate if it were able to detect the change in scale of the deformation field $\dot \gamma$ on its own. This could be achieved, for example, by searching for a sudden drop in $\dot \gamma$, as illustrated in \cref{fig:failureRoot}.
+
+Mesh deformation really improves the quality of the solution and avoids the pitfall of mesh refinement But this should be quantified with a convergence analysis, for example, to get a clearer picture of the situation. The idea of extreme mesh deformation could be push even further, by pushing the nodes away from solid to the liquid regions. This would densify the mesh were large gradients occur, and coarsen it were uniform and rotational motion happen. The velocity field would be well resolved there anyway, since it is either constant or linear.
 
 %\nocite{*}
 %\printbibliography

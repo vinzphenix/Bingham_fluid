@@ -100,7 +100,7 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 2
+        mode = 3
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
