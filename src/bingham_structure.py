@@ -24,7 +24,7 @@ def DPHI_DETA(xi, eta): return -27. * xi * eta + 27. * xi * (1. - xi - eta)
 class Simulation_2D:
     np.set_printoptions(precision=4)
 
-    def __init__(self, parameters: dict, new_coords=None):
+    def __init__(self, parameters: dict, new_coords=None, save_variant=""):
         self.K = parameters['K']  # Viscosity
         self.tau_zero = parameters['tau_zero']  # yield stress
         self.f = np.array(parameters['f'])  # body force (pressure gradient)
@@ -49,6 +49,7 @@ class Simulation_2D:
         self.iteration = 0
         self.tol_yield = 1.e-4
         self.tag = 0
+        self.save_variant = save_variant
 
         res = self.get_elements_info()
         self.elem_type, self.elem_tags, self.elem_node_tags, self.local_node_coords = res
@@ -351,7 +352,7 @@ class Simulation_2D:
     def bind_bc_functions(self):
         if self.model_name in ["rectangle", "rectanglerot"]:
             return vn_poiseuille, vt_poiseuille, gn_poiseuille, gt_poiseuille, corner_poiseuille
-        elif self.model_name in ["cavity", "cavity_cheat"]:
+        elif self.model_name in ["cavity", "cavity_cheat", "cavity_test"]:
             return vn_cavity, vt_cavity, gn_cavity, gt_cavity, corner_cavity
         elif self.model_name in ["cylinder"]:
             return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder, corner_cylinder

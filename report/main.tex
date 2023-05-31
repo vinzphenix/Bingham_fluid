@@ -65,7 +65,7 @@ Before looking for a closure equation for the shear stress tensor, let us first 
 
 To be exhaustive:
 \begin{itemize}[label=---]
-    \item $\mathbf{D}$ is the strain-rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
+    \item $\mathbf{D}$ is the strain rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
     \item $\mathbf{W}$ is the spin tensor that indicates the axis around which the flow is locally rotating, as well as the speed of this rotation. It contains the same information as the vorticity vector $\boldsymbol\omega = \nabla \times \vv$.
 \end{itemize} 
 
@@ -346,7 +346,7 @@ We will consider both linear and quadratic shape functions. They are expressed o
 \end{figure}
 
 
-The strain-rate tensor with a unidirectional flow $u(y)$ only contains the off-diagonal component,
+The strain rate tensor with a unidirectional flow $u(y)$ only contains the off-diagonal component,
 \begin{equation}
     D_{12}^h(y) = \frac{1}{2} \pdv{u^h}{y} \quad \text{where} \quad \left(\pdv{u^h}{y}\right)_{\Omega_i} = \sum_{j=1}^{n} U_j \dv{\phi_j}{y}
 \end{equation}
@@ -886,7 +886,7 @@ The boundary term $\phi_j \:\vv^h\cdot \tgt$ was deduced from $\phi_j (\nabla \p
 As in the 1D case, we want to the mesh to be topologically correct: the nodes should be placed along the interface between solid and liquid behavior. This will be done in three steps:
 \begin{enumerate}
     \item Solve the finite element problem by minimizing the functional $\mathcal{J}$.
-    \item Estimate the interface position based on the strain-rate field $\gam(\vv^h)$.
+    \item Estimate the interface position based on the strain rate field $\gam(\vv^h)$.
     \item Move the nodes of the mesh towards the interface estimation.
 \end{enumerate}
 
@@ -908,7 +908,7 @@ The procedure described above is detailed in \cref{alg:tacking_2d} and illustrat
     %\While{\textsf{not optimalMesh}}{
         \tcp{Step 1}
         Minimize the energy functional $\mathcal{J}$ on the mesh $\mathcal{M}$ and retrieve the solutions $U_j, T_{i,g}$\;
-        \tcp{Step 2: Reconstruct a strain-rate scalar field with negative values}
+        \tcp{Step 2: Reconstruct a strain rate scalar field with negative values}
         $\mathcal{I} \gets$ set of unyielded elements, i.e. elements $i$ where the strain rate norm $T_{i,g} < \epsilon \; \forall g$\;
         $\mathcal{B} \gets$ set of nodes on the boundary of the connected components of $\mathcal{I}$\;
         \ForEach {$j \in \mathcal{B}$}{
@@ -921,7 +921,7 @@ The procedure described above is detailed in \cref{alg:tacking_2d} and illustrat
         \ForEach {$n \in \mathcal{N}$}{
             $R_n \gets$ average of the reconstructed values $R_n^{(j)} \; \forall j : n\in \mathcal{N}_j$\;
         }
-        $R \gets$ reconstructed strain-rate field ($\mathcal{P}_1$), based on nodal values $R_n \; \forall n \in \mathcal{N}$\;
+        $R \gets$ reconstructed strain rate field ($\mathcal{P}_1$), based on nodal values $R_n \; \forall n \in \mathcal{N}$\;
         \tcp{Step 3: move the nodes where the reconstructerd field cancels out}
         $\mathcal{E} \gets$ edges with origin \texttt{org} and destination \texttt{dst} such that $\sign(R_{\text{org}})\neq \sign(R_{\text{dst}})$\;
         $\mathcal{C} \gets \cup_{e\in\mathcal{E}} \big(\text{ adjacent node of }e\text{ closest to the root of }R \text{ along } e\big)$\;
@@ -944,7 +944,7 @@ The procedure described above is detailed in \cref{alg:tacking_2d} and illustrat
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.48\textwidth}
         \includesvg[width=\textwidth,]{../figures/rec_3.svg}
-        \caption{Iso-contours of the linear approximation of the strain-rate field around one of the nodes of the predicted interface. The reconstruction is only based on the values of the colored Gauss points}
+        \caption{Iso-contours of the linear approximation of the strain rate field around one of the nodes of the predicted interface. The reconstruction is only based on the values of the colored Gauss points}
         \label{fig:build_approx}
     \end{subfigure}\vspace{20pt}
     \begin{subfigure}[t]{0.48\textwidth}
@@ -1237,16 +1237,25 @@ For a low Reynolds Newtonian fluid flow, the drag can even be exactly computed w
 
 For three dimensional flow, the approximation $Re\ll 1$ is of no major consequence, but in 2D, the story is quite different. There exists in fact no solution to the Stokes problem for a an unbounded flow around a disk that respects both boundary conditions far away ($\vv=U_{\infty}\mathbf{e}_1$) and around the sphere ($\vv=0$): this is the Stokes' paradox. Progress can however be made with an asymptotic expansion of the convective term of the Navier-Stokes equations \cite{stokesExpansion}.
 
-To summarize, the flow we are going to simulate contains boundaries (slip-walls) and does not attempt to reproduce an unbounded flow that is impossible to solve because of Stokes' paradox. Furthermore, the disk was replaced by a square because it generates bigger "Bingham features", and therefore easier to visualize, cf. \cref{fig:cylinderSetup}.
+To summarize, the flow we are considering here is bounded with slip-walls and does not attempt to reproduce an unbounded flow that is impossible to simulate because of Stokes' paradox.
 
 \input{./schema_cylinder.tex}
 
-\begin{figure}[!hb]
-    \centering
-    \includegraphics[width=0.85\textwidth]{../figures/cylinder_mesh.pdf}
-    \caption{First step of the interface tracking. Predictor is colored blue, and the zero level set of the corrector is the red line. The node displacements are shown in green. The mesh size grows from $l \sim h/40$ around the obstacle, to $l \sim h/3$ in the far field (outside the figure).}
-    \label{fig:cylinderTracking}
-\end{figure}
+Furthermore, the disk was replaced by a square because it generates bigger "Bingham features", and therefore easier to visualize, cf. \cref{fig:cylinderSetup}. These features are specific rigid zones around the obstacle, observed by \cite{adaptiveCylinder,simulationCylinder}, and simulated here in \cref{fig:cylinder}:
+\begin{itemize}
+    \item A dead zone upstream and downstream, where the velocity profile is uniform.
+    \item A deformation zone around the rectangle, allowing the particles to change direction and bypass the obstacle.
+    \item Two \textit{pikes}, or \textit{caps}, stuck to the obstacle, pointing in the direction of the flow.
+    \item Two rigid zones, called \textit{almonds} where the fluid is in solid rotation. They are lying inside the deformation zone.
+\end{itemize}
+
+In order to capture the pikes and almonds, the mesh was refined near the rectangle, and the vertical center line. The mesh size grows from $l \sim h/40$ around the obstacle, to $l \sim h/3$ in the far field (outside of \cref{fig:cylinder}). The observation is comparable to previous situations:
+\begin{itemize}
+    \item The unyielded zones grow in size as the Bingham number increases.
+    \item Some unyielded zones are connected through valleys of low deformation, that come with a pressure discontinuity.
+\end{itemize}
+
+The interface tracking is illustrated in \cref{fig:cylinderTracking} for $Bn=\frac{\tau_0 h}{K U_{\infty}}=10$. We can see that the algorithm struggles to capture the kinks of the interfaces when the mesh is not fine enough. 
 
 \begin{figure}
     \centering
@@ -1274,29 +1283,107 @@ To summarize, the flow we are going to simulate contains boundaries (slip-walls)
     \label{fig:cylinder}
 \end{figure}
 
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{\textwidth}
+        \centering
+        \includegraphics[width=0.85\textwidth]{../figures/cylinder_mesh.pdf}
+    \end{subfigure}\vspace{6pt}
+    \begin{subfigure}[t]{\textwidth}
+        \centering
+        \includegraphics[width=0.85\textwidth]{../figures/cylinder_mesh_2.pdf}
+    \end{subfigure}
+    \caption{First and last step of the interface tracking. Predictor is colored blue, and the zero level set of the corrector is the red line. The node displacements are shown in green.}
+    \label{fig:cylinderTracking}
+\end{figure}
+
+
+\section{Failures of the algorithm}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/negative_1.svg}
+        \caption{Colormap of the strain rate tensor norm.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/negative_2.pdf}
+        \caption{.}
+    \end{subfigure}\vspace{6pt}
+    \caption{}
+    \label{fig:failureNegative}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        %\includesvg[width=\textwidth]{../figures/corner_5.svg}
+        \includegraphics[width=\textwidth]{../figures/corner_5.pdf}
+        \caption{Colormap of the strain rate tensor norm.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_4.svg}
+        \caption{Colormap of the virtual field, whose zero level set is the interface corrector.}
+    \end{subfigure}\vspace{6pt}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_1.svg}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_2.svg}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.325\textwidth}
+        \includesvg[width=\textwidth]{../figures/corner_3.svg}
+    \end{subfigure}
+    \caption{The interface predictor and corrector are shown respectively as black and red curves. The lower figures show the linear approximation on three neighbouring patches (note the difference in scale).}
+    \label{fig:failureCorner}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/issue_1.svg}
+        \caption{Colormap of the strain rate tensor norm.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/issue_2.svg}
+        \caption{Strain rate norm $T_{i,g}$ at the Gauss points.}
+    \end{subfigure}\vspace{6pt}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/issue_3.svg}
+        \caption{Outliers in a very small elements.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includesvg[width=\textwidth]{../figures/issue_4.svg}
+        \caption{Inconsistent linear approximation.}
+    \end{subfigure}
+    \caption{}
+    \label{fig:failureCap}
+\end{figure}
+
+
+\begin{figure}
+    \centering
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/correction_1.pdf}
+        \caption{Predictor in yellow, corrector in red.}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.495\textwidth}
+        \includegraphics[width=\textwidth]{../figures/correction_2.pdf}
+        \caption{Parametric curves: lines and circles.}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/correction_3.svg}
+    \end{subfigure}
+    \begin{subfigure}[t]{\textwidth}
+        \includesvg[width=\textwidth]{../figures/correction_4.svg}
+    \end{subfigure}
+    \caption{Interrogations about the smoothness of the strain-rate norm $\|D\|$. The parametric curves are shown above in the domain $\Omega$, and the evaluation of $\|D\|$ along them is shown below.}
+    \label{fig:failureRoot}
+\end{figure}
 
 \addcontentsline{toc}{chapter}{Conclusion}
 \chapter*{Conclusion}
-A conclusion
-
-
-% \begin{figure}[b]
-%     \centering
-%     \begin{subfigure}[t]{0.9\textwidth}
-%         \includesvg[width=\textwidth]{../figures/bc_good_velocity.svg}
-%         %\caption{From first to second iteration.}
-%     \end{subfigure}
-%     \begin{subfigure}[t]{0.9\textwidth}
-%         \includesvg[width=\textwidth]{../figures/bc_bad_velocity.svg}
-%         %\caption{From first to second iteration.}
-%     \end{subfigure}
-%     % \vspace{-2cm}
-%     % \begin{subfigure}[t]{0.8\textwidth}
-%     %     \includesvg[width=\textwidth]{../figures/bc_diff_velocity.svg}
-%     % \end{subfigure}
-%     \caption{Comparison of the velocity and pressure fields of the correct (top) and incorrect (bottom) flows. The horizontal and vertical velocity profiles are also shown at the boundaries.}
-%     \label{fig:bc_issue_velocity}
-% \end{figure}
 
 
 %\nocite{*}
@@ -1310,47 +1397,49 @@ A conclusion
 \bibliography{main.bib}
 
 
-\appendix
-\chapter{Curvilinear coordinates}
-\label{appendix:curvilinear}
+%%%%%%%%%%%%%%%%%%%%%%% - Curvilinear coordinates START - %%%%%%%%%%%%%%%%%%%%%%%
+% \appendix
+% \chapter{Curvilinear coordinates}
+% \label{appendix:curvilinear}
 
-In axisymmetric cylindrical coordinates, the solution only depends on the radial and axial coordinates $r, z$. We also assume that the velocity field has no tangential component.
+% In axisymmetric cylindrical coordinates, the solution only depends on the radial and axial coordinates $r, z$. We also assume that the velocity field has no tangential component.
 
-\begin{align}
-    \begin{bmatrix}
-        x(r, \theta=0, z) \\
-        y(r, \theta=0, z) \\
-        z(r, \theta=0, z) \\
-    \end{bmatrix} &=
-    \begin{bmatrix}
-        r \\
-        0 \\
-        z
-    \end{bmatrix}\\
-    \uu(r, z) &= u_r(r, z) \mathbf{e}_r + u_z(r, z) \mathbf{e}_z\\
-    \left(\nabla \: \phi\right)_{\text{Cyl}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, z)}\\
-    \nabla \cdot \vv &= \pdv{u_r}{r} + \frac{u_r}{r} + \pdv{u_z}{z}\\
-    \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r}\bigg)^2 + 2\bigg(\pdv{u_z}{r}\bigg)^2 + \bigg(\pdv{u_r}{z} + \pdv{u_z}{r}\bigg)^2
-\end{align}
+% \begin{align}
+%     \begin{bmatrix}
+%         x(r, \theta=0, z) \\
+%         y(r, \theta=0, z) \\
+%         z(r, \theta=0, z) \\
+%     \end{bmatrix} &=
+%     \begin{bmatrix}
+%         r \\
+%         0 \\
+%         z
+%     \end{bmatrix}\\
+%     \uu(r, z) &= u_r(r, z) \mathbf{e}_r + u_z(r, z) \mathbf{e}_z\\
+%     \left(\nabla \: \phi\right)_{\text{Cyl}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, z)}\\
+%     \nabla \cdot \vv &= \pdv{u_r}{r} + \frac{u_r}{r} + \pdv{u_z}{z}\\
+%     \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r}\bigg)^2 + 2\bigg(\pdv{u_z}{r}\bigg)^2 + \bigg(\pdv{u_r}{z} + \pdv{u_z}{r}\bigg)^2
+% \end{align}
 
-Polar coordinates provide quite similar equations. Here again, we assume axisymmetry and the absence of azimuthal velocity.
-\begin{align}
-    \begin{bmatrix}
-        x(r, \theta, \varphi=0) \\
-        y(r, \theta, \varphi=0) \\
-        z(r, \theta, \varphi=0)
-    \end{bmatrix} &=
-    \begin{bmatrix}
-        r \sin{\theta} \\
-        0\\
-        r \cos{\theta} \\
-    \end{bmatrix}\\
-    \uu(r, z) &= u_r(r, \theta) \mathbf{e}_r + u_\theta(r, \theta) \mathbf{e}_\theta\\
-    \left(\nabla \: \phi\right)_{\text{Pol}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, \theta)} \\
-    \nabla \cdot \vv &= \frac{1}{r^2}\pdv{(r^2 u_r)}{r} + \frac{1}{r\sin\theta} \pdv{(u_\theta \sin \theta)}{\theta}\\
-    \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{1}{r}\pdv{u_\theta}{\theta} + \frac{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r} + \cot \theta \frac{u_\theta}{r}\bigg)^2 \nonumber\\
-    &+ \bigg(\frac{1}{r}\pdv{u_r}{\theta} \pdv{u_\theta}{r} - \frac{u_\theta}{r}\bigg)^2
-\end{align}
+% Polar coordinates provide quite similar equations. Here again, we assume axisymmetry and the absence of azimuthal velocity.
+% \begin{align}
+%     \begin{bmatrix}
+%         x(r, \theta, \varphi=0) \\
+%         y(r, \theta, \varphi=0) \\
+%         z(r, \theta, \varphi=0)
+%     \end{bmatrix} &=
+%     \begin{bmatrix}
+%         r \sin{\theta} \\
+%         0\\
+%         r \cos{\theta} \\
+%     \end{bmatrix}\\
+%     \uu(r, z) &= u_r(r, \theta) \mathbf{e}_r + u_\theta(r, \theta) \mathbf{e}_\theta\\
+%     \left(\nabla \: \phi\right)_{\text{Pol}} &= \nabla_{\boldsymbol\xi} \phi \; \cdot \dv{\boldsymbol \xi}{\mathbf{x}} \cdot \dv{\mathbf{x}}{(r, \theta)} \\
+%     \nabla \cdot \vv &= \frac{1}{r^2}\pdv{(r^2 u_r)}{r} + \frac{1}{r\sin\theta} \pdv{(u_\theta \sin \theta)}{\theta}\\
+%     \|\gam(u, v)\|_{\text{Cyl}}^2 &= 2 \bigg(\pdv{u_r}{r}\bigg)^2 + 2\bigg(\frac{1}{r}\pdv{u_\theta}{\theta} + \frac{u_r}{r}\bigg)^2 + 2\bigg(\frac{u_r}{r} + \cot \theta \frac{u_\theta}{r}\bigg)^2 \nonumber\\
+%     &+ \bigg(\frac{1}{r}\pdv{u_r}{\theta} \pdv{u_\theta}{r} - \frac{u_\theta}{r}\bigg)^2
+% \end{align}
+%%%%%%%%%%%%%%%%%%%%%%%% - Curvilinear coordinates END - %%%%%%%%%%%%%%%%%%%%%%%%
 
 %\includepdf[pages=-]{back_page.pdf}
 

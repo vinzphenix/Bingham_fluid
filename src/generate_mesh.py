@@ -304,10 +304,10 @@ def create_cavity(filename, elemSizeRatio, cut=True, size_field=False, cheat=Fal
     lc = elemSizeRatio * width
     refinement_factor_surface = 1. if size_field else 4.
 
-    p1 = factory.addPoint(0., 0., 0., lc / refinement_factor_surface)
-    p2 = factory.addPoint(0., -height, 0., lc)
-    p3 = factory.addPoint(width, -height, 0., lc)
-    p4 = factory.addPoint(width, 0., 0., lc / refinement_factor_surface)
+    p1 = factory.addPoint(0., 0., 0.) #, lc / refinement_factor_surface)
+    p2 = factory.addPoint(0., -height, 0.) # , lc)
+    p3 = factory.addPoint(width, -height, 0.) #, lc)
+    p4 = factory.addPoint(width, 0., 0.) #, lc / refinement_factor_surface)
 
     l1 = factory.addLine(p1, p2)
     l2 = factory.addLine(p2, p3)
@@ -372,10 +372,59 @@ def create_cavity(filename, elemSizeRatio, cut=True, size_field=False, cheat=Fal
 
             fields += [6]
 
+        if 1:
+            # Set mesh size field
+            a1, a2, a3 = -np.pi*0.1, -np.pi*0.3, -np.pi*0.2
+            d = 0.2
+            p_solid_lf = factory.addPoint(d*np.cos(a1), d*np.sin(a1), 0.)
+            line_solid_1 = factory.addLine(p1, p_solid_lf)
+            p_solid_rg = factory.addPoint(1.4*d*np.cos(a2), 1.4*d*np.sin(a2), 0.)
+            line_solid_2 = factory.addLine(p1, p_solid_rg)
+            p_solid_rg = factory.addPoint(1.3*d*np.cos(a3), 1.3*d*np.sin(a3), 0.)
+            line_solid_3 = factory.addLine(p1, p_solid_rg)
+            
+            p_solid_lf = factory.addPoint(1.-d*np.cos(a1), d*np.sin(a1), 0.)
+            line_solid_4 = factory.addLine(p4, p_solid_lf)
+            p_solid_rg = factory.addPoint(1.-1.4*d*np.cos(a2), 1.4*d*np.sin(a2), 0.)
+            line_solid_5 = factory.addLine(p4, p_solid_rg)
+            p_solid_rg = factory.addPoint(1.-1.3*d*np.cos(a3), 1.3*d*np.sin(a3), 0.)
+            line_solid_6 = factory.addLine(p4, p_solid_rg)
+
+            p_circle = factory.addPoint(0.5, 0.15, 0.)
+            factory.synchronize()
+
+            gmsh.model.mesh.field.add("Distance", tag=5)
+            gmsh.model.mesh.field.setNumbers(5, "CurvesList", [
+                line_solid_1, line_solid_2, line_solid_3,
+                line_solid_4, line_solid_5, line_solid_6,
+            ])
+            # gmsh.model.mesh.field.setNumbers(5, "PointsList", [p_circle])
+            gmsh.model.mesh.field.setNumber(5, "Sampling", 100)
+            gmsh.model.mesh.field.add("Threshold", 6)
+            gmsh.model.mesh.field.setNumber(6, "InField", 5)
+            gmsh.model.mesh.field.setNumber(6, "SizeMin", lc / 6.)
+            gmsh.model.mesh.field.setNumber(6, "SizeMax", lc)
+            gmsh.model.mesh.field.setNumber(6, "DistMin", 0.08)
+            gmsh.model.mesh.field.setNumber(6, "DistMax", 0.20)
+            fields += [6]
+
         min_field = gmsh.model.mesh.field.add("Min")
         gmsh.model.mesh.field.setNumbers(min_field, "FieldsList", fields)
         gmsh.model.mesh.field.setAsBackgroundMesh(min_field)
         gmsh.option.setNumber("Mesh.Algorithm", 6)
+
+        gmsh.model.mesh.field.add("Distance", tag=20)
+        gmsh.model.mesh.field.setNumbers(20, "PointsList", [p_circle])
+        gmsh.model.mesh.field.add("Threshold", 21)
+        gmsh.model.mesh.field.setNumber(21, "InField", 20)
+        gmsh.model.mesh.field.setNumber(21, "SizeMin", lc/10.)
+        gmsh.model.mesh.field.setNumber(21, "SizeMax", lc*10)
+        gmsh.model.mesh.field.setNumber(21, "DistMin", 0.85)
+        gmsh.model.mesh.field.setNumber(21, "DistMax", 0.90)
+        max_field = gmsh.model.mesh.field.add("Max")
+        gmsh.model.mesh.field.setNumbers(max_field, "FieldsList", [min_field, 21])
+        gmsh.model.mesh.field.setAsBackgroundMesh(max_field)
+
 
     # Physical groups for boundary conditions
 
@@ -770,7 +819,7 @@ if __name__ == "__main__":
     path_to_dir = "../mesh/"
 
     # create_rectangle(
-    #     path_to_dir + "rectangle.msh", width=2., height=1., elemSizeRatio=1. / 28.,
+    #     path_to_dir + "rectangle.msh", width=2., height=1., elemSizeRatio=1. / 25.,
     #     size_field=False, y_zero=0.35, angle=0., fit=False, cut=False,
     # )
     # create_rectangle(
@@ -783,7 +832,8 @@ if __name__ == "__main__":
     #     length=10., height=5., refine_mid=2., refine_all=12.,
     #     radial=False, sharp=True, multiple=False
     # )
-
+    
+    create_cavity(path_to_dir + "cavity_test.msh", elemSizeRatio=1./40., size_field=True)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., size_field=True)
     # create_cavity(path_to_dir + "cavity_cheat.msh", elemSizeRatio=1./35., size_field=True, cheat=True)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
@@ -795,4 +845,3 @@ if __name__ == "__main__":
     # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)
-    

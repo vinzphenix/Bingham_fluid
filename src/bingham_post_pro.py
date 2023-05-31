@@ -155,11 +155,11 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
     else:  # n_pts = 2
         pass
 
-    print(f"Force resultant = ({resultant[0]:.3e}, {resultant[1]:.3e})")
-    with open("../cylinder_force.txt", "a") as f:
-        l = np.amax(sim.coords[:, 0]) - np.amin(sim.coords[:, 0])
-        h = np.amax(sim.coords[:, 1]) - np.amin(sim.coords[:, 1])
-        f.write(f"{l:.3e} {h:.3e} {resultant[0]:.3e} {resultant[1]:.3e}\n")
+    # print(f"Force resultant = ({resultant[0]:.3e}, {resultant[1]:.3e})")
+    # with open("../cylinder_force.txt", "a") as f:
+    #     l = np.amax(sim.coords[:, 0]) - np.amin(sim.coords[:, 0])
+    #     h = np.amax(sim.coords[:, 1]) - np.amin(sim.coords[:, 1])
+    #     f.write(f"{l:.3e} {h:.3e} {resultant[0]:.3e} {resultant[1]:.3e}\n")
 
     return n_edge, data
 

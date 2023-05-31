@@ -405,10 +405,11 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         end_build_time = perf_counter()
 
         # set solver options
-        task.putatruncatetol(1e-12)
-        task.putintparam(mosek.iparam.num_threads, 6)
+        # task.putatruncatetol(1e-12)
+        task.putintparam(mosek.iparam.num_threads, 4)
         # task.putdouparam(mosek.dparam.intpnt_co_tol_dfeas, 1.e-12)
         # task.putdouparam(mosek.dparam.intpnt_co_tol_pfeas, 1.e-12)
+        task.putdouparam(mosek.dparam.mio_max_time, -1.0)
 
         # Solve the minimization problem
         start_time = perf_counter()
@@ -436,6 +437,9 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         i_start, i_end = sim.n_var - sim.ng_all, sim.n_var
         t_num = np.array(task.getxxslice(mosek.soltype.itr, i_start, i_end))
         t_num = t_num.reshape((sim.n_elem, sim.ng_loc))
+
+    if sim.save_variant != "":
+        sim.save_solution(u_num, p_num, t_num, model_variant=sim.save_variant)
 
     print("\n====================   MOSEK OPTIMIZATION LOG - end  ====================\n")
 

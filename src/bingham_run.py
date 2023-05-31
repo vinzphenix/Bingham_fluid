@@ -105,46 +105,44 @@ if __name__ == "__main__":
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
 
-    # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="rectangle")
+    # parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], element="th", model_name="rectangle")
     
+    # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe")
     # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe_dense")
     # parameters = dict(K=1., tau_zero=0.1, f=[0., 0.], element="th", model_name="pipeneck")
 
-    parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cylinder")
+    # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cylinder")
     # parameters = dict(K=1., tau_zero=1.5, f=[0., 0.], element="th", model_name="cavity")
     # parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity_cheat")
     # parameters = dict(K=1., tau_zero=100., f=[0., 0.], element="th", model_name="opencavity")
     # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
 
-    sim = Simulation_2D(parameters)
+    parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cavity_test")
+
+    sim = Simulation_2D(parameters, save_variant=f"{parameters['tau_zero']:.0f}")
 
     if mode == 1:  # Solve problem: ONE SHOT
-        u_field, p_field, d_field = solve_FE_mosek(sim, strong=True)
-        # sim.save_solution(u_field, p_field, d_field, model_variant='strong')
-
-        # sim.f[0] = 1.
-        # u_field, p_field, d_field = solve_FE_sparse(sim, strong=False, solver_name='mosek')
+        u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
 
     elif mode == 2:  # Solve the problem: ITERATE
-        res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-4, deg=1, strong=False)
+        parameters, u_field, p_field, d_field, coords = load_solution("cavity_test", "50")
+        sim = Simulation_2D(parameters, new_coords=coords, save_variant=f"{parameters['tau_zero']:.0f}")
+
+        res = solve_interface_tracking(sim, max_it=20, tol_delta=1.e-8, deg=1, strong=False, supp=[u_field, p_field, d_field])
         u_field, p_field, d_field = res
-        # sim.save_solution(u_field, p_field, d_field, model_variant=f'{sim.tau_zero:.0f}')
 
     elif mode == 3:  # Load solution from disk
+        model, variant = "cavity_test", "50"
         # model, variant = "cavity", "0"
+        # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
         # model, variant = "pipe", "classic"
         # model, variant = "pipe_dense", ""
         # model, variant = "pipeneck", "smooth"
         # model, variant = "pipeneck", "sharp"
-        model, variant = "cylinder", "10"
+        # model, variant = "cylinder", "10"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
-        # model, variant = "cylinder", "strong"
-        # parameters, u_field2, p_field2, d_field2, coords = load_solution(model, variant)
-        # u_field -= u_field2
-        # p_field -= p_field2
-
         sim = Simulation_2D(parameters, new_coords=coords)
 
     else:  # DUMMY solution to debug

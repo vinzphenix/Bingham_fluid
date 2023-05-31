@@ -290,10 +290,11 @@ def move_front(sim: Simulation_2D, interface_nodes, rec_strains_map):
     return tomove, new_coords
 
 
-def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg: int = 1, strong=False):
+def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg: int = 1, strong=False, supp=[]):
 
     # Solve first time with initial mesh
-    u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
+    u_num, p_num, t_num = supp
+    # u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
     # plot_1D_slice(u_num, sim, extra_name="2D_init")
     init_coords = np.copy(sim.coords)
     moved_once = np.array([], dtype=int)
@@ -313,7 +314,7 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
         print(f"Interface location - predictor (Gauss points) : {interface_nodes.size:d} nodes")
         print(f"Interface location - corrector (Linear apprx) : {rm:d} removed // {ad:d} added")
         print(f"Maximum node displacement : {np.amax(delta):.2e}")
-        print(sim.coords[nodes_to_move[np.argmax(delta)]])
+        # print(sim.coords[nodes_to_move[np.argmax(delta)]])
 
         extra = [interface_nodes, strain_rec, coefs, nodes_to_move, new_coords]
         plot_solution_2D(u_num, p_num, t_num, sim, extra)

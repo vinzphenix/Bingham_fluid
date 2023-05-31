@@ -1,5 +1,8 @@
 # Very slow
 # Kept for benchmark only
+# # sim.f[0] = 1.
+# # u_field, p_field, d_field = solve_FE_sparse(sim, strong=False, solver_name='mosek')
+
 
 from bingham_structure import *
 from cvxopt import solvers, matrix, spmatrix
