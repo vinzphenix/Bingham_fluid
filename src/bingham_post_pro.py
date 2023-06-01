@@ -241,7 +241,7 @@ def add_streamfunction(sim: Simulation_2D, u_num):
         tag_psi, 0, sim.model_name, "NodeData",
         sim.node_tags + 1, psi, numComponents=1
     )
-    gmsh.view.option.set_number(tag_psi, "NbIso", 20)
+    gmsh.view.option.set_number(tag_psi, "NbIso", 10)
     gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
     gmsh.view.option.set_number(tag_psi, "ShowScale", 0)
     gmsh.view.option.set_number(tag_psi, "LineWidth", 1.5)

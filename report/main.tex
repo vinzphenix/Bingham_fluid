@@ -2,7 +2,7 @@
 \usepackage{structure}
 
 \title{{\Huge Numerical simulation of yield stress fluid flows with X-MESH}}
-\author{\textsc{DEGROOFF} Vincent}
+\author{Vincent \textsc{DEGROOFF}}
 \date{\today}
 
 
@@ -46,7 +46,7 @@ Let $\Omega \in \mathbb{R}^3$ denote the domain of interest and $\Gamma=\partial
 Let us recall the mass and momentum conservation equations, with the pressure $p$ and body forces $\mathbf{f}$, expressed in an Eulerian reference frame:
 \begin{align}
     \nabla \cdot \mathbf{u} &= 0\\
-    \rho \left(\pdv{\mathbf{u}}{t} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}
+    \rho \left(\pdv{\mathbf{u}}{t} + \left(\mathbf{u} \cdot \nabla\right) \mathbf{u}\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f} \label{eq:full_momentum}
 \end{align}
 
 %In both yielded and unyielded regions, the stress tensor is continuous (\textcolor{red}{seems obvious, in the yielded zones, but what about the solid part ?}). At the interface, the conservation of mass and momentum read as follows, where $[\![ . ]\!]$ refers to the difference of the fields across the interface and $\mathbf{u^*}$ to the interface velocity:
@@ -55,7 +55,7 @@ Let us recall the mass and momentum conservation equations, with the pressure $p
 %     [\![ \rho \mathbf{u} (\mathbf{u^* - \mathbf{u}}) \cdot \mathbf{\hat n} + \mathbf{\hat n} \cdot \sigma ]\!] &= 0 \label{eq:interface_momentum}
 % \end{align}
 
-Throughout this study, we will consider low Reynolds numbers, i.e. flows that are dominated by viscous forces. We will thus neglect the inertia terms on the left of equation \eqref{eq:momentum}. The resulting equations are the well known Stokes equations, where we look for velocity and pressure fields $(\uu,p)$ solution of
+Throughout this study, we consider low Reynolds numbers, i.e., flows that are dominated by viscous forces. We thus neglect the inertia terms on the left of equation \eqref{eq:full_momentum}. 
 \begin{empheqboxed}
     \begin{align}
         0 &= -\nabla p + \nabla \cdot \boldsymbol \tau(\uu) + \mathbf{f} &&\text{in} \; \Omega \label{eq:momentum} \\[2pt]
@@ -64,7 +64,10 @@ Throughout this study, we will consider low Reynolds numbers, i.e. flows that ar
         \boldsymbol \sigma \cdot \nn &= \mathbf{g} &&\text{on}\; \Gamma_{N} \label{eq:Neumann}
     \end{align}
 \end{empheqboxed}
-where $\Gamma_{D}$ and $\Gamma_{N}$ refer to the partitions of $\partial \Omega$ where Dirichlet and Neumann boundary conditions are applied. $\mathbf{U}$ and $\mathbf{g}$ are given beforehand. One could also decide to impose only the normal velocity along with the tangential stress, or the tangential velocity along with the normal stress, as will be explained in more detail in \cref{sec:boundary_conditions}.
+The resulting \cref{eq:momentum,eq:mass,eq:Dirichlet,eq:Neumann} are the well known Stokes equations, with the unknown velocity and pressure fields $\uu$ and $p$. $\Gamma_D$ and $\Gamma_N$ are the partitions of the boundary $\partial \Omega$ where Dirichlet and Neumann conditions are applied. $\mathbf{U}$ and $\mathbf{g}$ refer to the velocity and force imposed on the respective partition. $\nn$ is the unitary vector normal to the boundary $\partial \Omega$.
+%$\mathbf{U}$ is the velocity imposed on the boundary $\Gamma_{D}$, and $\mathbf{g}$ is the force imposed on the boundary $\Gamma_{N}$. refer to the partitions of $\partial \Omega$ where Dirichlet and Neumann boundary conditions are applied. $\mathbf{U}$ and $\mathbf{g}$ are given beforehand. 
+
+One could also decide to impose only the normal velocity along with the tangential stress, or the tangential velocity along with the normal stress, as will be explained in more detail in \cref{sec:boundary_conditions}.
 
 Before looking for a closure equation for the shear stress tensor, let us first recall the velocity gradient decomposition,
 \begin{empheqboxed}
@@ -75,15 +78,15 @@ Before looking for a closure equation for the shear stress tensor, let us first 
     \end{align}
 \end{empheqboxed}
 
-To be exhaustive:
+%To be exhaustive:
 \begin{itemize}[label=---]
-    \item $\mathbf{D}$ is the strain rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another.
+    \item $\mathbf{D}$ is the strain rate tensor, whose diagonal elements indicate the stretching of the fluid along the basis vectors and whose off-diagonal elements indicate the shearing of the fluid from one basis vector to another. $\gam$ is the same tensor, scaled by a factor $2$.
     \item $\mathbf{W}$ is the spin tensor indicating the axis around which the flow is locally rotating, as well as the speed of this rotation. It contains the same information as the vorticity vector $\boldsymbol\omega = \nabla \times \vv$.
 \end{itemize} 
 
 \section{Constitutive equations of Bingham fluids}
 
-The Newtonian fluid is one of the simplest model of fluid mechanics, as it assumes that fluid deformation, or strain rate, is directly proportional to the shear stress it undergoes. This model is highly accurate in describing the behavior of many liquids and gases, such as air, water, gasoline or alcohol, under normal conditions. However, it cannot be used to characterize a variety of other well-known substances, such as blood, toothpaste or ketchup, to name a few.
+The Newtonian fluid is one of the simplest model of fluid mechanics, as it assumes that fluid deformation, or strain rate, is directly proportional to the shear stress it undergoes. This model is highly accurate in describing the behavior of many liquids and gases, such as air, water, gasoline or alcohol, under normal conditions \cite{fox2020fox}. However, it cannot be used to characterize a variety of other well-known substances, such as blood, toothpaste or ketchup, to name a few \cite{Coussot,Geophysical}.
 
 Such fluids are much better described as \textit{generalized Newtonian} \cite{Geophysical}. This model extends Newtonian fluids with a nonlinear constitutive law between the stress $\boldsymbol\tau$ and strain rate $\gam$:
 \begin{equation}
@@ -101,27 +104,27 @@ where $\mu$, $T$ and $\phi$ respectively refer to the fluid viscosity, the tempe
 
 The first invariant is always zero when we deal with incompressible fluids since $\Tr(\gam) = 2 \nabla \cdot \vv$. The third invariant is always neglected because it is also zero for shearing flows in 3 dimensions -- $\vv = u(y)\mathbf{e}_1$ -- precisely those for which the theory was developed. The constitutive law was then later used to model more complex flows, but the absence of $I_3$ has persisted \cite{bird1987dynamics}.
 
-The simplest example of Generalized Newtonian fluids are the Power-law Fluids, that assume $\mu(\dot\gamma) = K \dot \gamma^{n-1}$, with the \textit{consistency} $K$ and \textit{index} $n$. This can already describe
+The simplest example of Generalized Newtonian fluids are the Power-law Fluids \cite{bird1987dynamics,Geophysical}, that assume $\mu(\dot\gamma) = K \dot \gamma^{n-1}$, with the \textit{consistency} $K$ and \textit{index} $n$. This can already describe:
 \begin{itemize}[label=---, topsep=0pt]
     \setlength{\itemsep}{0pt}
     \item\textit{Shear thinning} fluids with viscosity inversely proportional to strain rate $(n<1)$. For example, Ketchup or blood flow more easily with higher strain rates.
     \item\textit{Shear thickening} or \textit{Dilatant} fluids with viscosity proportional to strain rate $(n>1)$. A typical example is the mixture of cornstarch and water, called Oobleck, that appears liquid at rest, but that becomes viscous enough to walk on it if struck hard enough.
-    \item \textit{Newtonian} fluids of course when $n=1$.
+    \item \textit{Newtonian} fluids when $n=1$.
 \end{itemize}
 
 However, this model is not sufficient to describe certain fluids under low shear stress. For example, the toothpaste flows like a liquid out of the tube, but stays in its configuration once on the toothbrush, so we can easily put it in our mouth without dropping any on the floor: at low stress, such a fluid is considered to behave as a solid.
 
-The Herschel-Bulkley Model extends the Power-law model with a yield stress $\tau_0$, that enables us to simulate yield stress fluids like the toothpaste. When the shear stress tensor norm $\tau < \tau_0$, the fluid behaves as a non-deformable solid ($\gam=\mathbf{0}$) and is called \textit{unyielded}. In these regions, the fluid undergoes a rigid-body motion: a uniform translation and/or a uniform rotation, or possibly at rest.
+The Herschel-Bulkley Model \cite{bird1987dynamics,Geophysical,Coussot} extends the Power-law model with a yield stress $\tau_0$, that enables us to simulate yield stress fluids like the toothpaste. When the shear stress tensor norm $\tau < \tau_0$, the fluid behaves as a non-deformable solid ($\gam=\mathbf{0}$) and is called \textit{unyielded}. In these regions, the fluid undergoes rigid-body motion only: either at rest, or in translation, or in rotation, but in any case without deformation.
 
 Above that threshold, the fluid becomes \textit{yielded} and follows the Power-law model. The constitutive law of the Herschel-Bulkley Model reads as follows
 \begin{equation}
     \begin{aligned}
-        \dot \gamma_{ij} &= 0 & \text{if} \quad \tau \leq \tau_0\\
+        \dot \gamma_{ij} &= 0 & \text{if} \quad \tau < \tau_0\\
         \tau_{ij} &= \left(K \dot \gamma^{n-1} + \frac{\tau_0}{\dot \gamma}\right) \gamma_{ij} & \text{if} \quad \tau \geq \tau_0\\
     \end{aligned}
     \label{eq:herschel}
 \end{equation}
-where $\dot \gamma$ and $\tau$ are the square root the second invariant tensor of $\gam$ and $\boldsymbol\tau$, also equal to their Frobenius norm since they are traceless:
+where $\dot \gamma$ and $\tau$ are the square root of the second invariant tensor of $\gam$ and $\boldsymbol\tau$, also equal to their Frobenius norm since they are traceless:
 \begin{equation}
     \dot \gamma \coloneqq \sqrt{|I_2(\gam)|} = \sqrt{\frac{1}{2} \, \gam : \gam} = \sqrt{2 \mathbf{D} : \mathbf{D}} \qquad\text{and}\qquad
     \tau \coloneqq \sqrt{|I_2(\boldsymbol\tau)|} = \sqrt{\frac{1}{2} \, \boldsymbol\tau : \boldsymbol\tau}
@@ -136,7 +139,7 @@ where $\dot \gamma$ and $\tau$ are the square root the second invariant tensor o
     \label{fig:fluid-classification}
 \end{figure}
 
-Common values of $n$ generally lies between $0.3$ and $0.5$, especially for Carbopol gels (e.g. hair gel) and emulsions (e.g. mustard, mayonnaise). The Bingham model ($n = 1$) is thus very rarely obtained when it is fitted over more than two orders of magnitude of shear rates. The yield stress value $\tau_0$ generally lies in the range [1, 100 Pa] \cite{Coussot}. To give a feel of how common substances fit in this model, several sets of parameters are provided in \cref{tab:parameters}.
+Common values of $n$ generally lie between $0.3$ and $0.5$, especially for Carbopol gels (e.g. hair gel) and emulsions (e.g. mustard, mayonnaise). The Bingham model ($n = 1$) is thus very rarely obtained when it is fitted over more than two orders of magnitude of shear rates. The yield stress value $\tau_0$ generally lies in the range [1, 100 Pa] \cite{Coussot}. To give a feel of how common substances fit in this model, several sets of parameters are provided in \cref{tab:parameters}.
 
 Those values are not universal. It is in fact hard to find unanimous parameters values of the Herschel-Bulkley model in the literature, especially for food products because their composition may depend on the brand, e.g. the yield stress of mayonnaise is inversely proportional to its fat content \cite{mayonnaiseFat}. The values may also depend on the test methodology, and on the model for which the experimental data is fitted, which is not always Herschel-Bulkley.
 
@@ -163,7 +166,7 @@ Those values are not universal. It is in fact hard to find unanimous parameters 
     \label{tab:parameters}
 \end{table}%
 
-The present study will focus on simple yield stress fluids. By simple yield stress fluids are meant those for which the \textbf{shear stress depends only} on the imposed \textbf{shear rate}, and not on time (thixotropic/rheopectic) or shear (elastic behavior) \cite{simpleyield}. Thixotropic fluids have the property that their viscosity \textit{under constant shear} decreases with time. Though less common, rheopectic are the exact opposite where viscosity increases with time. This history dependence is also called \textit{hysteresis}, and such fluids can thus have an hysteresis loop in their stress-strain diagram. 
+The present study will focus on simple yield stress fluids. By simple yield stress fluids are meant those for which the shear stress depends only on the imposed shear rate, and not on time (thixotropic/rheopectic) or shear (elastic behavior) \cite{simpleyield}. Thixotropic fluids have the property that their viscosity \textit{under constant shear} decreases with time. Though less common, rheopectic are the exact opposite where viscosity increases with time. This history dependence is also called \textit{hysteresis}, and such fluids can thus have an hysteresis loop in their stress-strain diagram. 
 
 % INTRODUCTION
 Furthermore, only Bingham fluids ($n=1$), will be considered hereafter. The equations of this model are indeed simpler to solve, but still provide solutions with the desired features that make them interesting to analyze with the X-MESH method. Let us then reformulate model \eqref{eq:herschel} for $n=1$, with $\dot\gamma$ defined in \eqref{eq:tensornorm}:
@@ -178,7 +181,12 @@ Furthermore, only Bingham fluids ($n=1$), will be considered hereafter. The equa
 \end{empheqboxed}
 
 \section{Weak formulation}
-In order to solve \cref{eq:momentum,eq:mass} with the finite element method one can express them under its weak form. This is done by multiplying the equations of the strong form by velocity and pressure test functions $\vv$ and $q$. The shear stress tensor $\boldsymbol\tau$ is eventually replaced with its constitutive law \cref{eq:constitutive}.
+\Cref{eq:momentum,eq:mass} are discretized and solved numerically with the finite element method, whose efficiency is well proven. It was also the most natural method, since it allows interfaces to be represented intrinsically. Before moving on to discretization, however, the system of equations has to be written under its weak form. This is done by multiplying the equations of the strong form by velocity and pressure test functions $\vv \in V$, and $p\in Q$, where:
+\begin{align}
+    Q &= L^2(\Omega) \coloneqq \left\{q: \Omega \to \mathbb{R} \quad\big\vert\quad \int_\Omega q^2 \dd x < +\infty \right\}\\
+    V &= H^1(\Omega)^d \coloneqq \left\{\vv : \Omega \to \mathbb{R}^d \quad\big\vert\quad \int_\Omega \|\vv\|^2 + \|\nabla \vv\|^2 \dd x < +\infty\right\}
+\end{align}
+%The shear stress tensor $\boldsymbol\tau$ is eventually replaced with its constitutive law \cref{eq:constitutive}.
 
 \begin{equation}
     \begin{aligned}
@@ -190,9 +198,7 @@ In order to solve \cref{eq:momentum,eq:mass} with the finite element method one 
         &= {\color{blue} \int_{\Omega} p \nabla \cdot \vv \;\dd x} - {\color{red} \int_{\Omega}  \left( 2K + \frac{\tau_0}{\|\mathbf{D}(\uu)\|} \right) \mathbf{D}(\uu) : \mathbf{D}(\vv) \;\dd x} + \int_{\Omega} \ff \cdot \vv \;\dd x + {\color{violet}\int_{\Gamma_N} \mathbf{g} \cdot \vv \; \dd s}
     \end{aligned}\label{eq:weak_formulation}
 \end{equation}
-that must hold $\forall \; \vv \in H^1(\Omega)^d$ such that $\vv = \mathbf{0} \text{ on } \Gamma_D$.
-
-In \cref{eq:weak_formulation}, we initially multiplied \autoref{eq:momentum} by a test function $\mathbf{v}$ that is zero on $\Gamma_D$, then and integrated it over $\Omega$. Afterwards, we integrated by parts, used the Divergence theorem, and the property that the double contraction of symmetric and antisymmetric tensors cancels out.
+\Cref{eq:weak_formulation} must hold $\forall \; \vv \in H^1(\Omega)^d$ such that $\vv = \mathbf{0} \text{ on } \Gamma_D$. In \cref{eq:weak_formulation}, we initially multiplied \cref{eq:momentum} by a test function $\mathbf{v}$ that is zero on $\Gamma_D$, then and integrated it over $\Omega$. Afterwards, we integrated by parts, used the Divergence theorem, and the property that the double contraction of symmetric and antisymmetric tensors cancels out.
 
 On the other hand, \autoref{eq:mass} gets multiplied by a pressure test function $q$.
 \begin{equation}
@@ -230,7 +236,7 @@ The total energy of the system $J$ is the work of internal forces diminished by 
 \end{equation}
 \end{empheqboxed}
 
-In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint multiplied by its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to to set it as a constraint of problem \eqref{eq:minimize}. A scaling analysis shows that the system has only one parameter, the Bingham number $Bn$:
+In \cref{eq:energy_density}, we observe that the first term is the incompressibility constraint with its Lagrange multiplier: the pressure $p$, with a minus sign. It is therefore equivalent to set it as a constraint of problem \eqref{eq:minimize}. A scaling analysis shows that the system has only one parameter, the Bingham number $Bn$:
 %\begin{equation}
     \begin{gather}
         \vv = U_{\infty}\vv^* \qquad \xx = L \xx^* \qquad \gam = \frac{U}{L} \gam^* \qquad f = \frac{K U_{\infty}}{L^2}f^* \qquad (p,g) = \frac{K U_{\infty}}{L}(p^*,g^*)\\
@@ -1109,7 +1115,7 @@ In general, the numerical values of deformation in the solid region typically in
     \centering
     \begin{subfigure}[t]{\textwidth}
         \includesvg[width=\textwidth]{../figures/pipe_filament_1.svg}
-        \caption{Gauss points with deformation $T_{i,g} < 10^{-4} = \epsilon$, the yield tolerance we set before.}
+        \caption{Gauss points with deformation $T_{i,g} < 10^{-4} = \epsilon$ (the yield tolerance we set before).}
         \label{fig:pipeFilament1}
     \end{subfigure}\vspace{10pt}
     \begin{subfigure}[t]{\textwidth}

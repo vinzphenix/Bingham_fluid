@@ -33,7 +33,7 @@ def build_approximation(sim: Simulation_2D, node, t_num, interface_nodes, deg):
     # diamond_elems = sim.n2e_map[sim.n2e_st[node]: sim.n2e_st[node + 1]]
     support_elems = sim.get_support_approx(node)
     # print(
-    #     f"singular support [{node+1:d}] ?", 
+    #     f"singular support [{node+1:d}] ?",
     #     f"{np.amin(sim.determinants[support_elems]):8.3g} >?<",
     #     f"{sim.min_det / 100:8.3g}"
     # )
@@ -109,7 +109,7 @@ def build_approximation(sim: Simulation_2D, node, t_num, interface_nodes, deg):
 
 def update_mesh(sim: Simulation_2D, nodes_to_move, new_coords, nodes_to_relax, init_coords_relax):
 
-    # Relax 
+    # Relax
     new_coords_bis = init_coords_relax * 0.2 + sim.coords[nodes_to_relax] * 0.8
     nodes_to_move = np.r_[nodes_to_move, nodes_to_relax]
     new_coords = np.r_[new_coords, new_coords_bis]
@@ -290,11 +290,10 @@ def move_front(sim: Simulation_2D, interface_nodes, rec_strains_map):
     return tomove, new_coords
 
 
-def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg: int = 1, strong=False, supp=[]):
+def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg=1, strong=False):
 
     # Solve first time with initial mesh
-    u_num, p_num, t_num = supp
-    # u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
+    u_num, p_num, t_num = solve_FE_mosek(sim, strong=strong)
     # plot_1D_slice(u_num, sim, extra_name="2D_init")
     init_coords = np.copy(sim.coords)
     moved_once = np.array([], dtype=int)
@@ -322,7 +321,7 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg:
         # Check if nodes moved enough to require new 'fem solve'
         res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
         if (np.amax(delta) < tol_delta) or (res_input == 'n'):
-        # if (np.amax(delta) < tol_delta):
+            # if (np.amax(delta) < tol_delta):
             break
 
         # Change node positions, jacobians...

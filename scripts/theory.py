@@ -81,7 +81,7 @@ def plot_poiseuille_profiles(save=False):
         u_ana[m_mid] = (1. - bn / 4.) ** 2
         return u_ana
 
-    fig, ax = plt.subplots(1, 1, figsize=(6.*0.9, 3.5*0.9))
+    fig, ax = plt.subplots(1, 1, figsize=(6. * 0.9, 3.5 * 0.9))
     ax.locator_params(axis='x', nbins=6)
     ax.locator_params(axis='y', nbins=5)
     ax.axis([0., 1., -1., 1.])
@@ -89,7 +89,7 @@ def plot_poiseuille_profiles(save=False):
     ax.set_xlabel(r"$u/U_{\infty}$", fontsize=ftSz2)
     ax.set_ylabel(r"$2y/H$", fontsize=ftSz2)
     ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
-    
+
     eta = np.linspace(-1., 1., 150)
     for i, bn in enumerate([0., 1., 2., 3., 4.]):
         c, lw = (f'C{i:d}', 1.) if i < 4 else ('k', 3.)
@@ -98,16 +98,16 @@ def plot_poiseuille_profiles(save=False):
         eta_zero = np.full(2, bn / 4.)
         ax.plot(u, eta, color=c, label=f"$Bn = {bn:.0f}$", lw=lw)
         ax.fill_between([0., umax], +eta_zero, -eta_zero, color=c, ls='', alpha=0.50)
-    
+
     lgd = ax.legend(fontsize=ftSz3, ncols=1, labelspacing=1., bbox_to_anchor=(1., .86),)
     for legobj in lgd.legend_handles:
         legobj.set_linewidth(3.0)
     fig.tight_layout()
 
-    # if save:
-    plt.savefig(path + "poiseuille_bn.svg", bbox_inches="tight", transparent=True)
-    # else:
-    plt.show()
+    if save:
+        plt.savefig(path + "poiseuille_bn.svg", bbox_inches="tight", transparent=True)
+    else:
+        plt.show()
 
     return
 
@@ -216,6 +216,6 @@ if __name__ == "__main__":
     plt.rcParams["text.usetex"] = True
 
     # plot_interior_point(save_global)
-    plot_poiseuille_profiles(save_global)
+    # plot_poiseuille_profiles(save_global)
     # plot_shape_fct_1D(save_global)
     # plot_fluid_models(save_global)
