@@ -266,10 +266,10 @@ def plot_solution_1D(
     fig.tight_layout()
     if sim.save:
         path = "../figures/"
-        filename = f"res_P{sim.degree:d}_{extra_name:s}"
+        # filename = f"res_P{sim.degree:d}_{extra_name:s}"
         # filename = f"sensibility_1D_quadrature"
         filename = f"result_1D_P{sim.degree:d}"
-        fig.savefig(f"{path:s}{filename:s}.svg", format="svg", bbox_inches="tight")
+        fig.savefig(f"{path:s}{filename:s}.svg", bbox_inches="tight", transparent=True)
         # plt.show()
     else:
         plt.show()

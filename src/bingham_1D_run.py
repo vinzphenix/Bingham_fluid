@@ -214,7 +214,7 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-9, rtol=1e-8):
 if __name__ == "__main__":
 
     params = dict(
-        H=1., K=1., tau_zero=0.25, f=1., degree=2, n_elem=7,
+        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=7,
         random_seed=8, fix_interface=True,
         save=True, plot_density=25, dimensions=False
     )
