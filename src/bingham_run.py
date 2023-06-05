@@ -134,9 +134,9 @@ if __name__ == "__main__":
         # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
         # model, variant = "pipe", "classic"
-        model, variant = "pipe_dense", "250"
+        # model, variant = "pipe_dense", "250"
         # model, variant = "pipeneck", "smooth"
-        # model, variant = "pipeneck", "sharp"
+        model, variant = "pipeneck", "sharp"
         # model, variant = "cylinder", "10"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)

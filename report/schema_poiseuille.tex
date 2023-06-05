@@ -8,12 +8,12 @@
   \pgfmathsetmacro{\u}{1.5/(1.-\b/4.)^2}
 
   \node (wall_up) [ground1, minimum width=2*\l cm, yshift=\h cm, anchor=south] {};
-  \node[anchor=east] (wall_up_left) at (-\l, \h) {$H/2$};
+  \node[anchor=east] (wall_up_left) at (-\l, \h) {$h/2$};
   \draw (wall_up.south east) -- (wall_up.south west);
   %\draw[gray, thick] (-6,2) node[black,anchor=east]{$y=H$} -- (6,2) ;
 
   \node (wall_down) [ground2, minimum width=2*\l cm, yshift=-\h cm, anchor=north] {};
-  \node[anchor=east] (wall_down_left) at (-\l, -\h) {$-H/2$};
+  \node[anchor=east] (wall_down_left) at (-\l, -\h) {$-h/2$};
   \draw (wall_down.north east) -- (wall_down.north west);
   %\draw[gray, thick] (-6,-2) node[black,anchor=east]{$y=-H$} -- (6,-2) ;
 

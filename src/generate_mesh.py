@@ -833,7 +833,7 @@ if __name__ == "__main__":
     #     radial=False, sharp=True, multiple=False
     # )
     
-    create_cavity(path_to_dir + "cavity_test.msh", elemSizeRatio=1./40., size_field=True)
+    # create_cavity(path_to_dir + "cavity_test.msh", elemSizeRatio=1./40., size_field=True)
     # create_cavity(path_to_dir + "cavity.msh", elemSizeRatio=1./35., size_field=True)
     # create_cavity(path_to_dir + "cavity_cheat.msh", elemSizeRatio=1./35., size_field=True, cheat=True)
     # create_open_cavity(path_to_dir + "opencavity.msh", elemSizeRatio=1./35.)
@@ -842,6 +842,6 @@ if __name__ == "__main__":
     # create_pipe(path_to_dir + "pipe_dense.msh", 1./28., l1=2.5, l2=0., width=1., radius=1., theta=90.)
 
     # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./10., 1.5, 1.5, 1., 0.5, 0.5, sharp=0)
-    # create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)
+    create_pipe_contraction(path_to_dir + "pipeneck.msh", 1./9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)
 
     # create_backward_facing_step(path_to_dir + "bfs.msh", elemSizeRatio=1./25.)

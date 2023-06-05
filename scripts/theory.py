@@ -87,7 +87,7 @@ def plot_poiseuille_profiles(save=False):
     ax.axis([0., 1., -1., 1.])
     ax.grid(ls=':')
     ax.set_xlabel(r"$u/U_{\infty}$", fontsize=ftSz2)
-    ax.set_ylabel(r"$2y/H$", fontsize=ftSz2)
+    ax.set_ylabel(r"$2y/h$", fontsize=ftSz2)
     ax.tick_params(axis='both', direction='in', bottom=True, top=True, left=True, right=True)
 
     eta = np.linspace(-1., 1., 150)
@@ -210,12 +210,12 @@ def plot_fluid_models(save=False):
 
 
 if __name__ == "__main__":
-    save_global = False
+    save_global = True
     path = "./figures/"
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams["text.usetex"] = True
 
     # plot_interior_point(save_global)
-    # plot_poiseuille_profiles(save_global)
+    plot_poiseuille_profiles(save_global)
     # plot_shape_fct_1D(save_global)
     # plot_fluid_models(save_global)
