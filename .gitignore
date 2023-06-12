@@ -74,11 +74,9 @@ build/
 
 # Hidden files
 __pycache__/
-.vscode
+.vscode/
 
-
-# output files from xmesh demos
-**/png/**
-**/pdf/**
+# Simulation results files
 **/res/**
-**/docs/**
+**/xmesh_demos/**
+
