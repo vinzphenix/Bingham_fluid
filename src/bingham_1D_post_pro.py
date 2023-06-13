@@ -204,15 +204,15 @@ def plot_solution_1D(
         ax.set_title("Strain rate profile", fontsize=ftSz1)
         ax.plot(du_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
         ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
-        ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')    
+        ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')
     else:
         ax.set_title(r"Strain rate norm profile -- $\dot\gamma(u)$", fontsize=ftSz1)
         ax.plot(np.abs(du_ana_fit), y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
         ax.plot(np.abs(du_gauss), y_gauss, color="C3", ls="", marker='x', ms=10, label='Gauss pt')
-        tmp_x, tmp_y = make_step(du_dense, y_dense, sim.plot_density+1)
+        tmp_x, tmp_y = make_step(du_dense, y_dense, sim.plot_density + 1)
         ax.plot(np.abs(tmp_x), tmp_y, '-', color='C1', lw=3, label='FEM solution')
         ax.plot(
-            *make_step(du_discrete * np.sign(-y_discrete), y_discrete, 2), 
+            *make_step(du_discrete * np.sign(-y_discrete), y_discrete, 2),
             '--', ms=5, color='C2', label='Seen by quadrature'
         )
 
@@ -225,7 +225,7 @@ def plot_solution_1D(
         ax.plot(tau_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
         ax.plot(tau_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
         ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
-        ax.plot(*make_step(tau_dense, y_dense, sim.plot_density+1), '-', ms=5, color='C1')
+        ax.plot(*make_step(tau_dense, y_dense, sim.plot_density + 1), '-', ms=5, color='C1')
         ax.plot(*make_step(tau_discrete, y_discrete, 2), 'o', ls="", ms=5, color='C1')
 
         zipped = [axs[1, :]]
@@ -239,7 +239,7 @@ def plot_solution_1D(
             rel_error_nodes = (phi_pts - phi_ana_pts) / np.amax(np.abs(phi_ana_pts))
             rel_error_dense = (phi_dense - phi_ana_dense) / np.amax(np.abs(phi_ana_dense))
             ax.plot(rel_error_nodes, y_pts, marker="x", ls="", label="Error", color='red')
-            if (sim.degree == 2) and (ax==axs[1, 0]) and (1 == 0):
+            if (sim.degree == 2) and (ax == axs[1, 0]) and (1 == 0):
                 x_vals, y_vals = rel_error_dense, y_dense
             else:
                 x_vals, y_vals = rel_error_nodes, y_pts

@@ -25,7 +25,7 @@ def compute_bulk_source(sim: Simulation_2D):
 
     cost_bulk = coo_matrix((vals, (rows, cols)), shape=(1, sim.n_velocity_var))  # type: ignore
     cost_bulk.sum_duplicates()
-    
+
     return cost_bulk.col, cost_bulk.data
 
 
@@ -34,12 +34,6 @@ def compute_boundary_source(sim: Simulation_2D):
     all_rows = np.zeros(0, dtype=int)
     all_cols = np.zeros(0, dtype=int)
     all_vals = np.zeros(0, dtype=float)
-
-    # def get_pressure(edge_node_normal):  # Can be better generalized
-    #     # normals[edge, node, direction]
-    #     return np.where(edge_node_normal[:, :, 0] <= 0., 1.5, -0.5)
-            # pressure = get_pressure(normal[:, None, :].repeat(n_pts, axis=1))
-            # normal_shear = np.zeros((n_edge, n_pts))
 
     for physical_name in ["setNormalForce", "setTangentForce"]:
 
@@ -58,7 +52,7 @@ def compute_boundary_source(sim: Simulation_2D):
             gt = np.zeros((n_edge, n_pts))
             sim.eval_gt(sim.coords[edge_node_tags], gt)
             g_vector = np.einsum("ij,id->ijd", gt, tangent)
-        
+
         coefs = np.einsum(
             'g,ijd,gj,i->ijd',
             sim.weights_edge, g_vector, sim.sf_edge, length / 2.
@@ -75,7 +69,7 @@ def compute_boundary_source(sim: Simulation_2D):
 
     cost_boundary = coo_matrix((all_vals, (all_rows, all_cols)), shape=(1, 2 * sim.n_node))
     cost_boundary.sum_duplicates()
-    
+
     return cost_boundary.col, cost_boundary.data
 
 
@@ -109,13 +103,13 @@ def set_objective(sim: Simulation_2D, task: mosek.Task):
 def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
 
     for physical_name in ["setTangentFlow", "setNormalFlow"]:
-        
+
         info = sim.get_edge_node_tags(physical_name)
         edge_node_tags, length, tangent, normal = info
         n_edge, n_pts = edge_node_tags.shape
         if n_edge == 0:
             continue
-            
+
         # renumber rows from '0' to 'nb of unique nodes' in 'edge_node_tags'
         rows = edge_node_tags[:, :, None].repeat(2, axis=2)
 
@@ -123,19 +117,19 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
         cols[:, :, 0] = 2 * cols[:, :, 0] + 0  # idxs u
         cols[:, :, 1] = 2 * cols[:, :, 1] + 1  # idxs v
 
-        if physical_name == "setNormalFlow":            
+        if physical_name == "setNormalFlow":
             speed = np.zeros((n_edge, n_pts))
             sim.eval_vn(sim.coords[edge_node_tags], speed)
             coefs = normal[:, None, :].repeat(n_pts, axis=1)
-        else:            
+        else:
             speed = np.zeros((n_edge, n_pts))
             sim.eval_vt(sim.coords[edge_node_tags], speed)
             coefs = tangent[:, None, :].repeat(n_pts, axis=1)
 
-        # Handle corners where the normal/tangent velocity is not well defined 
+        # Handle corners where the normal/tangent velocity is not well defined
         # Take into account only one of the two possible edges
         mask_rmv = sim.get_idx_corner_to_rm(
-            sim.coords[edge_node_tags], 
+            sim.coords[edge_node_tags],
             normal[:, None, :].repeat(n_pts, axis=1)
         )
 
@@ -146,7 +140,7 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
         _, rows = np.unique(rows, return_inverse=True)
 
         # number of constraints (unique nodes, corners possibly removed)
-        n_const = np.amax(rows) + 1 
+        n_const = np.amax(rows) + 1
 
         rhs = coo_matrix((speed.flatten(), (rows[::2], 0 * cols[::2])), shape=(n_const, 1))
         rhs.sum_duplicates()
@@ -162,7 +156,7 @@ def set_boundary_conditions(sim: Simulation_2D, task: mosek.Task):
         task.appendcons(n_const)
         task.putaijlist(coefs.row + row_start, coefs.col, coefs.data)
         task.putconboundlist(rhs.row + row_start, bkc, rhs.data, rhs.data)
-    
+
     return task.getnumcon()
 
 
@@ -424,7 +418,7 @@ def solve_FE_mosek(sim: Simulation_2D, strong=False):
         max_d_viol_var = task.getsolutioninfonew(mosek.soltype.itr)[10]
         max_p_viol_acc = task.getsolutioninfonew(mosek.soltype.itr)[5]
         p_cost = task.getsolutioninfonew(mosek.soltype.itr)[0]
-        print(f"{p_cost - (-1./12.):.3e}")
+        # print(f"{p_cost - (-1./12.):.3e}")
         # print(max_d_viol_var, max_p_viol_acc)
 
         i_start, i_end = n_bc, task.getnumcon()

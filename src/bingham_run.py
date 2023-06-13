@@ -3,6 +3,7 @@ from bingham_fem_solver import solve_FE_sparse
 from bingham_fem_mosek import solve_FE_mosek
 from bingham_post_pro import plot_1D_slice, plot_solution_2D, plot_solution_2D_matplotlib
 from bingham_tracking import solve_interface_tracking
+from utils import *
 
 
 def load_solution(model_name, model_variant):
@@ -20,71 +21,9 @@ def load_solution(model_name, model_variant):
     t_num = np.loadtxt(res_file_name + "_strain.txt")
     coords = np.loadtxt(res_file_name + "_coords.txt")
 
-    dic_params = dict(K=K, tau_zero=tau_zero, f=f, element=element, model_name=model_name)
+    dic_params = dict(K=K, tau_zero=tau_zero, f=f, elem=element, model=model_name)
 
     return dic_params, u_num, p_num, t_num, coords
-
-
-def get_analytical_poiseuille(sim: Simulation_2D):
-
-    # dp_dx = sim.f[0]
-    dp_dx = 1.
-    H = np.amax(sim.coords[:, 1])  # half channel width (centered at y = 0)
-    U_inf = dp_dx * (H ** 2) / (2. * sim.K)  # max velocity when tau_zero = 0
-
-    Bn = sim.tau_zero * H / (sim.K * U_inf)
-
-    y_zero = sim.tau_zero / dp_dx
-    eta_zero = y_zero / H
-    eta = sim.coords[:, 1] / H
-    u_analytical = np.zeros_like(eta)
-
-    mask_top = (eta_zero < eta) & (eta <= 1.)
-    mask_bot = (-1. <= eta) & (eta < -eta_zero)
-    mask_mid = ~(mask_top | mask_bot)
-
-    u_analytical[mask_top] = -Bn * (1. - eta[mask_top]) + (1. - np.square(eta[mask_top]))
-    u_analytical[mask_bot] = -Bn * (1. + eta[mask_bot]) + (1. - np.square(eta[mask_bot]))
-    u_analytical[mask_mid] = (1. - Bn / 2.) ** 2
-
-    return np.c_[U_inf * u_analytical, np.zeros_like(u_analytical)]
-
-
-def check_incompressibility(k):
-    s: float = 0.
-    for elem in sim.n2e_map[sim.n2e_st[k]: sim.n2e_st[k+1]]:
-        loc_k = np.argwhere(sim.elem_node_tags[elem, :3] == k)[0][0]
-        print("k = ", loc_k)
-        local_nodes = sim.elem_node_tags[elem]
-        sub_s = 0.
-        for g, wg in enumerate(sim.weights_q):
-            dudx = 0.
-            dvdy = 0.
-            dphi = np.dot(sim.dv_shape_functions_at_q[g], sim.inverse_jacobians[elem]/sim.determinants[elem])
-            for j, node in enumerate(local_nodes):
-                dudx += u_field[node, 0] * dphi[j, 0]
-                dvdy += u_field[node, 1] * dphi[j, 1]
-                # print(f"u[{node:3d}] = {u_field[node, 0]:.3f}")
-            tmp = wg * sim.q_shape_functions[g, loc_k] * (dudx + dvdy) * sim.determinants[elem]
-            s += tmp
-            tmp = (dudx + dvdy)
-            sub_s += tmp
-            print(tmp)
-    print("s = ", s)
-    return
-
-
-def dummy():
-    u_nodes = np.zeros((sim.n_node, 2))
-    u_nodes[:, 0] = (1. - sim.coords[:, 1]**2) / 2.
-    u_nodes[:, 1] = 1 * sim.coords[:, 0] * (1. + sim.coords[:, 1])
-    # x_centered = sim.coords[:, 0] - np.mean(sim.coords[:, 0])
-    # y_centered = sim.coords[:, 1] - np.mean(sim.coords[:, 1])
-    # u_nodes[:, 0] = +x_centered**2-y_centered**2
-    # u_nodes[:, 1] = -2*x_centered*y_centered
-    p_field = np.zeros(sim.primary_nodes.size - sim.nodes_singular_p.size)
-    t_num = np.ones((sim.n_elem, sim.ng_loc))
-    return u_nodes, p_field, t_num
 
 
 if __name__ == "__main__":
@@ -100,32 +39,36 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 3
+        mode = 2
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
 
-    # parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], element="th", model_name="rectangle")
-    
-    # parameters = dict(K=1., tau_zero=0.2, f=[0., 0.], element="th", model_name="pipe")
-    parameters = dict(K=1., tau_zero=0.24, f=[0., 0.], element="th", model_name="pipe_dense")
-    # parameters = dict(K=1., tau_zero=0.1, f=[0., 0.], element="th", model_name="pipeneck")
+    ##########################################################################################
+    #######################  -  Simulation parameters and geometry  -  #######################
 
-    # parameters = dict(K=1., tau_zero=10., f=[0., 0.], element="th", model_name="cylinder")
-    # parameters = dict(K=1., tau_zero=1.5, f=[0., 0.], element="th", model_name="cavity")
-    # parameters = dict(K=1., tau_zero=500., f=[0., 0.], element="th", model_name="cavity_cheat")
-    # parameters = dict(K=1., tau_zero=100., f=[0., 0.], element="th", model_name="opencavity")
-    # parameters = dict(K=1., tau_zero=0., f=[0., 0.], element="th", model_name="bfs")
+    parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], elem="th", model="rectangle")
+    # parameters = dict(K=1., tau_zero=0.2, elem="th", model="pipe")
+    # parameters = dict(K=1., tau_zero=0.1, elem="th", model="pipeneck")
+    # parameters = dict(K=1., tau_zero=10., elem="th", model="cylinder")
+    # parameters = dict(K=1., tau_zero=50., element="th", model="cavity_test")
+    # parameters = dict(K=1., tau_zero=1.5, elem="th", model="cavity")
+    # parameters = dict(K=1., tau_zero=500., elem="th", model="cavity_cheat")
+    # parameters = dict(K=1., tau_zero=100., elem="th", model="opencavity")
+    # parameters = dict(K=1., tau_zero=0., elem="th", model="bfs")
+    # parameters = dict(K=1., tau_zero=t, elem="th", model="finepipe")
 
-    # parameters = dict(K=1., tau_zero=50., f=[0., 0.], element="th", model_name="cavity_test")
+    sim = Simulation_2D(parameters, save_variant="")
+    # sim = Simulation_2D(parameters, save_variant=f"{1e3 * parameters['tau_zero']:.0f}")
 
-    sim = Simulation_2D(parameters, save_variant=f"275")
+    ##########################################################################################
+    #############################  -  Solve / Iterate / Load  -  #############################
 
     if mode == 1:  # Solve problem: ONE SHOT
         u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
 
     elif mode == 2:  # Solve the problem: ITERATE
-        res = solve_interface_tracking(sim, max_it=20, tol_delta=1.e-8, deg=1, strong=False)
+        res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-8, deg=1, strong=False)
         u_field, p_field, d_field = res
 
     elif mode == 3:  # Load solution from disk
@@ -134,9 +77,9 @@ if __name__ == "__main__":
         # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
         # model, variant = "pipe", "classic"
-        # model, variant = "pipe_dense", "250"
-        # model, variant = "pipeneck", "smooth"
-        model, variant = "pipeneck", "sharp"
+        model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
+        # model, variant = "necksmooth", "default"
+        # model, variant = "necksharp", "default"
         # model, variant = "cylinder", "10"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
@@ -144,8 +87,9 @@ if __name__ == "__main__":
 
     else:  # DUMMY solution to debug
         u_field, p_field, d_field = dummy()
-        # u_field[:, 0] = (0.25 - sim.coords[:, 1] ** 2) * np.sin(np.pi * sim.coords[:, 0]) ** 2
-        # u_field[:, 1] = (0.25 - sim.coords[:, 1] ** 2) * sim.coords[:, 0] * (3. - sim.coords[:, 0])
+
+    ##########################################################################################
+    ####################################  -  Display  -  #####################################
 
     plot_solution_2D(u_field, p_field, d_field, sim)
     # plot_1D_slice(u_field, sim, extra_name="2D_last")

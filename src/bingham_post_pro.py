@@ -37,7 +37,7 @@ def plot_1D_slice(u_num, sim: Simulation_2D, extra_name=""):
 
     params = dict(H=H, K=sim.K, tau_zero=sim.tau_zero, f=dpdx, degree=deg_along_edge,
                   n_elem=n_intervals, random_seed=-1, fix_interface=False,
-                  save=True, plot_density=25, dimensions=False)
+                  save=False, plot_density=25, dimensions=False)
 
     sim_1D = Simulation_1D(params)
     sim_1D.set_y(slice_y)
@@ -90,8 +90,8 @@ def compute_gradient_at_nodes(sim: Simulation_2D, u_num, velocity_gradient):
     for i in range(sim.n_elem):
         idx_local_nodes = sim.elem_node_tags[i]
         det, inv_jac = sim.determinants[i], sim.inverse_jacobians[i]
-        # don't evaluate at bubble node 
-        for j, idx_node in enumerate(idx_local_nodes[:sim.n_local_node]):  
+        # don't evaluate at bubble node
+        for j, idx_node in enumerate(idx_local_nodes[:sim.n_local_node]):
             dphi = dsf_at_nodes[j, :, :]  # dphi in reference element
             dphi = np.dot(dphi, inv_jac) / det  # dphi in physical element
             l11, l12, l21, l22 = eval_velocity_gradient(u_num[idx_local_nodes], dphi)
@@ -108,7 +108,7 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
 
     edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("", exclude=[5, 6])
     mid_x = 0.5 * (np.amin(sim.coords[:, 0]) + np.amax(sim.coords[:, 0]))
-    mask =(sim.coords[edge_node_tags, 0] - mid_x) ** 2 + sim.coords[edge_node_tags, 1] ** 2 < 1.
+    mask = (sim.coords[edge_node_tags, 0] - mid_x) ** 2 + sim.coords[edge_node_tags, 1] ** 2 < 1.
     mask = np.all(mask, axis=1)
     edge_node_tags, length, tangent, normal = edge_node_tags[mask], length[mask], tangent[mask], normal[mask]
     n_edge, n_pts = edge_node_tags.shape
@@ -237,10 +237,7 @@ def add_streamfunction(sim: Simulation_2D, u_num):
 
     tag_psi = gmsh.view.add("Streamfunction", tag=sim.tag)
     sim.tag += 1
-    gmsh.view.addHomogeneousModelData(
-        tag_psi, 0, sim.model_name, "NodeData",
-        sim.node_tags + 1, psi, numComponents=1
-    )
+
     gmsh.view.option.set_number(tag_psi, "NbIso", 10)
     gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
     gmsh.view.option.set_number(tag_psi, "ShowScale", 0)
@@ -249,7 +246,12 @@ def add_streamfunction(sim: Simulation_2D, u_num):
     gmsh.view.option.set_number(tag_psi, "ColormapNumber", 0)
     gmsh.view.option.set_number(tag_psi, "ColormapInvert", 1)
 
-    return 0*[tag_psi]
+    gmsh.view.addHomogeneousModelData(
+        tag_psi, 0, sim.model_name, "NodeData",
+        sim.node_tags + 1, psi, numComponents=1
+    )
+
+    return [tag_psi]
 
 
 def add_unstrained_zone(sim: Simulation_2D, t_num):
@@ -292,24 +294,68 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     n_edge, data_bd_shear = get_stress_boundary(sim, strain_tensor)
 
     tag_velocity = gmsh.view.add("Velocity", tag=sim.tag)
+    v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
+    strain_normal_raise = 0.5 / np.amax(strain_norm)
+    gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
+    gmsh.view.option.setNumber(tag_velocity, "DrawPoints", 0)
+    gmsh.view.option.setNumber(tag_velocity, "DrawLines", 0)
+    gmsh.view.option.setNumber(tag_velocity, "DrawTriangles", 1)
+    gmsh.view.option.setNumber(tag_velocity, "RaiseZ", v_normal_raise)
+    gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 50)
+    gmsh.view.option.setNumber(tag_velocity, "LineWidth", 0.7)
+    gmsh.view.option.setNumber(tag_velocity, "PointSize", 2.5)
+    gmsh.view.option.setNumber(tag_velocity, "ShowScale", 1)
+    gmsh.view.option.setNumber(tag_velocity, "Sampling", 1)
 
     tag_u = gmsh.view.add("Velocity - x", tag=sim.tag + 1)
     tag_v = gmsh.view.add("Velocity - y", tag=sim.tag + 2)
+    for tag in [tag_u, tag_v]:
+        gmsh.view.option.setNumber(tag, "ShowScale", 1)
+        gmsh.view.option.setNumber(tag, "DrawTriangles", 0)
+        gmsh.view.option.setNumber(tag, "NormalRaise", 10. / 6.)
+        # gmsh.view.option.setNumber(tag, "ShowScale", 0)
 
     tag_strain_xx = gmsh.view.add("Strain xx", tag=sim.tag + 3)
     tag_strain_xy = gmsh.view.add("Strain xy", tag=sim.tag + 4)
     tag_strain_yy = gmsh.view.add("Strain yy", tag=sim.tag + 5)
+    for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
+        gmsh.view.option.setNumber(tag, "ColormapAlpha", 0.75)
+        gmsh.view.option.setNumber(tag, "RangeType", 2)
+        gmsh.view.option.setNumber(tag, "CustomMin", -0.25)
+        gmsh.view.option.setNumber(tag, "CustomMax", 0.25)
 
-    tag_strain = gmsh.view.add("Strain rate tensor"*0, tag=sim.tag + 6)
+    tag_strain = gmsh.view.add("Strain rate", tag=sim.tag + 6)
     tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
+    gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
+    gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
+    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-10)
+    gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+0)
+    gmsh.view.option.setNumber(tag_strain, "IntervalsType", 3)
+    gmsh.view.option.setNumber(tag_strain, "NbIso", 20)  # 12
+    gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
+    gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_strain, "ScaleType", 2)
+    gmsh.view.option.setString(tag_strain, "Format", r"%.2g")
+
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
 
     tag_bd_shear = gmsh.view.add("Shear force", tag=sim.tag + 10)
+    gmsh.view.addListData(tag_bd_shear, "VL", n_edge, data_bd_shear.flatten())
+    gmsh.view.option.setNumber(tag_bd_shear, "VectorType", 2)
+    gmsh.view.option.setNumber(tag_bd_shear, "Sampling", 2)
+    gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 4.)
+    gmsh.view.option.setNumber(tag_bd_shear, "ColormapNumber", 23)
+    gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 60)
+    # gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
+    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
+    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
 
     tags = [
-        tag_velocity, tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
-        tag_strain, tag_strain_norm_avg, 
+        tag_velocity, 
+        tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
+        tag_strain, 
+        tag_strain_norm_avg,
         tag_vorticity, tag_divergence, tag_bd_shear
     ]
     sim.tag += 11
@@ -318,7 +364,6 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
         tag_velocity, 0, sim.model_name, "NodeData",
         sim.node_tags + 1, velocity, numComponents=3
     )
-
     gmsh.view.addHomogeneousModelData(
         tag_u, 0, sim.model_name, "NodeData",
         sim.node_tags + 1, u_num[:, 0], numComponents=1
@@ -361,51 +406,6 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
         tag_divergence, 0, sim.model_name, "ElementNodeData",
         sim.elem_tags, divergence, numComponents=1
     )
-
-    gmsh.view.addListData(tag_bd_shear, "VL", n_edge, data_bd_shear.flatten())
-    gmsh.view.option.setNumber(tag_bd_shear, "VectorType", 2)
-    gmsh.view.option.setNumber(tag_bd_shear, "Sampling", 2)
-    gmsh.view.option.setNumber(tag_bd_shear, "LineWidth", 4.)
-    gmsh.view.option.setNumber(tag_bd_shear, "ColormapNumber", 23)
-    gmsh.view.option.setNumber(tag_bd_shear, "ArrowSizeMax", 60)
-    # gmsh.view.option.setNumber(tag_bd_shear, "RangeType", 2)
-    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMin", 0.)
-    # gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
-
-    v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
-    strain_normal_raise = 0.5 / np.amax(strain_norm)
-    gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
-    gmsh.view.option.setNumber(tag_velocity, "DrawLines", 0)
-    gmsh.view.option.setNumber(tag_velocity, "DrawPoints", 0)
-    gmsh.view.option.setNumber(tag_velocity, "NormalRaise", v_normal_raise)
-    gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 50)
-    gmsh.view.option.setNumber(tag_velocity, "LineWidth", 0.7)
-    gmsh.view.option.setNumber(tag_velocity, "PointSize", 2.5)
-    gmsh.view.option.setNumber(tag_velocity, "ShowScale", 1)
-    gmsh.view.option.setNumber(tag_velocity, "Sampling", 1)
-
-    for tag in [tag_u, tag_v]:
-        gmsh.view.option.setNumber(tag, "ShowScale", 1)
-        gmsh.view.option.setNumber(tag, "DrawTriangles", 0)
-        gmsh.view.option.setNumber(tag, "NormalRaise", 10. / 6.)
-        # gmsh.view.option.setNumber(tag, "ShowScale", 0)
-
-    gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
-    for tag in [tag_strain_xx, tag_strain_xy, tag_strain_yy]:
-        gmsh.view.option.setNumber(tag, "ColormapAlpha", 0.75)
-        gmsh.view.option.setNumber(tag, "RangeType", 2)
-        gmsh.view.option.setNumber(tag, "CustomMin", -0.25)
-        gmsh.view.option.setNumber(tag, "CustomMax", 0.25)
-
-    gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
-    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-11)
-    gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+1)
-    gmsh.view.option.setNumber(tag_strain, "IntervalsType", 3)
-    gmsh.view.option.setNumber(tag_strain, "NbIso", 12)
-    gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
-    gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
-    gmsh.view.option.setNumber(tag_strain, "ScaleType", 2)
-    gmsh.view.option.setString(tag_strain, "Format", r"%.0e")
 
     return tags
 
@@ -508,10 +508,6 @@ def add_reconstruction(sim: Simulation_2D, extra):
     value_rec = np.fromiter(strain_rec.values(), dtype='float')
     view_avg_rec = gmsh.view.add("Avg reconstr.", sim.tag)
     sim.tag += 1
-    gmsh.view.addHomogeneousModelData(
-        view_avg_rec, 0, sim.model_name, "NodeData",
-        nodes_rec, value_rec, numComponents=1
-    )
     gmsh.view.option.setNumber(view_avg_rec, 'IntervalsType', 1)
     gmsh.view.option.setNumber(view_avg_rec, 'NbIso', 1)
     gmsh.view.option.setNumber(view_avg_rec, 'RangeType', 2)
@@ -520,10 +516,13 @@ def add_reconstruction(sim: Simulation_2D, extra):
     gmsh.view.option.setNumber(view_avg_rec, "LineWidth", 2.)
     gmsh.view.option.setNumber(view_avg_rec, "ColormapNumber", 21)
     gmsh.view.option.setNumber(view_avg_rec, "ShowScale", 0)
-
     # gmsh.view.option.setNumber(view_avg_rec, 'PointSize', 7.5)
     # gmsh.view.option.setNumber(view_avg_rec, 'Boundary', 3)
     # gmsh.view.option.setNumber(view_avg_rec, 'GlyphLocation', 2)
+    gmsh.view.addHomogeneousModelData(
+        view_avg_rec, 0, sim.model_name, "NodeData",
+        nodes_rec, value_rec, numComponents=1
+    )
 
     #########################
 
@@ -534,9 +533,9 @@ def add_reconstruction(sim: Simulation_2D, extra):
     data_2[:, 7] = np.linalg.norm(sim.coords[moved_nodes] - new_coords, axis=1)
     view_targets = gmsh.view.add("Targets", tag=sim.tag)
     sim.tag += 1
-    gmsh.view.addListData(tag=view_targets, dataType="SL", numEle=n, data=data_2.flatten())
     gmsh.view.option.setNumber(view_targets, 'LineWidth', 3.)
     gmsh.view.option.setNumber(view_targets, 'ShowScale', 0)
+    gmsh.view.addListData(tag=view_targets, dataType="SL", numEle=n, data=data_2.flatten())
 
     return [view_rec, view_avg_rec, view_targets]
 
@@ -602,7 +601,18 @@ def add_exact_interface(sim: Simulation_2D):
     return [view_interface]
 
 
+def add_text(t0):
+    gmsh.plugin.setString('Annotate', option="Text", value=f"Bn = .{1e3 * t0:03.0f}")
+    gmsh.plugin.setNumber('Annotate', option="X", value=385)
+    gmsh.plugin.setNumber('Annotate', option="Y", value=450)
+    gmsh.plugin.setNumber('Annotate', option="FontSize", value=40)
+    gmsh.plugin.run('Annotate')
+
+    return
+
+
 def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
+    # return
 
     gmsh.fltk.initialize()
 
@@ -619,7 +629,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     # tags_steamlines = add_streamlines(sim, u_num, tags_velocities[0])
     tags_steamlines = add_streamfunction(sim, u_num)
 
-    tags_invisible = tags_velocities[:] + tags_pressure + tags_gauss + tags_steamlines
+    tags_invisible = tags_velocities + tags_pressure + tags_gauss + 0*tags_steamlines
 
     if extra is not None:
         tags_reconstructed = add_reconstruction(sim, extra)
@@ -639,7 +649,12 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.set_number("Mesh.ColorCarousel", 2)
     gmsh.option.set_number("Mesh.NodeLabels", 0)
     gmsh.option.set_number("Geometry.Points", 0)
-    gmsh.option.set_number("General.GraphicsFontSize", 24)
+    gmsh.option.set_number("General.GraphicsFontSize", 20)
+    gmsh.option.set_number("General.GraphicsFontSizeTitle", 24)
+    gmsh.option.set_number("General.SmallAxes", 0)
+    gmsh.option.set_number("Geometry.Points", 1)
+    
+    # add_text(sim.tau_zero)
 
     # if extra is None:  # used to show pipe velocity profile
     #     tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity

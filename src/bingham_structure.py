@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.tri.triangulation as mpl_tri
 import gmsh
 import mosek
-
+import os
 
 from tqdm import tqdm
 from time import perf_counter
@@ -27,12 +27,12 @@ class Simulation_2D:
     def __init__(self, parameters: dict, new_coords=None, save_variant=""):
         self.K = parameters['K']  # Viscosity
         self.tau_zero = parameters['tau_zero']  # yield stress
-        self.f = np.array(parameters['f'])  # body force (pressure gradient)
+        self.f = np.array(parameters.get('f', [0., 0.]))  # body force
 
-        self.model_name = parameters['model_name']
+        self.model_name = parameters['model']
         gmsh.open("../mesh/" + self.model_name + ".msh")
 
-        self.element = parameters['element']
+        self.element = parameters['elem']
         if self.element == "th":
             gmsh.model.mesh.setOrder(2)
             self.degree = 2
@@ -97,7 +97,7 @@ class Simulation_2D:
 
     def get_elements_info(self):
         elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(2, -1)  # type: ignore
-        elem_type = elem_types[0] # type: ignore
+        elem_type = elem_types[0]  # type: ignore
         elem_tags = np.array(elem_tags[0])
         n_elem = len(elem_tags)
 
@@ -220,13 +220,14 @@ class Simulation_2D:
         # primary_nodes = np.setdiff1d(primary_nodes, self.nodes_corner)
 
         return primary_nodes
-    
+
     def update_transformation(self, elements):
         for elem in elements:
             elem_center = np.array([1., 1., 0.]) / 3.
-            jacobian, determinant, _ = gmsh.model.mesh.getJacobian(self.elem_tags[elem], elem_center)
+            jacobian, determinant, _ = gmsh.model.mesh.getJacobian(
+                self.elem_tags[elem], elem_center)
             jacobian = np.array(jacobian).reshape((3, 3))
-            
+
             self.inverse_jacobians[elem, 0, 0] = +jacobian[1, 1]
             self.inverse_jacobians[elem, 0, 1] = -jacobian[1, 0]
             self.inverse_jacobians[elem, 1, 0] = -jacobian[0, 1]
@@ -234,7 +235,7 @@ class Simulation_2D:
 
             self.determinants[elem] = determinant[0]
         return
-    
+
     def get_node_elem_map(self):
 
         node_elem_pairs = np.c_[
@@ -243,16 +244,16 @@ class Simulation_2D:
         ]
 
         pairs = node_elem_pairs[np.argsort(node_elem_pairs[:, 0])]
-        
+
         # node_elem_st = np.r_[0, 1 + np.where(pairs[:-1, 0] != pairs[1:, 0])[0]]
         # not working due to higher order nodes with smaller index than primary nodes
         node_elem_st = np.cumsum(np.r_[0, np.bincount(pairs[:, 0])])
         node_elem_map = pairs[:, 1]
 
         return node_elem_map, node_elem_st
-    
+
     def get_node_node_map(self):
-        
+
         # Double direction (org-dst and dst-org) is needed only because of
         # boundary nodes, connected through one element only (two in the bulk)
         node_node_pairs = np.c_[
@@ -268,7 +269,7 @@ class Simulation_2D:
         node_node_map = pairs[:, 1]
 
         return node_node_map, node_node_st
-    
+
     def get_edges(self, elems):
         edges = np.c_[
             [self.elem_node_tags[elems, 0], self.elem_node_tags[elems, 1]],
@@ -278,7 +279,6 @@ class Simulation_2D:
         edges = np.sort(edges, axis=1)
         return np.unique(edges, axis=0)
 
-    
     def is_yielded(self, strains):
         # strains is a matrix with each gauss point value
         # 0 or 1 ->   yielded
@@ -292,14 +292,12 @@ class Simulation_2D:
         # elems = self.n2e_map[self.n2e_st[node]: self.n2e_st[node + 1]]
         return elems
 
-
     def set_all_nodes(self, new_coords):
         n_node = new_coords.shape[0]
         new_coords = np.c_[new_coords, np.zeros(n_node)]
         for node in range(n_node):
             gmsh.model.mesh.setNode(node + 1, new_coords[node], [0., 0.])
         return
-
 
     def get_edge_info(self):
         line_tag = 1 if self.element == "mini" else 8
@@ -310,7 +308,6 @@ class Simulation_2D:
         sf_edge = np.array(sf).reshape((ng_edge, -1))
         n_sf_edge = sf_edge.shape[1]
         return line_tag, weights_edge, sf_edge
-
 
     def get_edge_node_tags(self, physical_name, exclude=[]):
         gmsh.model.mesh.createEdges()
@@ -334,12 +331,12 @@ class Simulation_2D:
                 return np.zeros((0, 0)), *[None] * 3
             else:
                 tags = gmsh.model.getEntitiesForPhysicalGroup(1, physical_tag)
-        
+
         for tag in tags:
             tmp = gmsh.model.mesh.getElementEdgeNodes(elementType=self.line_tag, tag=tag)
             tmp = np.array(tmp).astype(int) - 1
             edge_node_tags = np.r_[edge_node_tags, tmp.reshape((-1, self.nsf_edge))]
-        
+
         coords_org = self.coords[edge_node_tags[:, 0]]
         coords_dst = self.coords[edge_node_tags[:, 1]]
         length = np.linalg.norm(coords_dst - coords_org, axis=1)
@@ -358,16 +355,16 @@ class Simulation_2D:
             return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder, corner_cylinder
         elif self.model_name in ["opencavity"]:
             return vn_opencavity, vt_opencavity, gn_opencavity, gt_opencavity, corner_opencavity
-        elif self.model_name in ["bfs", "pipeneck"]:
+        elif self.model_name in ["bfs", "necksmooth", "necksharp"]:
             return vn_bfs, vt_bfs, gn_bfs, gt_bfs, corner_bfs
-        elif self.model_name in ["pipe", "pipe_dense"]:
+        elif self.model_name in ["pipe", "finepipe"]:
             return vn_pipe, vt_pipe, gn_pipe, gt_pipe, corner_pipe
         else:
             warning_msg = f"Boundary conditions not yet implemented for model '{self.model_name}'"
             raise ValueError(warning_msg)
 
     def save_solution(self, u_num, p_num, t_num, model_variant):
-        
+
         res_file_name = f"../res/{self.model_name:s}_{model_variant:s}"
         with open(res_file_name + "_params.txt", 'w') as file:
             file.write(f"{self.K:.6e}\n")
@@ -375,10 +372,10 @@ class Simulation_2D:
             file.write(f"{self.f[0]:.6e} {self.f[1]:.6e}\n")
             file.write(f"{self.element:s}\n")
             file.write(f"{self.run_time:.6e}\n")
-        
-        np.savetxt(res_file_name + "_velocity.txt", u_num, fmt="%.6e")
+
+        np.savetxt(res_file_name + "_velocity.txt", u_num, fmt="%.14e")
         np.savetxt(res_file_name + "_pressure.txt", p_num, fmt="%.6e")
         np.savetxt(res_file_name + "_strain.txt", t_num, fmt="%.6e")
-        np.savetxt(res_file_name + "_coords.txt", self.coords, fmt="%.6e")
+        np.savetxt(res_file_name + "_coords.txt", self.coords, fmt="%.14e")
 
         return
