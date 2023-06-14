@@ -39,7 +39,7 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 2
+        mode = 3
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # parameters = dict(K=1., tau_zero=0.1, elem="th", model="pipeneck")
     # parameters = dict(K=1., tau_zero=10., elem="th", model="cylinder")
     # parameters = dict(K=1., tau_zero=50., element="th", model="cavity_test")
-    # parameters = dict(K=1., tau_zero=1.5, elem="th", model="cavity")
+    # parameters = dict(K=1., tau_zero=20., elem="th", model="cavity")
     # parameters = dict(K=1., tau_zero=500., elem="th", model="cavity_cheat")
     # parameters = dict(K=1., tau_zero=100., elem="th", model="opencavity")
     # parameters = dict(K=1., tau_zero=0., elem="th", model="bfs")
@@ -73,11 +73,11 @@ if __name__ == "__main__":
 
     elif mode == 3:  # Load solution from disk
         # model, variant = "cavity_test", "50"
-        # model, variant = "cavity", "0"
+        model, variant = "cavity", "20"
         # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
         # model, variant = "pipe", "classic"
-        model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
+        # model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
         # model, variant = "necksmooth", "default"
         # model, variant = "necksharp", "default"
         # model, variant = "cylinder", "10"

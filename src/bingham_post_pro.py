@@ -231,20 +231,20 @@ def compute_streamfunction(sim: Simulation_2D, u_num):
     return psi[:sim.n_node]
 
 
-def add_streamfunction(sim: Simulation_2D, u_num):
+def add_streamfunction(sim: Simulation_2D, u_num, nb_iso=10):
 
     psi = compute_streamfunction(sim, u_num)
 
     tag_psi = gmsh.view.add("Streamfunction", tag=sim.tag)
     sim.tag += 1
 
-    gmsh.view.option.set_number(tag_psi, "NbIso", 10)
-    gmsh.view.option.set_number(tag_psi, "IntervalsType", 0)
-    gmsh.view.option.set_number(tag_psi, "ShowScale", 0)
-    gmsh.view.option.set_number(tag_psi, "LineWidth", 1.5)
-    gmsh.view.option.set_number(tag_psi, "ColormapAlpha", 0.75)
-    gmsh.view.option.set_number(tag_psi, "ColormapNumber", 0)
-    gmsh.view.option.set_number(tag_psi, "ColormapInvert", 1)
+    gmsh.view.option.setNumber(tag_psi, "NbIso", nb_iso)
+    gmsh.view.option.setNumber(tag_psi, "IntervalsType", 0)
+    gmsh.view.option.setNumber(tag_psi, "ShowScale", 0)
+    gmsh.view.option.setNumber(tag_psi, "LineWidth", 1.5)
+    gmsh.view.option.setNumber(tag_psi, "ColormapAlpha", 0.75)
+    gmsh.view.option.setNumber(tag_psi, "ColormapNumber", 0)
+    gmsh.view.option.setNumber(tag_psi, "ColormapInvert", 1)
 
     gmsh.view.addHomogeneousModelData(
         tag_psi, 0, sim.model_name, "NodeData",
@@ -273,9 +273,9 @@ def add_unstrained_zone(sim: Simulation_2D, t_num):
         gmsh.view.option.setNumber(tag_unstrained, "RangeType", 2)
         gmsh.view.option.setNumber(tag_unstrained, "CustomMin", 0.)
         gmsh.view.option.setNumber(tag_unstrained, "CustomMax", percentile_95)
-        gmsh.view.option.set_number(tag_unstrained, "ShowScale", 0)
-        gmsh.view.option.set_number(tag_unstrained, "ColormapAlpha", 0.25)
-        gmsh.view.option.set_number(tag_unstrained, "OffsetZ", -1.e-5)
+        gmsh.view.option.setNumber(tag_unstrained, "ShowScale", 0)
+        gmsh.view.option.setNumber(tag_unstrained, "ColormapAlpha", 0.25)
+        gmsh.view.option.setNumber(tag_unstrained, "OffsetZ", -1.e-5)
 
     return [tag_unstrained]
 
@@ -296,11 +296,11 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tag_velocity = gmsh.view.add("Velocity", tag=sim.tag)
     v_normal_raise = 0.5 / np.amax(np.hypot(u_num[:, 0], u_num[:, 1]))
     strain_normal_raise = 0.5 / np.amax(strain_norm)
-    gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
     gmsh.view.option.setNumber(tag_velocity, "DrawPoints", 0)
     gmsh.view.option.setNumber(tag_velocity, "DrawLines", 0)
     gmsh.view.option.setNumber(tag_velocity, "DrawTriangles", 1)
     gmsh.view.option.setNumber(tag_velocity, "RaiseZ", v_normal_raise)
+    gmsh.view.option.setNumber(tag_velocity, "VectorType", 6)
     gmsh.view.option.setNumber(tag_velocity, "ArrowSizeMax", 50)
     gmsh.view.option.setNumber(tag_velocity, "LineWidth", 0.7)
     gmsh.view.option.setNumber(tag_velocity, "PointSize", 2.5)
@@ -328,14 +328,15 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
     gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
-    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-10)
-    gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+0)
+    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-11)
+    gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+2)
     gmsh.view.option.setNumber(tag_strain, "IntervalsType", 3)
     gmsh.view.option.setNumber(tag_strain, "NbIso", 20)  # 12
     gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
     gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
     gmsh.view.option.setNumber(tag_strain, "ScaleType", 2)
     gmsh.view.option.setString(tag_strain, "Format", r"%.2g")
+    gmsh.view.option.setNumber(tag_strain, "ShowScale", 0)
 
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
@@ -352,9 +353,9 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     # gmsh.view.option.setNumber(tag_bd_shear, "CustomMax", 0.5)
 
     tags = [
-        tag_velocity, 
+        tag_velocity,
         tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
-        tag_strain, 
+        # tag_strain,
         tag_strain_norm_avg,
         tag_vorticity, tag_divergence, tag_bd_shear
     ]
@@ -611,6 +612,152 @@ def add_text(t0):
     return
 
 
+def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
+ 
+    # Generate streamlines with particles, to obtain their positions
+
+    if sim.model_name in ["pipe", "finepipe"] and show_radius:
+        n_streamlines, n_iterations, dt = 3, 200, 0.4
+        options = dict(
+            X0=1.5, Y0=0.30, X1=1.7, Y1=0.55, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
+    elif sim.model_name in ["pipe", "finepipe"]:
+        n_streamlines, n_iterations, dt = 5, 200, 0.4
+        options = dict(
+            X0=1.7, Y0=0.15, X1=1.7, Y1=0.85, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
+    elif sim.model_name in ["cavity", "cavity_cheat"] and show_radius:
+        n_streamlines, n_iterations, dt = 5, 100, 0.01
+        options = dict(
+            X0=0.75, Y0=-0.01, X1=0.75, Y1=-0.08, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
+    elif sim.model_name in ["cavity", "cavity_cheat"]:
+        n_streamlines, n_iterations, dt = 5, 380, 0.03
+        options = dict(
+            X0=0.5, Y0=-0.15, X1=0.5, Y1=-0.55, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
+    elif sim.model_name in ["opencavity"]:
+        n_streamlines, n_iterations, dt = 7, 200, 0.05
+        if show_radius:
+            n_iterations //= 3
+        options = dict(
+            X0=0., Y0=-0.003, X1=0., Y1=-0.03, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
+    else:
+        return
+
+    for option_name, option_value in options.items():
+        gmsh.plugin.setNumber('StreamLines', option=option_name, value=option_value)
+
+    tag_streamlines = gmsh.plugin.run('StreamLines')
+    sim.tag += 1
+    gmsh.view.option.setNumber(tag_streamlines, "PointSize", 10.)
+    gmsh.view.option.setNumber(tag_streamlines, "IntervalsType", 0)
+    gmsh.view.option.setNumber(tag_streamlines, "ShowScale", 0)
+    gmsh.view.option.setNumber(tag_streamlines, "LineWidth", 4.)
+    gmsh.view.option.setNumber(tag_streamlines, "ColormapAlpha", 0.85)
+    gmsh.view.option.setNumber(tag_streamlines, "ColormapNumber", 0)
+    gmsh.view.option.setNumber(tag_streamlines, "ColormapInvert", 1)
+
+    # Get the positions of the particles at each time step
+    _, _, data_particles = gmsh.view.getListData(tag_streamlines)
+
+    # if no otherview: elemtype of streamlines is VP
+    # [p1x, p1y, p1z, (p1dx1, p1dy1, p1dz1, ..., p1dxn, p1dyn, p1dzn)] rep. for each streamline
+    data_particles = data_particles[0].reshape((n_streamlines, 1 + n_iterations, 3))
+
+    # Trick to display initial position of particles (by default: start at t = dt)
+    new_data_particles = np.zeros((n_streamlines, 2 + n_iterations, 3))
+    new_data_particles[:, 2:] = data_particles[:, 1:]
+    new_data_particles[:, 0] = data_particles[:, 0]
+    gmsh.view.addListData(tag_streamlines, "VP", n_streamlines, new_data_particles.flatten())
+
+    # if otherview: elemtype of streamlines is SL
+    # [p11xo, p11xd, p11yo, p11yd, p11zo, p11zd, p11vo, p11vd] rep. for each seg. of each strml.
+    # data_particles = data_particles[0].reshape((n_streamlines, n_iterations, 8))
+
+    tags_arrows = [
+        gmsh.view.add("ArrowAcceleration", tag=sim.tag + 0),
+        gmsh.view.add("ArrowVelocity", tag=sim.tag + 1),
+    ]
+    sim.tag += len(tags_arrows)
+
+    # Compute velocities and accelerations with finite differences
+    coords = data_particles
+    coords[:, 1:, :] += coords[:, 0, None, :]
+    velocities = np.empty((n_streamlines, n_iterations + 1, 3))
+    velocities[:, 1:-1] = (coords[:, 2:] - coords[:, :-2])
+    velocities[:, +0] = (-3. * coords[:, +0] + 4. * coords[:, +1] - 1. * coords[:, +2])
+    velocities[:, -1] = (+1. * coords[:, -3] - 4. * coords[:, -2] + 3. * coords[:, -1])
+    velocities /= 2. * dt
+    accelerations = np.empty((n_streamlines, n_iterations + 1, 3))
+    accelerations[:, 1:-1] = (1. * coords[:, 2:] - 2. * coords[:, 1:-1] + 1. * coords[:, :-2])
+    accelerations[:, +0] = (+1. * coords[:, +0] - 2. * coords[:, +1] + 1. * coords[:, +2])
+    accelerations[:, -1] = (+1. * coords[:, -3] - 2. * coords[:, -2] + 1. * coords[:, -1])
+    accelerations /= dt * dt
+    if show_radius:
+        scalar_vel = np.linalg.norm(velocities, axis=2)
+        scalar_acc = np.linalg.norm(accelerations, axis=2)
+        curvature = scalar_acc / scalar_vel ** 2
+        center_rotation = coords + 1. / curvature[:, :, None] * accelerations / scalar_acc[:, :, None]
+
+    # Set the parameters of the velocity/accelerations arrows
+    arrays = [velocities, accelerations]
+    for tag, colormap_nb, param, a in zip(tags_arrows, [19, 7], [1, 0], arrays):
+        magnitude = np.linalg.norm(a, axis=2)
+        n_items = magnitude.size
+        max_value = -np.partition(-magnitude.flatten(), n_items // 30)[n_items // 30]
+        a[magnitude > max_value] *= max_value / magnitude[magnitude > max_value, None]
+        # max_value = np.amax(magnitudes)
+        gmsh.view.option.setNumber(tag, "VectorType", 2)
+        gmsh.view.option.setNumber(tag, "ArrowSizeMin", 60)
+        gmsh.view.option.setNumber(tag, "ArrowSizeMax", 60)
+        gmsh.view.option.setNumber(tag, "LineWidth", 3.)
+        gmsh.view.option.setNumber(tag, "ShowScale", 0)
+        gmsh.view.option.setNumber(tag, "ColormapNumber", colormap_nb)
+        if tag == tags_arrows[0]:
+            gmsh.view.option.setNumber(tag, "OffsetZ", 1.)
+            gmsh.view.option.setNumber(tag, "ColormapInvert", param)
+            gmsh.view.option.setNumber(tag, "ColormapSwap", param)
+        else:
+            gmsh.view.option.setNumber(tag, "OffsetZ", 2.)
+            gmsh.view.option.setNumber(tag, "ColormapBias", -0.25)
+            max_value *= 4. / 3.
+        gmsh.view.option.setNumber(tag, "RangeType", 2)
+        gmsh.view.option.setNumber(tag, "CustomMin", 0.)
+        gmsh.view.option.setNumber(tag, "CustomMax", max_value * 1.5)
+
+    # Radius of curvature
+    if show_radius:
+        tag_radius = gmsh.view.add("Radius", tag=sim.tag + 2)
+        gmsh.view.option.setNumber(tag_radius, "ColormapNumber", 0)
+        gmsh.view.option.setNumber(tag_radius, "ColormapAlpha", 0.25)
+        gmsh.view.option.setNumber(tag_radius, "LineWidth", 3.)
+        gmsh.view.option.setNumber(tag_radius, "ShowScale", 0)
+
+    # Generate the frames, and save them in the anim directory
+    for step in range(n_iterations + 1):
+        data = np.c_[coords[:, step, :], velocities[:, step, :]].flatten()
+        gmsh.view.addListData(tag=tags_arrows[0], dataType="VP", numEle=n_streamlines, data=data)
+        data = np.c_[coords[:, step, :], accelerations[:, step, :]].flatten()
+        gmsh.view.addListData(tag=tags_arrows[1], dataType="VP", numEle=n_streamlines, data=data)
+        if show_radius:
+            data = np.empty((n_streamlines, (2 + 2 + 2) + 2))
+            data[:, [0, 2, 4]] = coords[:, step]
+            data[:, [1, 3, 5]] = center_rotation[:, step]
+            data[:, [6, 7]] = np.c_[curvature[:, step], curvature[:, step]]
+            gmsh.view.addListData(tag_radius, "SL", n_streamlines, data.flatten())
+        gmsh.view.option.setNumber(tag_streamlines, "TimeStep", step)
+        gmsh.write(f"../anim/model{show_radius * '_rotation':s}/frame_{step:04d}.png")
+
+    return
+
+
 def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     # return
 
@@ -626,10 +773,9 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     tags_unstrained = add_unstrained_zone(sim, t_num)
     tags_pressure = add_pressure_view(sim, p_num)
     tags_gauss = add_gauss_points(sim, t_num)
-    # tags_steamlines = add_streamlines(sim, u_num, tags_velocities[0])
-    tags_steamlines = add_streamfunction(sim, u_num)
-
-    tags_invisible = tags_velocities + tags_pressure + tags_gauss + 0*tags_steamlines
+    tags_streamfunction = add_streamfunction(sim, u_num, 15)
+    tags_exact_interface = add_exact_interface(sim)
+    tags_invisible = tags_velocities + tags_pressure + tags_gauss + tags_streamfunction
 
     if extra is not None:
         tags_reconstructed = add_reconstruction(sim, extra)
@@ -638,27 +784,28 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
         tags_invisible += [tag_all_steps]
         sim.tag += 1
 
-    tags_exact_interface = add_exact_interface(sim)
-
     for tag in tags_invisible:
         gmsh.view.option.setNumber(tag, "Visible", 0)
 
-    gmsh.option.set_number("Mesh.SurfaceEdges", 0)
-    gmsh.option.set_number("Mesh.Lines", 1)
-    gmsh.option.set_number("Mesh.Points", 0)
-    gmsh.option.set_number("Mesh.ColorCarousel", 2)
-    gmsh.option.set_number("Mesh.NodeLabels", 0)
-    gmsh.option.set_number("Geometry.Points", 0)
-    gmsh.option.set_number("General.GraphicsFontSize", 20)
-    gmsh.option.set_number("General.GraphicsFontSizeTitle", 24)
-    gmsh.option.set_number("General.SmallAxes", 0)
-    gmsh.option.set_number("Geometry.Points", 1)
-    
-    # add_text(sim.tau_zero)
+    gmsh.option.setNumber("Mesh.SurfaceEdges", 0)
+    gmsh.option.setNumber("Mesh.Lines", 1)
+    gmsh.option.setNumber("Mesh.Points", 0)
+    gmsh.option.setNumber("Mesh.ColorCarousel", 2)
+    gmsh.option.setNumber("Mesh.NodeLabels", 0)
+    gmsh.option.setNumber("Geometry.Points", 0)
+    gmsh.option.setNumber("General.GraphicsFontSize", 20)
+    gmsh.option.setNumber("General.GraphicsFontSizeTitle", 24)
+    gmsh.option.setNumber("General.SmallAxes", 0)
+    gmsh.option.setNumber("Geometry.Points", 0)
+    # gmsh.option.setNumber("Print.Background", 1)
+    gmsh.option.setNumber("General.DisplayBorderFactor", 0.0)
+    # gmsh.option.setNumber("General.TranslationX", 1.)
 
     # if extra is None:  # used to show pipe velocity profile
-    #     tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
-    #     save_profiles(tags, "../figures/pipe_profiles", n_pts=150)
+        # animate_particles(sim, u_num, tags_velocities[0], show_radius=False)
+        # add_text(sim.tau_zero)
+        # tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
+        # save_profiles(tags, "../figures/pipe_profiles", n_pts=150)
 
     gmsh.fltk.run()
     gmsh.fltk.finalize()

@@ -316,12 +316,12 @@ def solve_interface_tracking(sim: Simulation_2D, max_it=5, tol_delta=1.e-3, deg=
         # print(sim.coords[nodes_to_move[np.argmax(delta)]])
 
         extra = [interface_nodes, strain_rec, coefs, nodes_to_move, new_coords]
-        extra = None
+        # extra = None
         plot_solution_2D(u_num, p_num, t_num, sim, extra)
 
         # Check if nodes moved enough to require new 'fem solve'
-        # res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
-        res_input = "y"
+        res_input = input("Iteratate again to improve the mesh ? [y/n]\n")
+        # res_input = "y"
         if (np.amax(delta) < tol_delta) or (res_input == 'n'):
             break
 
