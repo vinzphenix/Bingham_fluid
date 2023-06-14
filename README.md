@@ -42,7 +42,7 @@ The post-processing is done with `Gmsh`. Multiple views are available to visuali
 
 Figures are easily generated with `Gmsh` in various formats: `.png`, `.pdf`, `.svg`, ...
 
-The animations display particles in the flow field, with their velocity and acceleration vectors, and the radius of curvature of their trajectory if required. This can be enabled in `./src/bingham_post_pro.py`. Animations are saved as a series of `.png` frames in `./anim/`.
+The animations display particles in the flow field, with their velocity (blue) and acceleration (red) vectors, and the radius of curvature of their trajectory if required. This can be enabled in `./src/bingham_post_pro.py`. Animations are saved as a series of `.png` frames in `./anim/`.
 
 To generate a `.mp4` video from the frames, with `FFmpeg`:
 ```
@@ -57,14 +57,17 @@ ffmpeg -i anim.mp4 -f gif anim.gif
 ## Dependencies
 The solver uses the  open-source `CVXOPT` library in the 1D problem, and the `MOSEK Optimizer API for Python` in the 2D problem.
 
-## Example 1
+<br />
+
+# Examples
+## Lid driven cavity
 ![Example 2 gif](./anim/cavity_20/anim.gif)
 
-## Example 2
+## Lid driven cavity, display radius of curvature
 ![Example 2 gif](./anim/cavity_20_rotation/anim.gif)
 
-## Example 3
+## Flow in a pipe
 ![Example 1 gif](./anim/pipe_rotation/anim.gif)
 
-## Example 4
+## Lid driven cavity, open at the upper left and lower right boundaries
 ![Example 4 gif](./anim/opencavity/anim.gif)
