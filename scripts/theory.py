@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 
 ftSz1, ftSz2, ftSz3 = 16, 14, 12
 
@@ -65,6 +66,85 @@ def plot_interior_point(save=False):
         )
     else:
         plt.show()
+
+    return
+
+
+def plot_interior_point_steps(save=False):
+    nx, ny = 300, 300
+    x1, y1 = np.linspace(0.8, 2.3, nx), np.linspace(1.4, 0.9, ny)  # 1.3, 0.9
+    x2, y2 = np.linspace(0.8, 1.2333, nx), np.linspace(1.4, 0.1, ny)  # 1.3, 0.9
+    x3, y3 = np.linspace(1.2333, 2.3, nx), np.linspace(0.1, 0.9, ny)  # 1.3, 0.9
+    x, y = np.meshgrid(x1, y2)
+
+    fig, ax = plt.subplots(1, 1, figsize=(5., 5.))
+
+    ax.plot(x1, (5. - x1) / 3., color='black')  # 1st side
+    ax.plot(0.8 - (y2 - 1.4) / 3.00, y2, color='black')  # 2nd side
+    ax.plot(2.3 + (y3 - 0.9) / 0.75, y3, color='black')  # 3rd side
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    # ax.grid(ls=':')
+    ax.axis('off')
+    ax.set_aspect('equal')
+    ax.set_ylim(0.09, 1.41)
+
+    fps, t_anim = 15, 5.0
+    nt = int(t_anim * fps)
+
+    central_path, = ax.plot([], [], ls='-', lw=3, color='red', marker="o", markevery=[-1])
+    mu_text = ax.text(0.7, 0.9, "", fontsize=1.2 * ftSz1, transform=ax.transAxes)
+    x_path, y_path = np.empty(nt + 1), np.empty(nt + 1)
+    mu_range = 10. * np.exp(-5.75 * np.arange(0, nt + 1) / nt)
+    nlevels = 40
+    contourl = ax.contour(x, y, x, alpha=0.5)
+    contourf = ax.contourf(x, y, x, cmap=plt.get_cmap("viridis"), levels=nlevels)
+
+    def update(i):
+        nonlocal contourf, contourl
+        mu = mu_range[i]
+        fmu = x / mu - (
+            + np.log((+5.0 - 1. * x - 3. * y) / np.sqrt(10)) +
+            np.log((-3.8 + 3. * x + 1. * y) / np.sqrt(10)) +
+            np.log((+3.3 - 3. * x + 4. * y) / np.sqrt(25))
+        )
+        fmu = np.nan_to_num(fmu, nan=100.)
+        # fmu[~mask] = 100.
+        fmu -= np.amin(fmu)
+        # print(np.amax(fmu[fmu <= 100000]))
+
+        idx = np.unravel_index(fmu.argmin(), fmu.shape)
+        x_path[i], y_path[i] = x[idx], y[idx]
+
+        central_path.set_data(x_path[mu_range >= mu], y_path[mu_range >= mu])
+        mu_text.set_text(r"$\mu = {{{:.2f}}}$".format(mu))
+        # if contourf is not None:
+        for c in contourf.collections:
+            c.remove()
+        for c in contourl.collections:
+            c.remove()
+        levels = np.arange(0., 51., 0.5)
+        contourf = ax.contourf(x, y, fmu, cmap=plt.get_cmap("Spectral_r"), levels=levels)
+        contourl = ax.contour(x, y, fmu, levels=levels, colors='k', alpha=0.5, linewidths=.5)
+        return contourf, contourl
+
+    fig.tight_layout()
+    path_anim = f"./anim/interior_point"
+
+    save = "mp4"
+    if save == "none":
+        anim = FuncAnimation(fig, update, nt + 1, interval=200, repeat=False)
+        plt.show()
+
+    elif save == "gif":
+        anim = FuncAnimation(fig, update, nt + 1, interval=20, repeat=False)
+        writerGIF = PillowWriter(fps=fps)
+        anim.save(f"{path_anim}.gif", writer=writerGIF, savefig_kwargs={"transparent": True})
+
+    elif save == "mp4":
+        anim = FuncAnimation(fig, update, nt + 1, interval=20, repeat=False)
+        writerMP4 = FFMpegWriter(fps=fps)
+        anim.save(f"{path_anim}.mp4", writer=writerMP4, savefig_kwargs={"transparent": True})
 
     return
 
@@ -170,9 +250,10 @@ def plot_fluid_models(save=False):
     for ax, tau, title, lbs in zip(axs, [0., tau_y], titles, labels):
 
         for i, (power, label) in enumerate(zip(powers, lbs)):
-            alpha, lw = (1., 2.5) if power == 1. else (0.75, 1.5)
+            # alpha, lw = (1., 2.5) if power == 1. else (0.75, 1.5)
+            alpha, lw = (1., 2.5) if (power == 1. and tau > 0.) else (0.25, 1.5)
             stress = np.r_[0., tau + strain ** power]
-            ls = "--" if (tau == 1. and power == 1.) else "-"
+            ls = "--" if (tau == 0. and power == 1.) else "-"
             ax.plot(np.r_[0., strain], stress, f'C{i:d}{ls:s}', lw=lw, label=label, alpha=alpha)
 
         # loc = "upper left" if tau == 0. else "lower right"
@@ -183,6 +264,10 @@ def plot_fluid_models(save=False):
     lines_labels = [ax.get_legend_handles_labels() for ax in axs]
     lines, labels = [sum(line_or_label, []) for line_or_label in zip(*lines_labels)]
     # _, idxs = np.unique(labels, return_index=True)
+    for ax in axs:
+        ax.tick_params(axis='both', direction='in', bottom=True, left=True, top=True, right=True)
+        ax.set_yticklabels([])
+        ax.set_xticklabels([])
 
     _ = axs[0].legend(
         lines, labels,  # bbox_to_anchor=(1.0, 0.25, 0.18, 0.5),
@@ -203,19 +288,20 @@ def plot_fluid_models(save=False):
     # plt.arrow
 
     if save:
-        fig.savefig(path + "fluid_classification.svg", format="svg", bbox_inches='tight')
+        fig.savefig(path + "fluid_classification_slide.svg", format="svg", bbox_inches='tight')
     else:
         plt.show()
     return
 
 
 if __name__ == "__main__":
-    save_global = True
+    save_global = False
     path = "./figures/"
     plt.rcParams['font.family'] = 'serif'
     plt.rcParams["text.usetex"] = True
 
+    plot_interior_point_steps(save_global)
     # plot_interior_point(save_global)
-    plot_poiseuille_profiles(save_global)
+    # plot_poiseuille_profiles(save_global)
     # plot_shape_fct_1D(save_global)
     # plot_fluid_models(save_global)

@@ -247,8 +247,9 @@ def plot_solution_1D(
 
     for ax in axs.flatten():
         xmin, xmax = ax.get_xbound()
+        d = (xmax - xmin) * 0.1
         y_pos = sim.y_zero if sim.dimensions else 2. * sim.y_zero / sim.H
-        ax.fill_between([xmin, xmax], [-y_pos, -y_pos], [y_pos, y_pos], color='grey', alpha=0.25)
+        ax.fill_between([xmin - d, xmax + d], [-y_pos, -y_pos], [y_pos, y_pos], color='grey', alpha=0.25)
         ax.set_xlim(xmin, xmax)
         ax.legend(fontsize=ftSz3)
         ax.grid(ls=':')
@@ -263,12 +264,15 @@ def plot_solution_1D(
             xlabel = r"$({:s}^h - {:s}) / {:s}_{{max}}$".format(phi, phi, phi)
             ax.set_xlabel(xlabel, fontsize=ftSz2)
 
+    # xmin, xmax = axs[1, 1].get_xbound()
+    # axs[1, 1].set_xlim(xmin - (xmax-xmin)*0.1, xmax + (xmax-xmin)*0.1)
+
     fig.tight_layout()
     if sim.save:
         path = "../figures/"
-        # filename = f"res_P{sim.degree:d}_{extra_name:s}"
+        filename = f"res_P{sim.degree:d}_{extra_name:s}"
         # filename = f"sensibility_1D_quadrature"
-        filename = f"result_1D_P{sim.degree:d}"
+        # filename = f"result_1D_P{sim.degree:d}"
         fig.savefig(f"{path:s}{filename:s}.svg", bbox_inches="tight", transparent=True)
         # plt.show()
     else:

@@ -107,7 +107,7 @@ Those non-Newtonian fluids are much better described as \textit{generalized Newt
     \boldsymbol\tau = \mu(\gam, T, \phi) \: \gam
     \label{eq:power-law}
 \end{equation}
-where $\mu$, $T$ and $\phi$ respectively refer to the fluid viscosity, the temperature and the particle concentration (e.g. polymer chains in dilute solutions). Since the viscosity, a scalar, depends on the tensor $\gam$, then it must depend only on the combinations of components $\gamma_{ij}$ that are not dependent on the coordinate system \cite{bird1987dynamics}. These combinations are the tensor invariants, described below and connected to its eigenvalues $\lambda_i$, as one can find by diagonalizing the matrix $\gam$.
+where $\mu$, $T$ and $\phi$ respectively refer to the fluid viscosity, the temperature and the particle concentration (e.g. polymer chains in dilute solutions). Since the viscosity, a scalar, depends on the tensor $\gam$, then it must depend only on the combinations of components $\dot\gamma_{ij}$ that are not dependent on the coordinate system \cite{bird1987dynamics}. These combinations are the tensor invariants, described below and connected to its eigenvalues $\lambda_i$, as one can find by diagonalizing the matrix $\gam$.
 \begin{equation}
     \begin{alignedat}{2}
         I_1(\gam) &\coloneqq \Tr(\gam) &&= \lambda_1 + \lambda_2 + \lambda_3\\
@@ -135,7 +135,7 @@ Above that threshold, the fluid becomes \textit{yielded} and follows the power-l
 \begin{equation}
     \begin{aligned}
         \dot \gamma_{ij} &= 0 & \text{if} \quad \tau < \tau_0\\
-        \tau_{ij} &= \left(K \dot \gamma^{n-1} + \frac{\tau_0}{\dot \gamma}\right) \gamma_{ij} & \text{if} \quad \tau \geq \tau_0\\
+        \tau_{ij} &= \left(K \dot \gamma^{n-1} + \frac{\tau_0}{\dot \gamma}\right) \dot\gamma_{ij} & \text{if} \quad \tau \geq \tau_0\\
     \end{aligned}
     \label{eq:herschel}
 \end{equation}
@@ -788,7 +788,7 @@ The minimization problem for Cartesian coordinate systems is given below.% while
             - && \: \sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h\vert_{\tilde \xx_g} \frac{\ell_{\text{e}}}{2}\\
             \textrm{s.t.} &\qquad \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L_R^5 && \forall i, g\\
             &\qquad \left(T_{i,g}, \sqrt{2}\pdv{u^h}{x}, \sqrt{2}\pdv{v^h}{y}, \pdv{u^h}{y}+\pdv{v^h}{x}\right) \in L^4 && \forall i, g\\
-            &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) && \forall\; l\\
+            &\qquad 0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\pdv{u^h}{x} + \pdv{v^h}{y}\right) \det \left(\dv{\mathbf{x}}{\boldsymbol \xi}\right)_{i,g} && \forall\; l\\
             &\qquad \mathbf{V}_{j} = \mathbf{U} && \forall\; \mathbf{V}_{j} \in \Gamma_D
         \end{alignedat}
         \label{eq:functional2D}
@@ -1249,7 +1249,7 @@ We can also note that the rotating behavior is verified with the velocity profil
     \begin{subfigure}[t]{\textwidth}
         \centering
         \includesvg[width=0.80\textwidth]{../figures/profile_papers_cavity.svg}
-        \caption{Comparison with the litterature.}
+        \caption{Comparison with the literature.}
         \label{fig:compareCavity}
     \end{subfigure}\vspace{15pt}
     \caption{Horizontal velocity profile along the center vertical line.}
@@ -1296,7 +1296,7 @@ To summarize, the flow we are considering here is bounded with slip-walls and do
 
 \input{./schema_cylinder.tex}
 
-In addition, we do not study the flow around a disk, i.e. the cross section of a cylinder, but instead around a rectangle because it generates bigger unyielded regions, and therefore easier to visualize (cf. \cref{fig:cylinderSetup}). Those regid zones around the obstacle are well known in the litterature \cite{adaptiveCylinder,simulationCylinder}, and are also observed here in \cref{fig:cylinder}:
+In addition, we do not study the flow around a disk, i.e. the cross section of a cylinder, but instead around a rectangle because it generates bigger unyielded regions, and therefore easier to visualize (cf. \cref{fig:cylinderSetup}). Those regid zones around the obstacle are well known in the literature \cite{adaptiveCylinder,simulationCylinder}, and are also observed here in \cref{fig:cylinder}:
 \begin{itemize}
     \item A dead zone upstream and downstream, where the velocity profile is uniform.
     \item A deformation zone around the rectangle, allowing the particles to change direction and bypass the obstacle.

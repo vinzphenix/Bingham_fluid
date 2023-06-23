@@ -330,7 +330,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
     gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-11)
     gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+2)
-    gmsh.view.option.setNumber(tag_strain, "IntervalsType", 3)
+    gmsh.view.option.setNumber(tag_strain, "IntervalsType", 2)
     gmsh.view.option.setNumber(tag_strain, "NbIso", 20)  # 12
     gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
     gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
@@ -648,6 +648,13 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
             X0=0., Y0=-0.003, X1=0., Y1=-0.03, X2=0., Y2=0., NumPointsU=n_streamlines,
             NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
         )
+    elif sim.model_name in ["cylinder"]:
+        n_streamlines, n_iterations, dt = 10, 100, 0.04
+        options = dict(
+            # X0=3.5, Y0=-1.25, X1=3.5, Y1=+1.25, X2=0., Y2=0., NumPointsU=n_streamlines,
+            X0=3.5, Y0=1.25*0.1, X1=3., Y1=+1.25*0.4, X2=0., Y2=0., NumPointsU=n_streamlines,
+            NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
+        )
     else:
         return
 
@@ -753,7 +760,7 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
             data[:, [6, 7]] = np.c_[curvature[:, step], curvature[:, step]]
             gmsh.view.addListData(tag_radius, "SL", n_streamlines, data.flatten())
         gmsh.view.option.setNumber(tag_streamlines, "TimeStep", step)
-        gmsh.write(f"../anim/model{show_radius * '_rotation':s}/frame_{step:04d}.png")
+        gmsh.write(f"../anim/cylinder{show_radius * '_rotation':s}/frame_{step:04d}.png")
 
     return
 
@@ -798,11 +805,11 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.setNumber("General.SmallAxes", 0)
     gmsh.option.setNumber("Geometry.Points", 0)
     # gmsh.option.setNumber("Print.Background", 1)
-    gmsh.option.setNumber("General.DisplayBorderFactor", 0.0)
+    gmsh.option.setNumber("General.DisplayBorderFactor", -0.25)
     # gmsh.option.setNumber("General.TranslationX", 1.)
 
     # if extra is None:  # used to show pipe velocity profile
-        # animate_particles(sim, u_num, tags_velocities[0], show_radius=False)
+        # animate_particles(sim, u_num, tags_velocities[0], show_radius=True)
         # add_text(sim.tau_zero)
         # tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
         # save_profiles(tags, "../figures/pipe_profiles", n_pts=150)

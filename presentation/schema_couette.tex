@@ -1,0 +1,30 @@
+\begin{tikzpicture}
+  %[background rectangle/.style={fill=gray!15}, show background rectangle]
+  \tikzstyle{ground1}=[draw, fill=gray!50, minimum width=0.75cm,minimum height=0.2cm]
+  \tikzstyle{ground2}=[fill,pattern=north east lines,draw=none, minimum width=0.75cm,minimum height=0.2cm]
+
+  \pgfmathsetmacro{\h}{1.5}
+  \pgfmathsetmacro{\l}{2.}
+  \pgfmathsetmacro{\u}{\l}
+  \pgfmathsetmacro{\n}{10}
+
+  \fill [color=black, fill=gray!10!white] (-0.5*\l, -\h) rectangle (1.5*\l, \h);
+
+  \node (wall_up) [ground1, minimum width=2*\l cm, yshift=\h cm, anchor=south, xshift=0.5*\l cm] {};
+  %\draw [line width=1mm] (wall_up.south east) -- (wall_up.south west);
+
+  \node (wall_down) [ground2, minimum width=2*\l cm, yshift=-\h cm, anchor=north, xshift=0.5*\l cm] {};
+  \draw (wall_down.north east) -- (wall_down.north west);
+
+  \draw (0., -\h) -- (\u, \h);
+  \draw (0., -\h) -- (0., \h);
+  \foreach \i in {1,...,\n} {
+    \draw[-stealth] (0., {\h * (2.*\i/(\n+1) - 1)}) -- ({\u * \i/(\n+1)}, {\h * (2.*\i/(\n+1) - 1)});
+  }
+  \draw[-Latex, ultra thick] (0.,1.3*\h) -- (\u, 1.3*\h) node [midway, above] {$U$};
+  \draw[-Latex, ultra thick] (1.5*\l,1.1*\h) -- (1.8*\l, 1.1*\h) node [midway, above] {$F$};
+
+  \draw[-Latex] (1.1*\l, -0.9*\h) -- (1.1*\l + 0.4*\h, -0.9*\h) node[anchor=south] {$x$};
+  \draw[-Latex] (1.1*\l, -0.9*\h) -- (1.1*\l, -0.9*\h + 0.4*\h) node[anchor=west] {$y$};
+
+\end{tikzpicture}

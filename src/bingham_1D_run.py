@@ -214,24 +214,24 @@ def solve_interface_tracking(sim: Simulation_1D, atol=1e-9, rtol=1e-8):
 if __name__ == "__main__":
 
     params = dict(
-        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=7,
+        H=1., K=1., tau_zero=0.25, f=1., degree=1, n_elem=5,
         random_seed=8, fix_interface=True,
-        save=True, plot_density=25, dimensions=False
+        save=False, plot_density=25, dimensions=False
     )
 
     sim = Simulation_1D(params)
 
-    y_tmp = np.array([-0.5, -0.47, -0.44, -0.25, 0.10, 0.25, 0.35, 0.5])  # used for basic plots
-    # y_tmp = np.array([-0.5, -0.4, -0.2, -0.02, 0.45, 0.5])  # used for basic plots
+    # y_tmp = np.array([-0.5, -0.47, -0.44, -0.25, 0.10, 0.25, 0.35, 0.5])  # used for basic plots
+    y_tmp = np.array([-0.5, -0.4, -0.2, -0.02, 0.45, 0.5])  # used for basic plots
     # y_tmp = np.array([-0.5, -0.4, -0.30, 0.30, 0.4, 0.5])
     # z = 0.3335  # 0.25
     # y_tmp = np.array([-0.5, -z, 0., z, 0.5])  # -1/192 +
     sim.set_y(y_tmp)
 
     # Solve the problem ITERATE
-    # u_num = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
+    u_num = solve_interface_tracking(sim, atol=1e-12, rtol=1e-10)
 
     # Solve problem ONE SHOT
-    u_num, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
+    # u_num, s_num, t_num = solve_FE(sim, atol=1e-12, rtol=1e-10)
 
     plot_solution_1D(sim, u_num, mini_display=False, extra_name="last", window="Final solution")
