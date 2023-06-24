@@ -286,8 +286,8 @@
             \draw[dotted] (o) -- (4., 3.) node [pos=0.7, above, sloped] {Linear} node [pos=0.7,below,sloped] {Newtonian};
             \node[align=left] at (4.75, 1.5) {Less\\viscous};
             \node[align=left] at (2., 3.75) {More\\viscous};
-            \draw[line width=1mm, dashed, Blue] (0., 0.) -- (5., 0.) node[midway, above] {Inviscid fluid};
-            \draw[line width=1mm, dashed, Red] (0., 0.) -- (0., 4.) node[midway, below, rotate=90] {Non-deformable solid};
+            \draw[line width=1mm, dashed, Blue] (0., 0.) -- (4.8, 0.) node[midway, above] {Inviscid fluid};
+            \draw[line width=1mm, dashed, Red] (0., 0.) -- (0., 3.8) node[midway, below, rotate=90] {Non-deformable solid};
         \end{tikzpicture}
         %\caption{Flow curve}
     \end{figure}
@@ -380,6 +380,7 @@
                     \mathbf{D} &= \mathbf{0}
                 \end{aligned}$
             };
+            \onslide<1->
         \end{tikzpicture}
     \end{figure}
 \end{frame}
@@ -767,7 +768,7 @@
             \only<2>{
                 \centering
                 \includesvg[height=0.65\textheight]{../figures/corner_4.svg}
-                \caption*{Virtual field $\phi$, interface predictor/corrector in black/red.}
+                \caption*{Virtual field $\phi$, interface predictor/{\color{red}corrector} in black/{\color{red}red}.}
             }
         \end{overprint}
     \end{figure}
