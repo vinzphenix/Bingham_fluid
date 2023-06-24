@@ -77,10 +77,10 @@ if __name__ == "__main__":
         # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
         # model, variant = "pipe", "classic"
-        model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
+        # model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
         # model, variant = "necksmooth", "default"
         # model, variant = "necksharp", "default"
-        # model, variant = "cylinder", "10"
+        model, variant = "cylinder", "10"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
         sim = Simulation_2D(parameters, new_coords=coords)

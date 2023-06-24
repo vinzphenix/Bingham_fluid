@@ -79,7 +79,7 @@
 %\setbeamercolor*{itemize item}{fg=red}
 %\setbeamercolor*{itemize subitem}{fg=red}
 %\setbeamercolor*{itemize subsubitem}{fg=red}
-\setbeamercovered{transparent}
+%\setbeamercovered{transparent}
 
 %------------------------------------------------------------
 
@@ -180,18 +180,18 @@
     \begin{figure}
         \centering
         \begin{subfigure}[t]{0.32\textwidth}
-            \movie[width=\textwidth, height=\textwidth, showcontrols]{} {../anim/kinematics_stretch.mp4}
-            % \animategraphics[loop,width=6cm]{40}{../anim/kinematics_stretch/frame}{1}{51}    
+            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_stretch.mp4}
+            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_stretch/frame}{1}{51}    
             \caption{\color{gray!50} expansion}
         \end{subfigure}
         \begin{subfigure}[t]{0.32\textwidth}
-            \movie[width=\textwidth, height=\textwidth, showcontrols]{} {../anim/kinematics_shear.mp4}
-            % \animategraphics[loop,width=6cm]{40}{../anim/kinematics_shear/frame}{1}{51}    
+            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_shear.mp4}
+            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_shear/frame}{1}{51}    
             \caption{shear}
         \end{subfigure}
         \begin{subfigure}[t]{0.32\textwidth}
-            \movie[width=\textwidth, height=\textwidth, showcontrols]{} {../anim/kinematics_rotation.mp4}
-            % \animategraphics[loop,width=6cm]{40}{../anim/kinematics_rotation/frame}{1}{51}
+            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_rotation.mp4}
+            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_rotation/frame}{1}{51}
             \caption{rotation}
         \end{subfigure}
     \end{figure}
@@ -303,10 +303,12 @@
                 \dot \gamma = \|\boldsymbol{\dot \gamma}\|_F = \sqrt{\Tr(\boldsymbol{\dot \gamma} \cdot \boldsymbol{\dot \gamma})}
             \end{cases}
         \end{equation*}
+        \pause
         \item Power-law model
         \begin{equation*}
             \boldsymbol\tau = (K \dot \gamma^n) \; \gam
         \end{equation*}
+        \pause
         \item Herschel-Bulkley model (Bingham with $n=1$)
         \begin{align*}
             \gam &= 0 & \text{if} \quad \tau < \tau_0\\
@@ -340,9 +342,15 @@
             \coordinate (c5) at (0, 2.5);
             \node[right=6pt, above=3pt] at (c3){\LARGE $\Omega$};
             \draw[black, thick] plot [smooth cycle] coordinates {(0) (x1) (c1) (c2) (x2) (c3) (c4) (c5)};
+            \node[anchor=north] at (2.25, 0.85) {
+                $\begin{aligned}
+                    \vv &\neq \mathbf{0}\\
+                    \mathbf{W} &\neq \mathbf{0}\\
+                    \mathbf{D} &\neq \mathbf{0}
+                \end{aligned}$
+            };
+            \pause
             \draw[black, thick, fill=gray!15] plot [smooth] coordinates {(x1) (2.95, -0.05) (2.95, 0.9) (x2)};
-            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.75, 1.25) (1.75, 1.25) (1.75, 2.25) (0.75, 2.25)};
-            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.25, 0.) (1.5, 0.) (1.5, 0.75) (0.25, 0.75)};
             \begin{scope}
                 \clip plot [smooth cycle] coordinates {(x1) (c1) (c2) (x2)};
                 \draw[fill=gray!15, thick] plot [smooth cycle] coordinates {(0) (x1) (c1) (c2) (x2) (c3) (c4) (c5)};
@@ -354,13 +362,8 @@
                     \mathbf{D} &= \mathbf{0}
                 \end{aligned}$
             };
-            \node[anchor=north] at (1.25, 2.25) {
-                $\begin{aligned}
-                    \vv &\neq \mathbf{0}\\
-                    \mathbf{W} &\neq \mathbf{0}\\
-                    \mathbf{D} &= \mathbf{0}
-                \end{aligned}$
-            };
+            \pause
+            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.25, 0.) (1.5, 0.) (1.5, 0.75) (0.25, 0.75)};
             \node[anchor=north] at (0.875, 0.85) {
                 $\begin{aligned}
                     \vv &\neq \mathbf{0}\\
@@ -368,11 +371,13 @@
                     \mathbf{D} &= \mathbf{0}
                 \end{aligned}$
             };
-            \node[anchor=north] at (2.25, 0.85) {
+            \pause
+            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.75, 1.25) (1.75, 1.25) (1.75, 2.25) (0.75, 2.25)};
+            \node[anchor=north] at (1.25, 2.25) {
                 $\begin{aligned}
                     \vv &\neq \mathbf{0}\\
                     \mathbf{W} &\neq \mathbf{0}\\
-                    \mathbf{D} &\neq \mathbf{0}
+                    \mathbf{D} &= \mathbf{0}
                 \end{aligned}$
             };
         \end{tikzpicture}
@@ -420,7 +425,7 @@
             \only<2->{0 &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}}
             & \text{in } \Omega
         \end{align*}
-        \pause
+        \pause[3]
         \item Constitutive law
         \begin{align*}
             \boldsymbol{\dot\gamma} &= 0 & \text{if} \quad \tau < \tau_0\\
@@ -439,17 +444,17 @@
     System of PDE's is equivalent to
     \begin{align*}
         \vv &= \argmin_{\uu \in \mathcal{V}} \mathcal{J}(\uu)\\[8pt]
-        \mathcal{V} &= \left\{\uu \in H^1(\Omega)^d \;\Big\vert\; \int_{\Omega}q \nabla \cdot \uu = 0 \;\; \forall q \in L^2(\Omega), \: \uu = \mathbf{U} \;\text{on}\; \partial \Omega_D \right\}\\[8pt]
+        \mathcal{V} &= \left\{\uu \in H^1(\Omega)^d \;\Big\vert\; \int_{\Omega}q \nabla \cdot \uu \; \dd x = 0 \;\; \forall q \in L^2(\Omega), \: \uu = \mathbf{U} \;\text{on}\; \partial \Omega_D \right\}\\[8pt]
         \mathcal{J}(\uu) &= \overbrace{\frac{K}{2}\int_{\Omega} \|\gam(\uu)\|^2 \;\dd x}^{\text{Viscous}} + \overbrace{\tau_0 \int_{\Omega} \|\gam(\uu)\| \;\dd x}^{\text{Yield}} 
          - \underbrace{\int_{\Omega} \ff\cdot \uu \; \dd x}_{\text{Body forces}} - \underbrace{\int_{\partial \Omega_N} \mathbf{g} \cdot \uu \;\dd s}_{\text{Boundary forces}}
     \end{align*}
 \end{frame}
 
 \subsection{Finite elements}
-\begin{frame}{Choice of element}
+\begin{frame}{Finite element method: a stable discretization ?}
     Discretize velocity-pressure fields, over a mesh of triangles, with either:
     \begin{itemize}
-        \item Mini element: $(\mathcal{P}_1^C\oplus \mathcal{B}_3) - \mathcal{P}_1^C$
+        \item Mini element: $(\mathcal{P}_1^C\oplus \mathcal{B}_3^C) - \mathcal{P}_1^C$
         \item Taylor-Hood element: $\mathcal{P}_2^C - \mathcal{P}_1^C$
     \end{itemize}
     \begin{figure}
@@ -485,7 +490,7 @@
         }^{\leq S_{i,g}} \onslide<1->
         + \tau_0 
         \onslide<2-> \overbrace{
-            \onslide<1-> \|\gam(\vv^h)\| \onslide<2->
+            \onslide<1-> \color{red!70} \|\gam(\vv^h)\| \color{black} \onslide<2->
         }^{\leq T_{i,g}} \onslide<1->
         - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}\\
         &\quad -\sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h \;\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}
@@ -500,7 +505,7 @@
         \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} - \sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}\\[8pt]
         \text{such that} \quad & S_{i,g} \geq (2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2 && \forall i, g\\
         &T_{i,g} \geq \sqrt{(2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2} && \forall i, g\\
-        &0 = \sum_{i,g} \omega_g \psi_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
+        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
         &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
     \end{alignat*}
     \normalsize
@@ -512,30 +517,30 @@
         \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}-\sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{x}}{\boldsymbol \xi}_{e,g}\\[8pt]
         \text{such that} \quad & 0 \preceq_{L^5_R} \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
         & 0 \preceq_{L^4} \left(T_{i,g}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
-        &0 = \sum_i \sum_g \omega_g \psi_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
+        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
         &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
     \end{alignat*}
     \normalsize
-\end{frame}
-
-\begin{frame}{Conic solver}
-    Conic optimization problem:
+    \pause
+    \vspace{-12pt}
     \begin{itemize}
         \item Objective is linear in variables $U_j$, $V_j$, $S_{i,g}$, $T_{i,g}$
         \item Equality constraints are linear
-        \item Inequality constraints are cones
+        \item Inequality constraints are proper cones
     \end{itemize}
-    \vspace{6pt}
+\end{frame}
+
+\begin{frame}{Conic solver}
     Can find the optimum with an interior-point method:
     \begin{itemize}
         \item Encode each constraint with barrier $g_n$
         \item Minimize a modified functional $\mathcal{J} + \mu\sum g_n$
         \item Alternatively:
         \begin{itemize}
-            \item perform Newton iterations (stay optimal)
-            \item and decrease $\mu \to 0$ (minimize $\mathcal{J}$ only)
+            \item Perform Newton iterations (stay optimal)
+            \item Decrease $\mu \to 0$ (minimize original objective $\mathcal{J}$)
         \end{itemize} 
-        \item Cones provide special barriers (self-concordant)
+        \item Proper cones provide special barriers (self-concordant)
         \item Solution obtained with Newton–Raphson method, within accuracy $\epsilon$, after $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations, where $\nu\propto$ number of variables
     \end{itemize}
 \end{frame}
@@ -543,7 +548,8 @@
 \begin{frame}{Interior-point solver example}
     \begin{figure}
         \centering
-        \movie[width=0.7\textheight, height=0.7\textheight, showcontrols]{} {../anim/interior_point.mp4}
+        %\movie[width=0.7\textheight, height=0.7\textheight, showcontrols]{} {../anim/interior_point.mp4}
+        \animategraphics[autoplay,loop,width=0.5\textwidth]{15}{../anim/interior_point/frame}{1}{76}
         \caption*{Minimize $x$ with linear inequalities over $x$ and $y$}
     \end{figure}
 \end{frame}
@@ -653,7 +659,8 @@
 
 \begin{frame}{Curved channel - Increasing Bingham}
     \begin{figure}
-        \movie[width=0.8\textwidth, height=0.52\textwidth, showcontrols]{} {../anim/filament.mp4}
+        %\movie[width=0.8\textwidth, height=0.52\textwidth, showcontrols]{} {../anim/filament.mp4}
+        \animategraphics[autoplay,loop,width=0.8\textwidth]{4}{../anim/filament_focus/frame}{1}{21}
     \end{figure}
 \end{frame}
 
@@ -713,304 +720,401 @@
 \begin{frame}{Lid-driven cavity - Rigid body motion}
     \begin{figure}
         \centering
-        \begin{subfigure}[t]{0.4\textwidth}
-            \movie[width=\textwidth, height=\textwidth, showcontrols]{} {../anim/cavity_20/anim.mp4}
-            % \animategraphics[loop,width=6cm]{40}{../anim/kinematics_stretch/frame}{1}{51}
+        \begin{subfigure}[t]{0.48\textwidth}
+            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20.mp4}
+            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
         \end{subfigure}
-        \begin{subfigure}[t]{0.4\textwidth}
-            \movie[width=\textwidth, height=\textwidth, showcontrols]{} {../anim/cavity_20_rotation/anim.mp4}
-            % \animategraphics[loop,width=6cm]{40}{../anim/kinematics_shear/frame}{1}{51}    
+        \begin{subfigure}[t]{0.48\textwidth}
+            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20_arrows.mp4}
+            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
         \end{subfigure}
     \end{figure}
 \end{frame}
 
 \begin{frame}{Flow around an obstacle}
     \begin{figure}
+        \begin{overprint}
+            \only<1>{
+                \centering
+                \includegraphics[width=0.9\textwidth]{../figures/cylinder_overview_empty.pdf}
+            }
+            \only<2>{
+                \centering
+                \includegraphics[width=0.9\textwidth]{../figures/cylinder_overview.pdf}
+            }
+        \end{overprint}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Flow around an obstacle - Rigid body motion}
+    \begin{figure}
         \centering
-        \movie[width=0.75\textheight, height=0.75\textheight, showcontrols]{} {../anim/cylinder_rotation/anim.mp4}
+        \movie[width=0.725\textheight, height=0.75\textheight, autostart, loop]{} {../anim/obstacle/obstacle_arrows.mp4}
     \end{figure}
 \end{frame}
 
 %---------------------------------------------------------
 
 \section{Improvements}
-\begin{frame}{tt}
-    blabla
+\begin{frame}{Corners of rigid regions}
+    \begin{figure}
+        \begin{overprint}
+            \only<1>{
+                \centering
+                \includegraphics[height=0.65\textheight]{../figures/corner_5.pdf}
+                \caption*{Strain rate of the flow in a curved channel}
+            }
+            \only<2>{
+                \centering
+                \includesvg[height=0.65\textheight]{../figures/corner_4.svg}
+                \caption*{Virtual field $\phi$, interface predictor/corrector in black/red.}
+            }
+        \end{overprint}
+    \end{figure}
 \end{frame}
 
+\begin{frame}{Corners of rigid regions}
+    \begin{figure}
+        \centering
+        \begin{subfigure}[t]{0.26\textwidth}
+            \includesvg[width=\textwidth]{../figures/corner_1.svg}
+        \end{subfigure}
+        \begin{subfigure}[t]{0.26\textwidth}
+            \includesvg[width=\textwidth]{../figures/corner_2.svg}
+        \end{subfigure}
+        \begin{subfigure}[t]{0.26\textwidth}
+            \includesvg[width=\textwidth]{../figures/corner_3.svg}
+        \end{subfigure}
+        \caption*{Successive linear approximations around the interface predictor}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Yield tolerance parameter}
+    \begin{itemize}
+        \item $\dot\gamma(\vv^h)$ never exactly $0$, but from $\sim 10^{-12}$ to $\sim 10^{-5}$
+        \item Interface predictor selects elements with $\dot\gamma(\vv^h)<10^{-4}$
+        \item Would prefer algorithm predicts interface autonomously
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Yield tolerance parameter}
+    \begin{figure}
+        \begin{overprint}
+            \only<1>{
+                \centering
+                \includegraphics[height=0.65\textheight]{../figures/correction_1.pdf}
+                \caption*{Strain rate of the lid-driven cavity flow, predictor/corrector in yellow/red}
+            }
+            \only<2>{
+                \centering
+                \includegraphics[height=0.65\textheight]{../figures/correction_2.pdf}
+                \caption*{Parametric curves}
+            }
+        \end{overprint}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Yield tolerance parameter}
+    \begin{figure}
+        \begin{overprint}
+            \only<1>{
+                \centering
+                \includesvg[width=0.9\textwidth]{../figures/correction_4.svg}
+            }
+            \only<2>{
+                \centering
+                \includesvg[width=0.9\textwidth]{../figures/correction_3.svg}
+            }
+        \end{overprint}
+        \caption*{Evaluation of the strain rate along the parametric curves}
+    \end{figure}
+\end{frame}
+
+\section*{}
+\begin{frame}
+    \begin{center}
+        \LARGE
+        Thank you for your attention !
+        \normalsize
+    \end{center}
+    \begin{figure}
+        \centering
+        \movie[width=0.71\textheight, height=0.6\textheight, autostart, loop]{} {../anim/obstacle/cropped.mp4}
+    \end{figure}
+\end{frame}
 %---------------------------------------------------------
 
 \end{document}
 
 
 
-\begin{frame}{Governing equations}
-    \begin{equation*}
-    \begin{aligned}
-        \nabla \cdot \boldsymbol\sigma + \mathbf{f} &= \mathbf{0}\\
-        \nabla \cdot \uu &= 0
-    \end{aligned}
-    \end{equation*}
+% \begin{frame}{Governing equations}
+%     \begin{equation*}
+%     \begin{aligned}
+%         \nabla \cdot \boldsymbol\sigma + \mathbf{f} &= \mathbf{0}\\
+%         \nabla \cdot \uu &= 0
+%     \end{aligned}
+%     \end{equation*}
     
-    \begin{equation*}
-    \begin{aligned}
-        &\;\;\: \mathbf{d} = \frac{1}{2} (\nabla u + \nabla u^T)\\
-        &\begin{cases}
-            \mathbf{s} = 2 \mu \mathbf{d} + 2 \tau_0 \frac{\mathbf{d}}{\|\mathbf{d}\|} & \text{if} \sqrt{\frac{1}{2}\mathbf{s}:\mathbf{s}} \geq \tau_0\\
-            \mathbf{d} = \mathbf{0} & \text{if} \sqrt{\frac{1}{2}\mathbf{s}:\mathbf{s}} \leq \tau_0\\
-        \end{cases}\\
-        &\;\;\: \uu = \uu \quad \text{on} \quad \partial \Omega
-    \end{aligned}
-    \end{equation*}
-\end{frame}
+%     \begin{equation*}
+%     \begin{aligned}
+%         &\;\;\: \mathbf{d} = \frac{1}{2} (\nabla u + \nabla u^T)\\
+%         &\begin{cases}
+%             \mathbf{s} = 2 \mu \mathbf{d} + 2 \tau_0 \frac{\mathbf{d}}{\|\mathbf{d}\|} & \text{if} \sqrt{\frac{1}{2}\mathbf{s}:\mathbf{s}} \geq \tau_0\\
+%             \mathbf{d} = \mathbf{0} & \text{if} \sqrt{\frac{1}{2}\mathbf{s}:\mathbf{s}} \leq \tau_0\\
+%         \end{cases}\\
+%         &\;\;\: \uu = \uu \quad \text{on} \quad \partial \Omega
+%     \end{aligned}
+%     \end{equation*}
+% \end{frame}
 
 
-\begin{frame}{Minimum principle}
-    \begin{align*}
-        \uu = \text{arg} \min_{\vv \in \mathcal{V}} \; \frac{1}{2}\int_{\Omega} \mu \|\mathbf{d}\|^2 \dd{\Omega} + \int_{\Omega} \tau_0 \|\mathbf{d}\| \dd{\Omega} - \int_{\Omega} \mathbf{f} \cdot \vv \dd{\Omega}
-    \end{align*}
+% \begin{frame}{Minimum principle}
+%     \begin{align*}
+%         \uu = \text{arg} \min_{\vv \in \mathcal{V}} \; \frac{1}{2}\int_{\Omega} \mu \|\mathbf{d}\|^2 \dd{\Omega} + \int_{\Omega} \tau_0 \|\mathbf{d}\| \dd{\Omega} - \int_{\Omega} \mathbf{f} \cdot \vv \dd{\Omega}
+%     \end{align*}
     
-    \vspace{1cm} 
-    How do they obtain it ? Multiply by a test function \& integrate ? But how did they handle the discontinuity of the stress tensor ?
-\end{frame}
+%     \vspace{1cm} 
+%     How do they obtain it ? Multiply by a test function \& integrate ? But how did they handle the discontinuity of the stress tensor ?
+% \end{frame}
 
-\begin{frame}{Finite element discretization}
-    \begin{align*}
-        \vv_h(\xx) &= \sum_{i=1}^{n} N_i(\boldsymbol \xi) \vv_i
-    \end{align*}
-    \begin{align*}
-        \mathbf{d}_h(\xx) &=
-        \begin{bmatrix}
-            d_{xx}\\
-            d_{yy}\\
-            d_{xy}
-        \end{bmatrix} = \mathbf{J}_e^{-T} 
-        \begin{bmatrix}
-            N_{1, \xi} & 0 & N_{2, \xi} & 0 & \dots & N_{n, \xi} & 0\\
-            0 & N_{1, \eta} & 0 & N_{2, \eta} & \dots & 0 & N_{n, \eta}\\
-            N_{1, \eta} & N_{1, \xi} & N_{2, \eta} & N_{2, \xi} & \dots & N_{n, \eta} & N_{n, \xi}
-        \end{bmatrix} \vv_i\\
-    \end{align*}
+% \begin{frame}{Finite element discretization}
+%     \begin{align*}
+%         \vv_h(\xx) &= \sum_{i=1}^{n} N_i(\boldsymbol \xi) \vv_i
+%     \end{align*}
+%     \begin{align*}
+%         \mathbf{d}_h(\xx) &=
+%         \begin{bmatrix}
+%             d_{xx}\\
+%             d_{yy}\\
+%             d_{xy}
+%         \end{bmatrix} = \mathbf{J}_e^{-T} 
+%         \begin{bmatrix}
+%             N_{1, \xi} & 0 & N_{2, \xi} & 0 & \dots & N_{n, \xi} & 0\\
+%             0 & N_{1, \eta} & 0 & N_{2, \eta} & \dots & 0 & N_{n, \eta}\\
+%             N_{1, \eta} & N_{1, \xi} & N_{2, \eta} & N_{2, \xi} & \dots & N_{n, \eta} & N_{n, \xi}
+%         \end{bmatrix} \vv_i\\
+%     \end{align*}
     
-    \begin{itemize}
-        \item How can the Jacobian be 3x3 with a 2D problem ?
-        %\item With linear shape functions, the "matrix of derivatives" is constant.
-    \end{itemize}
-\end{frame}
+%     \begin{itemize}
+%         \item How can the Jacobian be 3x3 with a 2D problem ?
+%         %\item With linear shape functions, the "matrix of derivatives" is constant.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Minimization formulation}
-    Define $Q$ to easily evaluate $\|\mathbf{d}\| = \sqrt{2 \mathbf{d}: \mathbf{d}} \quad \longrightarrow \quad \mathbf{Q} = \textrm{diag}(2, 2, 1)$.
+% \begin{frame}{Minimization formulation}
+%     Define $Q$ to easily evaluate $\|\mathbf{d}\| = \sqrt{2 \mathbf{d}: \mathbf{d}} \quad \longrightarrow \quad \mathbf{Q} = \textrm{diag}(2, 2, 1)$.
     
-    Using a Gaussian quadrature with $N_g$ integration points and weights $\omega_g$:
-    \begin{align*}
-        J(\vv) = \sum_{e=1}^{N_e} \sum_{g=1}^{N_g} \omega_g \det \mathbf{J}_e \left(\frac{\mu}{2} \Big\|\mathbf{Q} \mathbf{d}_h(\xx_g)\Big\|^2 + \tau_0 \Big\|\mathbf{Q} \mathbf{d}_h(\xx_g)\Big\| + \right) - \mathbf{f}^T \cdot \vv
-    \end{align*}
+%     Using a Gaussian quadrature with $N_g$ integration points and weights $\omega_g$:
+%     \begin{align*}
+%         J(\vv) = \sum_{e=1}^{N_e} \sum_{g=1}^{N_g} \omega_g \det \mathbf{J}_e \left(\frac{\mu}{2} \Big\|\mathbf{Q} \mathbf{d}_h(\xx_g)\Big\|^2 + \tau_0 \Big\|\mathbf{Q} \mathbf{d}_h(\xx_g)\Big\| + \right) - \mathbf{f}^T \cdot \vv
+%     \end{align*}
 
-    \begin{equation*}
-    \begin{aligned}
-        \implies \min_{\vv} \quad& J(\vv)\\
-        \text{s.t.} \quad& d_{xx} + d_{yy} = 0\\
-                      & \vv_I = \uu^d\\
-    \end{aligned}
-    \end{equation*}
+%     \begin{equation*}
+%     \begin{aligned}
+%         \implies \min_{\vv} \quad& J(\vv)\\
+%         \text{s.t.} \quad& d_{xx} + d_{yy} = 0\\
+%                       & \vv_I = \uu^d\\
+%     \end{aligned}
+%     \end{equation*}
     
-    \begin{itemize}
-        \item $\mathbf{f}^T \cdot \vv$ is the discrete version of $\int_{\Omega} \mathbf{f}(\xx) \cdot \vv(\xx) \dd{\Omega}$
-    \end{itemize}
-\end{frame}
+%     \begin{itemize}
+%         \item $\mathbf{f}^T \cdot \vv$ is the discrete version of $\int_{\Omega} \mathbf{f}(\xx) \cdot \vv(\xx) \dd{\Omega}$
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Conic optimization}
-    \begin{itemize}
-        \item Linear objective
-        \item Linear constraints
-        \item "Special constraints", or cones $$ \text{Let } K \subseteq \mathbb{R}^n \qquad x \succcurlyeq 0 \iff x \in K$$
-    \end{itemize}
+% \begin{frame}{Conic optimization}
+%     \begin{itemize}
+%         \item Linear objective
+%         \item Linear constraints
+%         \item "Special constraints", or cones $$ \text{Let } K \subseteq \mathbb{R}^n \qquad x \succcurlyeq 0 \iff x \in K$$
+%     \end{itemize}
     
-    \vspace{1cm}
-    Generalization of "classic" inequalities:
-    \begin{align*}
-        a \succcurlyeq b \iff a-b \succcurlyeq 0 \iff a-b \in K\\
-    \end{align*}
-\end{frame}
+%     \vspace{1cm}
+%     Generalization of "classic" inequalities:
+%     \begin{align*}
+%         a \succcurlyeq b \iff a-b \succcurlyeq 0 \iff a-b \in K\\
+%     \end{align*}
+% \end{frame}
 
-\begin{frame}{Proper cones: properties to satisfy}
-    \begin{enumerate}
-        \item $a \succcurlyeq 0 \implies \lambda a \succcurlyeq 0$ for $\lambda \in \mathbb{R}^+$ (Cone)
-        \item $a \succcurlyeq 0$ and $b \succcurlyeq 0 \implies a+b \succcurlyeq 0$ (Closed under addition)
-        \item $x \succcurlyeq 0$ and $x \preccurlyeq 0 \implies x = 0$ (Pointed)
-        \item $\textrm{int} (K) \neq \emptyset$ (Solid)
-        \item $\{x_i\}_{i\to\infty}$ with $x_i \succcurlyeq 0$ then $\lim_{i} x_i = \bar x$ with $\bar x \succcurlyeq 0$  (Closed)
-    \end{enumerate}
-\end{frame}
+% \begin{frame}{Proper cones: properties to satisfy}
+%     \begin{enumerate}
+%         \item $a \succcurlyeq 0 \implies \lambda a \succcurlyeq 0$ for $\lambda \in \mathbb{R}^+$ (Cone)
+%         \item $a \succcurlyeq 0$ and $b \succcurlyeq 0 \implies a+b \succcurlyeq 0$ (Closed under addition)
+%         \item $x \succcurlyeq 0$ and $x \preccurlyeq 0 \implies x = 0$ (Pointed)
+%         \item $\textrm{int} (K) \neq \emptyset$ (Solid)
+%         \item $\{x_i\}_{i\to\infty}$ with $x_i \succcurlyeq 0$ then $\lim_{i} x_i = \bar x$ with $\bar x \succcurlyeq 0$  (Closed)
+%     \end{enumerate}
+% \end{frame}
 
-\begin{frame}{Examples (1)}
-    \begin{itemize}
-        \item \textbf{In 1D}, only $\emptyset$, $\mathbb{R}^+$, $\mathbb{R}^-$.
+% \begin{frame}{Examples (1)}
+%     \begin{itemize}
+%         \item \textbf{In 1D}, only $\emptyset$, $\mathbb{R}^+$, $\mathbb{R}^-$.
     
-        \item \textbf{In 2D}, only "linear" cones: $\emptyset$, and regions between two half lines with an angle less than 180 degrees.
-    \end{itemize}
-    \pause
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
-        \label{fig:2d_cone}
-    \end{figure}
+%         \item \textbf{In 2D}, only "linear" cones: $\emptyset$, and regions between two half lines with an angle less than 180 degrees.
+%     \end{itemize}
+%     \pause
+%     \begin{figure}
+%         \centering
+%         \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
+%         \label{fig:2d_cone}
+%     \end{figure}
     
-\end{frame}
+% \end{frame}
 
-\begin{frame}{Examples (2)}
-    \begin{itemize}
-        \item Lorentz cone $$\mathbb{L}^n = \{\xx \in \mathbb{R}^{n+1} \big\vert x_1 \geq \sqrt{x_2^2+x_3^2+\dots + x_{n+1}^2}\}$$
-        \begin{figure}
-            \centering
-            \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
-            \caption{https://docs.mosek.com/modeling-cookbook/\_images/qcone.png}
-            \label{fig:Lorentz_cone}
-        \end{figure}
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Examples (2)}
+%     \begin{itemize}
+%         \item Lorentz cone $$\mathbb{L}^n = \{\xx \in \mathbb{R}^{n+1} \big\vert x_1 \geq \sqrt{x_2^2+x_3^2+\dots + x_{n+1}^2}\}$$
+%         \begin{figure}
+%             \centering
+%             \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
+%             \caption{https://docs.mosek.com/modeling-cookbook/\_images/qcone.png}
+%             \label{fig:Lorentz_cone}
+%         \end{figure}
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Examples (3)}
-    \begin{itemize}
-        \item Exponential cone $$\mathbb{E} = \textrm{closure}\left\{(x, y, z) \in \mathbb{R}^{3} \;\big\vert\; z \geq y \exp\left(\frac{x}{y}\right) \text{ and } y>0 \right\}$$
-        \begin{figure}
-            \centering
-            \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
-            %\caption{https://docs.mosek.com/modeling-cookbook/\_images/expcone.png}
-            \label{fig:Exp_cone}
-        \end{figure}
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Examples (3)}
+%     \begin{itemize}
+%         \item Exponential cone $$\mathbb{E} = \textrm{closure}\left\{(x, y, z) \in \mathbb{R}^{3} \;\big\vert\; z \geq y \exp\left(\frac{x}{y}\right) \text{ and } y>0 \right\}$$
+%         \begin{figure}
+%             \centering
+%             \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
+%             %\caption{https://docs.mosek.com/modeling-cookbook/\_images/expcone.png}
+%             \label{fig:Exp_cone}
+%         \end{figure}
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Examples (4)}
-    \begin{itemize}
-        \item Power cone, with $0 < a < 1$ $$\mathbb{P}_{\alpha} = \left\{(x, y, z) \in \mathbb{R}^{3} \;\big\vert\; |z| \leq x^{\alpha} y^{1-\alpha},\: x>0,\: y>0\right\}$$
-        \begin{figure}
-            \centering
-            \includegraphics[height=0.65\textheight]{../docs/Cone_Lorentz.png}
-            %\caption{https://docs.mosek.com/modeling-cookbook/\_images/powcone.png}
-            \label{fig:Power_cone}
-        \end{figure}
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Examples (4)}
+%     \begin{itemize}
+%         \item Power cone, with $0 < a < 1$ $$\mathbb{P}_{\alpha} = \left\{(x, y, z) \in \mathbb{R}^{3} \;\big\vert\; |z| \leq x^{\alpha} y^{1-\alpha},\: x>0,\: y>0\right\}$$
+%         \begin{figure}
+%             \centering
+%             \includegraphics[height=0.65\textheight]{../docs/Cone_Lorentz.png}
+%             %\caption{https://docs.mosek.com/modeling-cookbook/\_images/powcone.png}
+%             \label{fig:Power_cone}
+%         \end{figure}
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Examples (5)}
-    \begin{overprint}
-    \onslide<1>
-    \begin{itemize}
-        \item Semidefinite cone for SPD matrices
-        \item Others, but most important one covered
-    \end{itemize}
-    \onslide<2->
-    \begin{figure}
-        \centering
-        \includegraphics[height=0.8\textheight]{../docs/Cone_Lorentz.png}
-        %\caption{https://docs.mosek.com/cheatsheets/conic.pdf}
-        \label{fig:Cheatsheet}
-    \end{figure}
-    \end{overprint}
-\end{frame}
+% \begin{frame}{Examples (5)}
+%     \begin{overprint}
+%     \onslide<1>
+%     \begin{itemize}
+%         \item Semidefinite cone for SPD matrices
+%         \item Others, but most important one covered
+%     \end{itemize}
+%     \onslide<2->
+%     \begin{figure}
+%         \centering
+%         \includegraphics[height=0.8\textheight]{../docs/Cone_Lorentz.png}
+%         %\caption{https://docs.mosek.com/cheatsheets/conic.pdf}
+%         \label{fig:Cheatsheet}
+%     \end{figure}
+%     \end{overprint}
+% \end{frame}
 
 
-\begin{frame}{Rotated cone (1)}
-    \begin{align*}
-        \mathbb{L}_R^n = \{(\xx, y, z) \in \mathbb{R}^{n}\times\mathbb{R}\times\mathbb{R} \;\big\vert\; 2  y z &\geq x_1^2 + x_2^2+\dots + x_n^2\}\\
-        \frac{(y+z)^2}{2}&\geq \frac{(y-z)^2}{2} + x_1^2+\dots +x_n^2\\
-        \frac{(y+z)}{\sqrt{2}}&\geq \sqrt{\left(\frac{y-z}{\sqrt{2}}\right)^2 + x_1^2+\dots +x_n^2}
-    \end{align*}
-    \begin{itemize}
-        \item Which is equivalent to say that $\left(\frac{y+z}{\sqrt{2}}, \frac{y-z}{\sqrt{2}}, \xx \right) \in \mathbb{L}^{n+1}$.
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Rotated cone (1)}
+%     \begin{align*}
+%         \mathbb{L}_R^n = \{(\xx, y, z) \in \mathbb{R}^{n}\times\mathbb{R}\times\mathbb{R} \;\big\vert\; 2  y z &\geq x_1^2 + x_2^2+\dots + x_n^2\}\\
+%         \frac{(y+z)^2}{2}&\geq \frac{(y-z)^2}{2} + x_1^2+\dots +x_n^2\\
+%         \frac{(y+z)}{\sqrt{2}}&\geq \sqrt{\left(\frac{y-z}{\sqrt{2}}\right)^2 + x_1^2+\dots +x_n^2}
+%     \end{align*}
+%     \begin{itemize}
+%         \item Which is equivalent to say that $\left(\frac{y+z}{\sqrt{2}}, \frac{y-z}{\sqrt{2}}, \xx \right) \in \mathbb{L}^{n+1}$.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Rotated cone (2)}
-    \begin{figure}
-        \centering
-        \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
-        \label{fig:Rot_Lorentz_cone}
-    \end{figure}
-\end{frame}
+% \begin{frame}{Rotated cone (2)}
+%     \begin{figure}
+%         \centering
+%         \includegraphics[height=0.4\textheight]{../docs/Cone_Lorentz.png}
+%         \label{fig:Rot_Lorentz_cone}
+%     \end{figure}
+% \end{frame}
 
-\begin{frame}{Why so strong ?}
-    \begin{itemize}
-        %\item \textbf{Dual formulation} as with linear programming (bounds). However, harder now because cones are not always self-dual.
-        \item For every proper cone, there exists a \textbf{self-concordant barrier}: very useful functions that give a perfect framework for \textbf{Newton's method}. 
-        $$g \text{ is convex and } \quad |g'''(x)| \leq 2 g''(x) ^ {3/2}$$
-        They ensure \textbf{global convergence} of NR, no erratic behavior possible.
-        \item \textbf{Interior-point method}: all constraints $g$ are moved into an objective function $f_{obj}$ and multiplied by $\mu \to 0$: $$f_{obj} = \textrm{linear objective} + \mu \sum\textrm{Barrier functions}$$
-        %\item Estimated distance to optimal solution : $\delta^2(\mathbf x) = \nabla f^T (\nabla^2 f)^{-1} \nabla f$. If iterate $x_i$ "close" from $x^*$: quadratic convergence ! Otherwise, we "damp" the steps.
-        \item Solution obtained with accuracy $\epsilon$ after $\mathcal{O}\left(\sqrt{\nu} \log \frac{1}{\epsilon}\right)$ iterations, where $\nu=\sum\nu_i$, where $\nu_i$ is the parameter of the barrier $i$.
-    \end{itemize}
-\end{frame}
+% \begin{frame}{Why so strong ?}
+%     \begin{itemize}
+%         %\item \textbf{Dual formulation} as with linear programming (bounds). However, harder now because cones are not always self-dual.
+%         \item For every proper cone, there exists a \textbf{self-concordant barrier}: very useful functions that give a perfect framework for \textbf{Newton's method}. 
+%         $$g \text{ is convex and } \quad |g'''(x)| \leq 2 g''(x) ^ {3/2}$$
+%         They ensure \textbf{global convergence} of NR, no erratic behavior possible.
+%         \item \textbf{Interior-point method}: all constraints $g$ are moved into an objective function $f_{obj}$ and multiplied by $\mu \to 0$: $$f_{obj} = \textrm{linear objective} + \mu \sum\textrm{Barrier functions}$$
+%         %\item Estimated distance to optimal solution : $\delta^2(\mathbf x) = \nabla f^T (\nabla^2 f)^{-1} \nabla f$. If iterate $x_i$ "close" from $x^*$: quadratic convergence ! Otherwise, we "damp" the steps.
+%         \item Solution obtained with accuracy $\epsilon$ after $\mathcal{O}\left(\sqrt{\nu} \log \frac{1}{\epsilon}\right)$ iterations, where $\nu=\sum\nu_i$, where $\nu_i$ is the parameter of the barrier $i$.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{2D example of Interior-point method: min(x)}
-%    \begin{figure}
-%    \centering
-%    \includegraphics[height=0.4\textheight]{Figures/Lorentz_cone_rot.png}
-%    \label{fig:Rot_Lorentz_cone}
-%    \end{figure}
-    \begin{overprint}
-    \onslide<1>\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \gg 1$
-    \onslide<2>\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \approx 1$
-    \onslide<3->\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \ll 1$
-    \end{overprint}
-\end{frame}
+% \begin{frame}{2D example of Interior-point method: min(x)}
+% %    \begin{figure}
+% %    \centering
+% %    \includegraphics[height=0.4\textheight]{Figures/Lorentz_cone_rot.png}
+% %    \label{fig:Rot_Lorentz_cone}
+% %    \end{figure}
+%     \begin{overprint}
+%     \onslide<1>\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \gg 1$
+%     \onslide<2>\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \approx 1$
+%     \onslide<3->\centering\includegraphics[height=0.7\textheight]{../docs/Cone_Lorentz.png}\\$\mu \ll 1$
+%     \end{overprint}
+% \end{frame}
 
-\begin{frame}{Back to yield-stress fluid flow... in 1D}
-    \begin{itemize}
-        \item 1D $\implies \nabla \cdot \vv=0$ automatically satisfied with $\vv = u(y)$
-        \item Linear shape functions $\implies$ only 1 integration point needed
-        \item $\det \mathbf{J}_e = \Delta y$, and $\|\mathbf{d}\| = \left|\pdv{u}{y}\right| = \left| \frac{\Delta u}{\Delta y}\right|$
-    \end{itemize}
+% \begin{frame}{Back to yield-stress fluid flow... in 1D}
+%     \begin{itemize}
+%         \item 1D $\implies \nabla \cdot \vv=0$ automatically satisfied with $\vv = u(y)$
+%         \item Linear shape functions $\implies$ only 1 integration point needed
+%         \item $\det \mathbf{J}_e = \Delta y$, and $\|\mathbf{d}\| = \left|\pdv{u}{y}\right| = \left| \frac{\Delta u}{\Delta y}\right|$
+%     \end{itemize}
     
-    \begin{align*}
-        \min_{u} \quad &\sum_e \frac{\mu}{2 \Delta y} \|\Delta u\|^2 + \tau_0 \|\Delta u\| - \mathbf{f} \cdot \uu\\
-        \iff \qquad \min_{u} \quad& \sum_e \frac{\mu}{2 \Delta y} s_e + \tau_0 t_e - \mathbf{f} \cdot \uu\\
-        \text{s.t.} \quad& \|\Delta u\|^2 \leq s_e \:\;\iff\quad (0.5, s_e, u_{e+1}-u_e) \in \mathbb{L}_R^1 \\
-        &\|\Delta u\| \leq t_e \quad\iff\quad (t_e, u_{e+1}-u_e) \in \mathbb{L}^1 \\
-        & u_0 = u_{N_e} = 0
-    \end{align*}
+%     \begin{align*}
+%         \min_{u} \quad &\sum_e \frac{\mu}{2 \Delta y} \|\Delta u\|^2 + \tau_0 \|\Delta u\| - \mathbf{f} \cdot \uu\\
+%         \iff \qquad \min_{u} \quad& \sum_e \frac{\mu}{2 \Delta y} s_e + \tau_0 t_e - \mathbf{f} \cdot \uu\\
+%         \text{s.t.} \quad& \|\Delta u\|^2 \leq s_e \:\;\iff\quad (0.5, s_e, u_{e+1}-u_e) \in \mathbb{L}_R^1 \\
+%         &\|\Delta u\| \leq t_e \quad\iff\quad (t_e, u_{e+1}-u_e) \in \mathbb{L}^1 \\
+%         & u_0 = u_{N_e} = 0
+%     \end{align*}
     
-    \begin{itemize}
-        \item Bounds are tight at the optimum. This reformulation is possible because the coefficients of $\|\Delta u\|^2$ and $\|\Delta u\|$ are positive.
-    \end{itemize}
-\end{frame}
+%     \begin{itemize}
+%         \item Bounds are tight at the optimum. This reformulation is possible because the coefficients of $\|\Delta u\|^2$ and $\|\Delta u\|$ are positive.
+%     \end{itemize}
+% \end{frame}
 
-\begin{frame}{Canonical form (for the Python code)}
-    \begin{align*}
-        \min \quad& c^T x\\
-        \text{s.t.} \quad& A x = b\\
-        & Gx + s = h\\
-        & s \succcurlyeq 0
-    \end{align*}
+% \begin{frame}{Canonical form (for the Python code)}
+%     \begin{align*}
+%         \min \quad& c^T x\\
+%         \text{s.t.} \quad& A x = b\\
+%         & Gx + s = h\\
+%         & s \succcurlyeq 0
+%     \end{align*}
     
-    \begin{align*}
-        \xx &= 
-        \begin{bmatrix}
-            \uu & \mathbf{s} & \mathbf{t}
-        \end{bmatrix}\\
-        \mathbf{c} &= 
-        \begin{bmatrix}
-            \boldsymbol -\mathbf{f} & \frac{\mu}{2\Delta y \vert_e} & \tau_0
-        \end{bmatrix}\\
-        \mathbf{G} &= \dots\\
-        \mathbf{h} &= \dots
-    \end{align*}
-\end{frame}
+%     \begin{align*}
+%         \xx &= 
+%         \begin{bmatrix}
+%             \uu & \mathbf{s} & \mathbf{t}
+%         \end{bmatrix}\\
+%         \mathbf{c} &= 
+%         \begin{bmatrix}
+%             \boldsymbol -\mathbf{f} & \frac{\mu}{2\Delta y \vert_e} & \tau_0
+%         \end{bmatrix}\\
+%         \mathbf{G} &= \dots\\
+%         \mathbf{h} &= \dots
+%     \end{align*}
+% \end{frame}
 
-\begin{frame}{Numerical Simulation}
-    \begin{overprint}
-    \onslide<1>
-        \begin{figure}
-            \centering
-            \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
-            \caption{Arbitrary Mesh}
-        \end{figure}
-    \onslide<2>
-        \begin{figure}
-            \centering
-            \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
-            \caption{Mesh at exact interface}
-        \end{figure}
-    \end{overprint}
-\end{frame}
+% \begin{frame}{Numerical Simulation}
+%     \begin{overprint}
+%     \onslide<1>
+%         \begin{figure}
+%             \centering
+%             \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
+%             \caption{Arbitrary Mesh}
+%         \end{figure}
+%     \onslide<2>
+%         \begin{figure}
+%             \centering
+%             \includegraphics[width=0.4\textwidth]{../docs/Cone_Lorentz.png}
+%             \caption{Mesh at exact interface}
+%         \end{figure}
+%     \end{overprint}
+% \end{frame}

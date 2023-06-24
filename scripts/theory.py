@@ -133,7 +133,7 @@ def plot_interior_point_steps(save=False):
 
     save = "mp4"
     if save == "none":
-        anim = FuncAnimation(fig, update, nt + 1, interval=200, repeat=False)
+        anim = FuncAnimation(fig, update, nt + 1, interval=20, repeat=False)
         plt.show()
 
     elif save == "gif":

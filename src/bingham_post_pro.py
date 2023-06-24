@@ -328,15 +328,15 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tag_strain_norm_avg = gmsh.view.add("Strain norm avg", tag=sim.tag + 7)
     gmsh.view.option.setNumber(tag_strain_norm_avg, "NormalRaise", strain_normal_raise)
     gmsh.view.option.setNumber(tag_strain, "RangeType", 2)
-    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-11)
+    gmsh.view.option.setNumber(tag_strain, "CustomMin", 1e-10)
     gmsh.view.option.setNumber(tag_strain, "CustomMax", 1e+2)
     gmsh.view.option.setNumber(tag_strain, "IntervalsType", 2)
     gmsh.view.option.setNumber(tag_strain, "NbIso", 20)  # 12
     gmsh.view.option.setNumber(tag_strain, "ColormapAlpha", 1.)
     gmsh.view.option.setNumber(tag_strain, "ColormapNumber", 23)
     gmsh.view.option.setNumber(tag_strain, "ScaleType", 2)
-    gmsh.view.option.setString(tag_strain, "Format", r"%.2g")
-    gmsh.view.option.setNumber(tag_strain, "ShowScale", 0)
+    gmsh.view.option.setString(tag_strain, "Format", r"%.0e")
+    gmsh.view.option.setNumber(tag_strain, "ShowScale", 1)
 
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
@@ -612,14 +612,15 @@ def add_text(t0):
     return
 
 
-def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
- 
+def animate_particles(sim: Simulation_2D, u_num, tag_v, dir="", show_radius=False):
+
     # Generate streamlines with particles, to obtain their positions
 
     if sim.model_name in ["pipe", "finepipe"] and show_radius:
         n_streamlines, n_iterations, dt = 3, 200, 0.4
         options = dict(
-            X0=1.5, Y0=0.30, X1=1.7, Y1=0.55, X2=0., Y2=0., NumPointsU=n_streamlines,
+            X0=2.29, Y0=0.40, X1=2.31, Y1=0.42, X2=0., Y2=0., NumPointsU=n_streamlines,
+            # X0=1.5, Y0=0.30, X1=1.7, Y1=0.55, X2=0., Y2=0., NumPointsU=n_streamlines,
             NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
         )
     elif sim.model_name in ["pipe", "finepipe"]:
@@ -629,9 +630,9 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
             NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
         )
     elif sim.model_name in ["cavity", "cavity_cheat"] and show_radius:
-        n_streamlines, n_iterations, dt = 5, 100, 0.01
+        n_streamlines, n_iterations, dt = 5, 100, 0.015
         options = dict(
-            X0=0.75, Y0=-0.01, X1=0.75, Y1=-0.08, X2=0., Y2=0., NumPointsU=n_streamlines,
+            X0=0.70, Y0=-0.01, X1=0.75, Y1=-0.08, X2=0., Y2=0., NumPointsU=n_streamlines,
             NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
         )
     elif sim.model_name in ["cavity", "cavity_cheat"]:
@@ -652,7 +653,7 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
         n_streamlines, n_iterations, dt = 10, 100, 0.04
         options = dict(
             # X0=3.5, Y0=-1.25, X1=3.5, Y1=+1.25, X2=0., Y2=0., NumPointsU=n_streamlines,
-            X0=3.5, Y0=1.25*0.1, X1=3., Y1=+1.25*0.4, X2=0., Y2=0., NumPointsU=n_streamlines,
+            X0=3.5, Y0=1.25 * 0.1, X1=3., Y1=+1.25 * 0.4, X2=0., Y2=0., NumPointsU=n_streamlines,
             NumPointsV=1, DT=dt, MaxIter=n_iterations, View=tag_v - 1,
         )
     else:
@@ -711,7 +712,8 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
         scalar_vel = np.linalg.norm(velocities, axis=2)
         scalar_acc = np.linalg.norm(accelerations, axis=2)
         curvature = scalar_acc / scalar_vel ** 2
-        center_rotation = coords + 1. / curvature[:, :, None] * accelerations / scalar_acc[:, :, None]
+        center_rotation = coords + 1. / curvature[:, :,
+                                                  None] * accelerations / scalar_acc[:, :, None]
 
     # Set the parameters of the velocity/accelerations arrows
     arrays = [velocities, accelerations]
@@ -760,7 +762,7 @@ def animate_particles(sim: Simulation_2D, u_num, tag_v, show_radius=False):
             data[:, [6, 7]] = np.c_[curvature[:, step], curvature[:, step]]
             gmsh.view.addListData(tag_radius, "SL", n_streamlines, data.flatten())
         gmsh.view.option.setNumber(tag_streamlines, "TimeStep", step)
-        gmsh.write(f"../anim/cylinder{show_radius * '_rotation':s}/frame_{step:04d}.png")
+        gmsh.write(f"../anim/{dir:s}/frame_{step:04d}.png")
 
     return
 
@@ -782,7 +784,8 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     tags_gauss = add_gauss_points(sim, t_num)
     tags_streamfunction = add_streamfunction(sim, u_num, 15)
     tags_exact_interface = add_exact_interface(sim)
-    tags_invisible = tags_velocities + tags_pressure + tags_gauss + tags_streamfunction
+    tags_invisible = tags_velocities + tags_pressure + \
+        tags_gauss + tags_streamfunction + tags_unstrained
 
     if extra is not None:
         tags_reconstructed = add_reconstruction(sim, extra)
@@ -805,14 +808,20 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.setNumber("General.SmallAxes", 0)
     gmsh.option.setNumber("Geometry.Points", 0)
     # gmsh.option.setNumber("Print.Background", 1)
-    gmsh.option.setNumber("General.DisplayBorderFactor", -0.25)
-    # gmsh.option.setNumber("General.TranslationX", 1.)
+    # gmsh.option.setNumber("General.TranslationX", -0.15)
+    # gmsh.option.setNumber("General.TranslationY", -0.4)
+    # gmsh.option.setNumber("General.DisplayBorderFactor", -0.40)
+    gmsh.option.setNumber("General.DisplayBorderFactor", 0.05)
+    # gmsh.option.setNumber("General.GraphicsHeight", 600)
+    # gmsh.option.setNumber("General.GraphicsWidth", 600)
+    gmsh.option.setNumber("General.DetachedMenu", 0)
+    
 
     # if extra is None:  # used to show pipe velocity profile
-        # animate_particles(sim, u_num, tags_velocities[0], show_radius=True)
-        # add_text(sim.tau_zero)
-        # tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
-        # save_profiles(tags, "../figures/pipe_profiles", n_pts=150)
+        # animate_particles(sim, u_num, tags_velocities[0], dir="pipe", show_radius=True)
+    # add_text(sim.tau_zero)
+    # tags = np.array(tags_velocities)[[0, 6, 8]]  # velocity, strain, vorticity
+    # save_profiles(tags, "../figures/pipe_profiles", n_pts=150)
 
     gmsh.fltk.run()
     gmsh.fltk.finalize()
