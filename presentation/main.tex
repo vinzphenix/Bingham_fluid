@@ -67,12 +67,16 @@
 \setbeamercolor{titlelike}{fg=UBCblue} % TOC sections
 \setbeamercolor{frametitle}{fg=UBCblue} % TOC sections
 
-
 % Override palette coloring with secondary
 \setbeamercolor{subsection in head/foot}{bg=UBCgrey,fg=white}
 
+\setbeamerfont{subsection in toc}{size=\small}
+
+\setbeamertemplate{page number in head/foot}[framenumber]
 \setbeamertemplate{itemize item}[triangle]
-\setbeamertemplate{enumerate item}[circle]
+\setbeamertemplate{itemize subitem}[triangle]
+\setbeamertemplate{enumerate item}[rectangle]
+
 %\setbeamercolor*{enumerate item}{fg=red}
 %\setbeamercolor*{enumerate subitem}{fg=red}
 %\setbeamercolor*{enumerate subsubitem}{fg=red}
@@ -127,7 +131,8 @@
 
 %---------------------------------------------------------
 
-\section{What is a yield stress fluid ?}
+% \section{What is a yield stress fluid ?}
+\section{The context: what is a yield stress fluid ?}
 
 \begin{frame}{}
     \begin{columns}
@@ -171,31 +176,81 @@
     \end{columns}
 \end{frame}
 
+% \begin{frame}{Velocity modes}
+%     \begin{align*}
+%         \vv(\xx_0 + \boldsymbol\delta) &= \vv(\xx_0) + (\nabla \vv)(\xx_0) \boldsymbol\delta + \text{H.O.T.}\\
+%         \nabla \vv &= {\color{gray!50}\mathbf{D}_s} + \mathbf{D}_d + \mathbf{W}\\
+%         \only<2>{\boldsymbol\tau &= \mu \; 2 \mathbf{D}_d \qquad \text{(Newtonian fluids)}}
+%         % \only<2>{\text{Newton}\qquad \boldsymbol\tau &= \mu \; 2 \mathbf{D}_d = \mu \gam = \mu (\nabla \vv + \nabla \vv^\top - {\color{gray!50} 2 \Tr \nabla \vv})}
+%     \end{align*}
+%     \begin{figure}
+%         \centering
+%         \begin{subfigure}[t]{0.32\textwidth}
+%             %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_stretch.mp4}
+%             \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_stretch/frame}{1}{51}    
+%             \caption{\color{gray!50} expansion}
+%         \end{subfigure}
+%         \begin{subfigure}[t]{0.32\textwidth}
+%             %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_shear.mp4}
+%             \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_shear/frame}{1}{51}    
+%             \caption{shear}
+%         \end{subfigure}
+%         \begin{subfigure}[t]{0.32\textwidth}
+%             %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_rotation.mp4}
+%             \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_rotation/frame}{1}{51}
+%             \caption{rotation}
+%         \end{subfigure}
+%     \end{figure}
+% \end{frame}
+
+
 \begin{frame}{Velocity modes}
-    \begin{align*}
-        \nabla \vv &= {\color{gray!50}\mathbf{D}_s} + \mathbf{D}_d + \mathbf{W}\\
-        \only<2>{\boldsymbol\tau &= \mu \; 2 \mathbf{D}_d \qquad \text{(Newtonian fluids)}}
-        % \only<2>{\text{Newton}\qquad \boldsymbol\tau &= \mu \; 2 \mathbf{D}_d = \mu \gam = \mu (\nabla \vv + \nabla \vv^\top - {\color{gray!50} 2 \Tr \nabla \vv})}
-    \end{align*}
-    \begin{figure}
-        \centering
-        \begin{subfigure}[t]{0.32\textwidth}
-            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_stretch.mp4}
-            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_stretch/frame}{1}{51}    
-            \caption{\color{gray!50} expansion}
-        \end{subfigure}
-        \begin{subfigure}[t]{0.32\textwidth}
-            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_shear.mp4}
-            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_shear/frame}{1}{51}    
-            \caption{shear}
-        \end{subfigure}
-        \begin{subfigure}[t]{0.32\textwidth}
-            %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_rotation.mp4}
-            \animategraphics[autoplay,loop,width=\textwidth]{20}{../anim/kinematics_rotation/frame}{1}{51}
-            \caption{rotation}
-        \end{subfigure}
-    \end{figure}
+    \begin{columns}[c]
+        \begin{column}{.4\textwidth}
+            \begin{align*}
+                \vv(\xx_0 + \boldsymbol\delta)
+                &= \alt<2>{{\color{red} \vv(\xx_0)}}{\vv(\xx_0)}
+                + (\nabla \vv) \cdot \boldsymbol\delta\\
+                &+ \text{H.O.T.}\\[12pt]
+                \nabla \vv &= 
+                \alt<3>{{\color{red} \mathbf{W}}}{\mathbf{W}}
+                +\alt<4>{{\color{red} \mathbf{D}_s}}{\mathbf{D}_s}
+                +\alt<5>{{\color{red} \mathbf{D}_d}}{\mathbf{D}_d}
+                \\[12pt]
+                \boldsymbol\tau &= \mu \; 2 \mathbf{D}_d \quad \text{Newton}
+                % \only<2>{\text{Newton}\qquad \boldsymbol\tau &= \mu \; 2 \mathbf{D}_d = \mu \gam = \mu (\nabla \vv + \nabla \vv^\top - {\color{gray!50} 2 \Tr \nabla \vv})}
+            \end{align*}
+        \end{column}
+        \begin{column}{.5\textwidth}
+            % \animategraphics[autoplay,loop,width=0.45\textwidth]{20}{../anim/kinematics_translation/frame}{1}{51}
+            % \begin{figure}
+            %     \centering
+            %     \begin{subfigure}[t]{0.49\textwidth}
+                    %\movie[width=\textwidth, height=\textwidth, showcontrols, loop]{} {../anim/kinematics_stretch.mp4}
+            \centering
+            \begin{animateinline}[autoplay, loop]{20}
+                \multiframe{51}{i=1+1}{
+                    \only<1>{
+                        \includegraphics[width=0.85\textwidth]{../anim/kinematics_translation/frame0.png}
+                    }
+                    \only<2>{
+                        \includegraphics[width=0.85\textwidth]{../anim/kinematics_translation/frame\i.png}
+                    }
+                    \only<3>{
+                        \includegraphics[width=0.85\textwidth]{../anim/kinematics_rotation/frame\i.png}
+                    }
+                    \only<4>{
+                        \includegraphics[width=0.85\textwidth]{../anim/kinematics_stretch/frame\i.png}
+                    }
+                    \only<5>{
+                        \includegraphics[width=0.85\textwidth]{../anim/kinematics_shear/frame\i.png}
+                    }
+                }
+            \end{animateinline}
+        \end{column}
+    \end{columns}
 \end{frame}
+
 
 % \begin{frame}{Newtonian fluids}
 %     \begin{itemize}
@@ -309,7 +364,7 @@
             \boldsymbol\tau = (K \dot \gamma^n) \; \gam
         \end{equation*}
         \pause
-        \item Herschel-Bulkley model (Bingham with $n=1$)
+        \item Herschel-Bulkley model, for yield stress fluids (\textit{fluides à seuil} in French):
         \begin{align*}
             \gam &= 0 & \text{if} \quad \tau < \tau_0\\
             \boldsymbol\tau &= \left(K \dot \gamma^{n-1} + \frac{\tau_0}{\dot \gamma}\right) \gam & \text{if} \quad \tau \geq \tau_0\\
@@ -326,9 +381,8 @@
 
 %---------------------------------------------------------
 
-\section{Why do we study it ?}
-
-\begin{frame}{Solid-Liquid subdomains}
+\section{The motivation: improve flow simulations with interface tracking}
+\begin{frame}{Solid and liquid subdomains}
     \begin{figure}
         \centering
         \begin{tikzpicture} [line width=1.2, scale=2 ]
@@ -341,57 +395,79 @@
             \coordinate (c4) at (2, 2.5);
             \coordinate (c5) at (0, 2.5);
             \node[right=6pt, above=3pt] at (c3){\LARGE $\Omega$};
-            \draw[black, thick] plot [smooth cycle] coordinates {(0) (x1) (c1) (c2) (x2) (c3) (c4) (c5)};
-            \node[anchor=north] at (2.25, 0.85) {
+            \draw[black, very thick] plot [smooth cycle] coordinates {(0) (x1) (c1) (c2) (x2) (c3) (c4) (c5)};
+            \node[anchor=north, align=center] at (2.25, 0.85) {
                 $\begin{aligned}
-                    \vv &\neq \mathbf{0}\\
-                    \mathbf{W} &\neq \mathbf{0}\\
-                    \mathbf{D} &\neq \mathbf{0}
-                \end{aligned}$
+                    % \vv &\neq \mathbf{0}\\
+                    % \mathbf{W} &\neq \mathbf{0}\\
+                    % \mathbf{D} &\neq \mathbf{0}
+                    \tau &> \tau_0\\
+                    \dot\gamma &> 0
+                \end{aligned}$\\[2pt]
+                liquid
             };
             \pause
-            \draw[black, thick, fill=gray!15] plot [smooth] coordinates {(x1) (2.95, -0.05) (2.95, 0.9) (x2)};
+            \draw[red, thick, fill=gray!15] plot [smooth] coordinates {(x1) (2.95, -0.05) (2.95, 0.9) (x2)};
             \begin{scope}
                 \clip plot [smooth cycle] coordinates {(x1) (c1) (c2) (x2)};
                 \draw[fill=gray!15, thick] plot [smooth cycle] coordinates {(0) (x1) (c1) (c2) (x2) (c3) (c4) (c5)};
             \end{scope}
-            \node[anchor=north] at (3.5, 0.9) {
+            \node[anchor=north, align=center] at (3.5, 1.) {
                 $\begin{aligned}
-                    \vv &= \mathbf{0}\\
-                    \mathbf{W} &= \mathbf{0}\\
-                    \mathbf{D} &= \mathbf{0}
-                \end{aligned}$
+                    % \vv &= \mathbf{0}\\
+                    % \mathbf{W} &= \mathbf{0}\\
+                    % \mathbf{D} &= \mathbf{0}
+                    \tau &< \tau_0\\
+                    \dot\gamma &= 0
+                \end{aligned}$\\[2pt]
+                solid\\
+                static
             };
             \pause
-            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.25, 0.) (1.5, 0.) (1.5, 0.75) (0.25, 0.75)};
-            \node[anchor=north] at (0.875, 0.85) {
+            \draw[red, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.25, -0.1) (1.5, -0.1) (1.5, 0.75) (0.25, 0.75)};
+            \node[anchor=north, align=center] at (0.875, 0.90) {
                 $\begin{aligned}
-                    \vv &\neq \mathbf{0}\\
-                    \mathbf{W} &= \mathbf{0}\\
-                    \mathbf{D} &= \mathbf{0}
-                \end{aligned}$
+                    % \vv &\neq \mathbf{0}\\
+                    % \mathbf{W} &= \mathbf{0}\\
+                    % \mathbf{D} &= \mathbf{0}
+                    \tau &< \tau_0\\
+                    \dot\gamma &= 0
+                \end{aligned}$\\[2pt]
+                solid\\
+                translation
             };
             \pause
-            \draw[black, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.75, 1.25) (1.75, 1.25) (1.75, 2.25) (0.75, 2.25)};
-            \node[anchor=north] at (1.25, 2.25) {
+            \draw[red, thick, fill=gray!15] plot [smooth cycle] coordinates {(0.75, 1.25) (1.75, 1.25) (1.75, 2.25) (0.75, 2.25)};
+            \node[anchor=north, align=center] at (1.25, 2.3) {
                 $\begin{aligned}
-                    \vv &\neq \mathbf{0}\\
-                    \mathbf{W} &\neq \mathbf{0}\\
-                    \mathbf{D} &= \mathbf{0}
-                \end{aligned}$
+                    % \vv &\neq \mathbf{0}\\
+                    % \mathbf{W} &\neq \mathbf{0}\\
+                    % \mathbf{D} &= \mathbf{0}
+                    \tau &< \tau_0\\
+                    \dot\gamma &= 0
+                \end{aligned}$\\[2pt]
+                solid\\
+                rotation
             };
             \onslide<1->
         \end{tikzpicture}
     \end{figure}
 \end{frame}
 
-\begin{frame}{Interface tracking}
-    \begin{enumerate}
-        \item Simulate Flow
-        \item Locate interface(s)
-        \item Deform the mesh (X-MESH)
-        \item Repeat until convergence
-    \end{enumerate}
+\begin{frame}{Imrpove the accuracy near the interfaces}
+    \begin{itemize}
+        \setlength{\itemsep}{12pt}
+        \item Mesh refinement
+        \begin{itemize}
+            \item easier to implement
+            \item higher computational cost
+        \end{itemize}
+        \item Interface tracking
+        \begin{itemize}
+            \item harder to implement
+            \item lower computational cost
+        \end{itemize}
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Interface tracking benefits - Poiseuille flow}
@@ -403,195 +479,79 @@
 
 \begin{frame}{Interface tracking benefits - Poiseuille flow}
     \begin{figure}
-        %\centering
-        \begin{overprint}
-            \onslide<1>\includesvg[width=\textwidth]{../figures/res_P1_first.svg}
-            \onslide<2>\includesvg[width=\textwidth]{../figures/res_P1_last.svg}
-            \end{overprint} 
+        \centering
+        \includesvg[height=0.82\textheight]{../figures/res_P1_first_v.svg}
+        \pause
+        \hspace{12pt}
+        \includesvg[height=0.82\textheight]{../figures/res_P1_last_v.svg}
     \end{figure}
 \end{frame}
 
 %---------------------------------------------------------
 
-\section{How do we model it ?}
-\subsection{Differential equations}
+\section{The method: interface tracking algorithm}
+% \subsection{Differential equations}
 
-\begin{frame}{Equations}
-    \begin{itemize}
-        %\setlength{\itemsep}{-6pt}
-        \item Conservation laws for incompressible fluids\only<2>{, with low Reynolds}:
-        \begin{align*}
-            \nabla \cdot \vv &= 0 & \text{in } \Omega\\
-            \only<1>{\rho \left(\pdv{\vv}{t} + \left(\vv \cdot \nabla\right) \vv\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}}
-            \only<2->{0 &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}}
-            & \text{in } \Omega
-        \end{align*}
-        \pause[3]
-        \item Constitutive law
-        \begin{align*}
-            \boldsymbol{\dot\gamma} &= 0 & \text{if} \quad \tau < \tau_0\\
-            \boldsymbol\tau &= \left(K + \tau_0/\dot\gamma\right) \boldsymbol{\dot\gamma} & \text{if} \quad \tau \geq \tau_0
-        \end{align*}
-        \pause
-        \item Boundary conditions
-        \begin{align*}
-            \vv &= \mathbf{U} & \text{on } \partial \Omega_{D}\\
-            \mathbf{\hat n} \cdot \boldsymbol\sigma &= \mathbf{g} & \text{on } \partial \Omega_{N}
-        \end{align*}
-    \end{itemize}
-\end{frame}
+% \subsection{Finite elements}
 
-\begin{frame}{Energy functional}
-    System of PDE's is equivalent to
-    \begin{align*}
-        \vv &= \argmin_{\uu \in \mathcal{V}} \mathcal{J}(\uu)\\[8pt]
-        \mathcal{V} &= \left\{\uu \in H^1(\Omega)^d \;\Big\vert\; \int_{\Omega}q \nabla \cdot \uu \; \dd x = 0 \;\; \forall q \in L^2(\Omega), \: \uu = \mathbf{U} \;\text{on}\; \partial \Omega_D \right\}\\[8pt]
-        \mathcal{J}(\uu) &= \overbrace{\frac{K}{2}\int_{\Omega} \|\gam(\uu)\|^2 \;\dd x}^{\text{Viscous}} + \overbrace{\tau_0 \int_{\Omega} \|\gam(\uu)\| \;\dd x}^{\text{Yield}} 
-         - \underbrace{\int_{\Omega} \ff\cdot \uu \; \dd x}_{\text{Body forces}} - \underbrace{\int_{\partial \Omega_N} \mathbf{g} \cdot \uu \;\dd s}_{\text{Boundary forces}}
-    \end{align*}
-\end{frame}
+% \subsection{Conic optimization}
 
-\subsection{Finite elements}
-\begin{frame}{Finite element method: a stable discretization ?}
-    Discretize velocity-pressure fields, over a mesh of triangles, with either:
-    \begin{itemize}
-        \item Mini element: $(\mathcal{P}_1^C\oplus \mathcal{B}_3^C) - \mathcal{P}_1^C$
-        \item Taylor-Hood element: $\mathcal{P}_2^C - \mathcal{P}_1^C$
-    \end{itemize}
-    \begin{figure}
-        \begin{overprint}
-            \onslide<2>
-            \centering
-            \includesvg[width=0.75\textwidth]{../figures/shape_fcts_2d_P1.svg}
-            %\caption{$\mathcal{P}_1$}
-            \onslide<3>
-            \centering
-            \includesvg[width=0.75\textwidth]{../figures/shape_fcts_2d_bubble.svg}
-            %\caption{$\mathcal{P}_1 \oplus \mathcal{B}_3$}
-            \onslide<4>
-            \centering
-            \includesvg[width=0.90\textwidth]{../figures/shape_fcts_2d_P2.svg}
-            %\caption*{$\mathcal{P}_2$}
-        \end{overprint}
-    \end{figure}
-\end{frame}
+% \subsection{Interface tracking}
 
-
-\begin{frame}{Finite element approximation}
-    \begin{itemize}
-    \item Finite element approximation:
-    \begin{equation*}
-        \vv^h(\xx) = \sum_{\text{nodes } j} \mathbf{V}_{j} \phi_j(\xx)
-    \end{equation*}
-    \item Discrete functional\only<2>{, with additional variables $S_{i,g}$ and $T_{i,g}$}:
-    \begin{align*}
-        \mathcal{J}(\vv^h) &= \sum_{i}\sum_{g} \omega_g \left[\frac{K}{2} 
-        \onslide<2-> \overbrace{
-            \onslide<1-> \|\gam(\vv^h)\|^2 \onslide<2->
-        }^{\leq S_{i,g}} \onslide<1->
-        + \tau_0 
-        \onslide<2-> \overbrace{
-            \onslide<1-> \color{red!70} \|\gam(\vv^h)\| \color{black} \onslide<2->
-        }^{\leq T_{i,g}} \onslide<1->
-        - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}\\
-        &\quad -\sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h \;\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}
-    \end{align*}
-    \end{itemize}
-\end{frame}
-
-\subsection{Conic optimization}
-\begin{frame}{Objective and constraints}
-    \small
-    \begin{alignat*}{2}
-        \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} - \sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}\\[8pt]
-        \text{such that} \quad & S_{i,g} \geq (2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2 && \forall i, g\\
-        &T_{i,g} \geq \sqrt{(2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2} && \forall i, g\\
-        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
-        &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
-    \end{alignat*}
-    \normalsize
-\end{frame}
-
-\begin{frame}{Reformulation for conic optimization}
-    \small
-    \begin{alignat*}{2}
-        \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}-\sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{x}}{\boldsymbol \xi}_{e,g}\\[8pt]
-        \text{such that} \quad & 0 \preceq_{L^5_R} \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
-        & 0 \preceq_{L^4} \left(T_{i,g}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
-        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
-        &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
-    \end{alignat*}
-    \normalsize
-    \pause
-    \vspace{-12pt}
-    \begin{itemize}
-        \item Objective is linear in variables $U_j$, $V_j$, $S_{i,g}$, $T_{i,g}$
-        \item Equality constraints are linear
-        \item Inequality constraints are proper cones
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Conic solver}
-    Can find the optimum with an interior-point method:
-    \begin{itemize}
-        \item Encode each constraint with barrier $g_n$
-        \item Minimize a modified functional $\mathcal{J} + \mu\sum g_n$
-        \item Alternatively:
-        \begin{itemize}
-            \item Perform Newton iterations (stay optimal)
-            \item Decrease $\mu \to 0$ (minimize original objective $\mathcal{J}$)
-        \end{itemize} 
-        \item Proper cones provide special barriers (self-concordant)
-        \item Solution obtained with Newton–Raphson method, within accuracy $\epsilon$, after $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations, where $\nu\propto$ number of variables
-    \end{itemize}
-\end{frame}
-
-\begin{frame}{Interior-point solver example}
-    \begin{figure}
-        \centering
-        %\movie[width=0.7\textheight, height=0.7\textheight, showcontrols]{} {../anim/interior_point.mp4}
-        \animategraphics[autoplay,loop,width=0.5\textwidth]{15}{../anim/interior_point/frame}{1}{76}
-        \caption*{Minimize $x$ with linear inequalities over $x$ and $y$}
-    \end{figure}
-\end{frame}
-
-\subsection{Interface tracking}
-\begin{frame}{Interface tracking}
-    Once we have the velocity field, minimum of $\mathcal{J}$:
+\begin{frame}{Procedure}
     \begin{enumerate}
-        %\item Find the velocity field $\vv$ by minimizing $\mathcal{J}$
-        \item Estimate the interface position based on the strain rate field $\gam(\vv^h)$
+        \setlength{\itemsep}{6pt}
+        \item Obtain the flow $\vv$ with a finite element method
         \begin{itemize}
-            \item Not trivial, as it is not a level set of $\dot\gamma$
+            \item Solution of an optimization problem, obtained with an interior-point method
         \end{itemize}
-        \item Move the nodes of the mesh towards the interface estimation
+        \item Locate interface(s) based on the strain rate field $\gam(\vv)$
         \begin{itemize}
-            \item X-MESH algorithm allowing extreme deformations of the mesh
+            \item Not trivial: not a simple root of $\dot\gamma^h>0$, and $\dot\gamma^h$ is discontinuous
         \end{itemize}
+        \item Deform the mesh to match the physical interface
+        \begin{itemize}
+            \item With the X-MESH algorithm, where we allow extreme deformations of the mesh
+        \end{itemize}
+        \item Repeat until convergence
     \end{enumerate}
-    
-    % $\dot\gamma=0$ everywhere inside the rigid regions
-    % $C^2$ discontinuity at the interface
-    % The interface is \textbf{not} a level-set of a scalar field.
 \end{frame}
+
+% \begin{frame}{Interface tracking}
+%     Once we have the velocity field, minimum of $\mathcal{J}$:
+%     \vspace{18pt}
+%     \begin{enumerate}
+%         \setlength{\itemsep}{12pt}
+%         %\item Find the velocity field $\vv$ by minimizing $\mathcal{J}$
+%         \item Estimate the interface position based on the strain rate field $\gam(\vv^h)$
+        
+%         \item Move the nodes of the mesh towards the interface estimation
+        
+%     \end{enumerate}
+    
+%     % $\dot\gamma=0$ everywhere inside the solid regions
+%     % $C^2$ discontinuity at the interface
+%     % The interface is \textbf{not} a level-set of a scalar field.
+% \end{frame}
 
 \begin{frame}{Locating the interface}
     \begin{figure}
         \centering
         \begin{tikzpicture}
-            \draw[-Latex] (-4., 0.) -- (-4., 4.) node[right] {$\dot \gamma$};
-            \draw[-Latex] (-4., 0.) -- (4., 0.) node[above] {$x$};
-            \draw[line width=1mm] (-4., 0.) -- (-1., 0.) node[pos=0.4, above] {\small Rigid region};
+            \draw[-Latex] (-4., 0.) -- (-4., 4.) node[left] {$\dot \gamma$};
+            \draw[-Latex] (-4., 0.) -- (4., 0.) node[below] {$x$};
+            \draw[line width=1mm] (-4., 0.) -- (-1., 0.) node[pos=0.4, above] {\small Solid region};
             \draw[line width=1mm] ({sqrt(2)/2.}, {sqrt(2)/2.}) -- (4., 4.);
             \node[above] at (2.5, 0.) {\small Liquid region};
             % \draw[dashed] (0., -0.5) -- (0., 1.) node[pos=0., below] {Interface};
-            \draw (0., 0.) circle[radius=1 cm];
+            \alt<5>{\draw[blue!80] (0., 0.) circle[radius=1 cm];}{\draw (0., 0.) circle[radius=1 cm];}
             \only<1>{\node[align=center] {\small Interface not \\ \small well resolved};}
             \only<2->{\draw[red] (1., 1.05) node {\Large$\boldsymbol\times$};}
             \only<2->{\draw[red] (2., 2.15) node {\Large$\boldsymbol\times$};}
             \only<2->{\draw[red] (3., 3.15) node {\Large$\boldsymbol\times$};}
             \only<3->{\draw[red, dashed, thick] (-1., -1.) -- (3., 3.15) node[pos=0.55,above=6pt] {$\phi$};}
-            \only<4>{\fill[red] (-0.01, 0.) circle[radius=4pt] node[below] {\small Estimation};}
+            \only<4->{\fill[red] (-0.01, 0.) circle[radius=4pt] node[below] {\small Estimation};}
+            \only<5->{\draw[blue!80, thick] (-2.5,2.) rectangle (1.,3.) node[pos=.5, align=center] {Need an interface\\ predictor !};}
         \end{tikzpicture}
         %\caption*{Scalar strain rate $\dot\gamma$ near an interface}
     \end{figure}
@@ -600,30 +560,49 @@
 \begin{frame}{Locating the interface - Predictor}
     \begin{figure}
         \centering
-        \includesvg[width=0.5\textwidth]{../figures/rec_2.svg}
+        \includesvg[width=0.7\textwidth]{../figures/step_1.svg}
     \end{figure}
 \end{frame}
 
 \begin{frame}{Locating the interface - Compute linear approximation}
     \begin{figure}
         \centering
-        \includesvg[width=0.5\textwidth]{../figures/rec_3.svg}
+        \only<1>{\includesvg[width=0.7\textwidth]{../figures/step_2.svg}}%
+        \only<2>{\includesvg[width=0.7\textwidth]{../figures/step_3.svg}}%
+        \only<3>{\includesvg[width=0.7\textwidth]{../figures/step_4.svg}}%
     \end{figure}
 \end{frame}
 
 \begin{frame}{Locating the interface - Evaluate linear approximation}
     \begin{figure}
         \centering
-        \includesvg[width=0.5\textwidth]{../figures/rec_4.svg}
+        \only<1>{\includesvg[width=0.7\textwidth]{../figures/step_5.svg}}%
+        \only<2>{\includesvg[width=0.7\textwidth]{../figures/step_6.svg}}%
+        \only<3>{\includesvg[width=0.7\textwidth]{../figures/step_7.svg}}%
     \end{figure}
 \end{frame}
 
 \begin{frame}{Locating the interface - Average linear approximations}
     \begin{figure}
         \centering
-        \includesvg[width=0.5\textwidth]{../figures/rec_7.svg}
+        \includesvg[width=0.7\textwidth]{../figures/step_8.svg}
     \end{figure}
 \end{frame}
+
+\begin{frame}{Locating the interface - Corrector}
+    \begin{figure}
+        \centering
+        \includesvg[width=0.7\textwidth]{../figures/step_9.svg}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Deform the mesh - Move nodes along edges}
+    \begin{figure}
+        \centering
+        \includesvg[width=0.7\textwidth]{../figures/step_10.svg}
+    \end{figure}
+\end{frame}
+
 
 % \begin{frame}{In practice}
 %     \begin{figure}
@@ -645,6 +624,13 @@
     \end{figure}
 \end{frame}
 
+\begin{frame}{Curved channel - Increasing Bingham}
+    \begin{figure}
+        %\movie[width=0.8\textwidth, height=0.52\textwidth, showcontrols]{} {../anim/filament.mp4}
+        \animategraphics[autoplay,loop,width=0.8\textwidth]{4}{../anim/filament_focus/frame}{1}{21}
+    \end{figure}
+\end{frame}
+
 \begin{frame}{Curved channel - Pressure discontinuity}
     Jump condition 
     \begin{equation*}
@@ -655,13 +641,6 @@
             \only<1>{\centering\includegraphics[width=0.85\textwidth]{../figures/pipe_filament_p.pdf}}
             \only<2>{\centering\includegraphics[width=0.85\textwidth]{../figures/pipe_filament_d.pdf}}
         \end{overprint}
-    \end{figure}
-\end{frame}
-
-\begin{frame}{Curved channel - Increasing Bingham}
-    \begin{figure}
-        %\movie[width=0.8\textwidth, height=0.52\textwidth, showcontrols]{} {../anim/filament.mp4}
-        \animategraphics[autoplay,loop,width=0.8\textwidth]{4}{../anim/filament_focus/frame}{1}{21}
     \end{figure}
 \end{frame}
 
@@ -702,33 +681,22 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}{Lid-driven cavity - before/after interface tracking}
+\begin{frame}{Lid-driven cavity - before interface tracking}
     \begin{figure}
-        \begin{overprint}
-            \only<1>{\centering\includegraphics[height=0.75\textheight]{../figures/cavity_init.pdf}}
-            \only<2>{\centering\includegraphics[height=0.75\textheight]{../figures/cavity_last.pdf}}
-        \end{overprint}
+        \centering
+        \includegraphics[width=0.45\textwidth]{../figures/cavity_init.pdf}
+        \pause
+        \hspace{6pt}
+        \includegraphics[width=0.46\textwidth]{../figures/cavity_init_crop.pdf}
     \end{figure}
 \end{frame}
 
-\begin{frame}{Lid-driven cavity - comparison with the literature}
+\begin{frame}{Lid-driven cavity - after interface tracking}
     \begin{figure}
         \centering
-        \includesvg[width=0.80\textwidth]{../figures/profile_papers_cavity.svg}
-    \end{figure}
-\end{frame}
-
-\begin{frame}{Lid-driven cavity - Rigid body motion}
-    \begin{figure}
-        \centering
-        \begin{subfigure}[t]{0.48\textwidth}
-            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20.mp4}
-            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
-        \end{subfigure}
-        \begin{subfigure}[t]{0.48\textwidth}
-            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20_arrows.mp4}
-            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
-        \end{subfigure}
+        \includegraphics[width=0.45\textwidth]{../figures/cavity_last.pdf}
+        \hspace{6pt}
+        \includegraphics[width=0.46\textwidth]{../figures/cavity_last_crop.pdf}
     \end{figure}
 \end{frame}
 
@@ -747,7 +715,7 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}{Flow around an obstacle - Rigid body motion}
+\begin{frame}{Flow around an obstacle - Solid body motion}
     \begin{figure}
         \centering
         \movie[width=0.725\textheight, height=0.75\textheight, autostart, loop]{} {../anim/obstacle/obstacle_arrows.mp4}
@@ -756,8 +724,8 @@
 
 %---------------------------------------------------------
 
-\section{Improvements}
-\begin{frame}{Corners of rigid regions}
+\section{Future work}
+\begin{frame}{Corners of solid regions}
     \begin{figure}
         \begin{overprint}
             \only<1>{
@@ -774,7 +742,203 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}{Corners of rigid regions}
+
+\begin{frame}{Yield tolerance parameter}
+    \begin{itemize}
+        \item $\dot\gamma(\vv^h)$ never exactly $0$, but from $\sim 10^{-12}$ to $\sim 10^{-5}$
+        \item Interface predictor selects elements with $\dot\gamma(\vv^h)<10^{-4}$
+        \item Would prefer algorithm predicts interface autonomously
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Yield tolerance parameter}
+    \begin{figure}
+        \centering
+        \includegraphics[height=0.65\textheight]{../figures/correction_1.pdf}
+        \caption*{Strain rate of the lid-driven cavity flow, predictor/corrector in yellow/red}
+    \end{figure}
+\end{frame}
+
+\section*{}
+\begin{frame}{Key points}
+    \begin{itemize}
+        \setlength{\itemsep}{12pt}
+        \item Solid-liquid interface of yield stress fluids
+        \item Predictor-corrector method to track this interface
+        \item Bingham model can generate pressure jumps
+    \end{itemize}
+    \vspace{48pt}
+    Code is open-source: \texttt{github.com/vinzphenix/Bingham\_fluid}
+\end{frame}
+%---------------------------------------------------------
+
+\section*{Additional material - System of PDE's}
+\begin{frame}{Equations}
+    \begin{itemize}
+        %\setlength{\itemsep}{-6pt}
+        \item Conservation laws for incompressible fluids\only<2>{, with low Reynolds}:
+        \begin{align*}
+            \nabla \cdot \vv &= 0 & \text{in } \Omega\\
+            \only<1>{\rho \left(\pdv{\vv}{t} + \left(\vv \cdot \nabla\right) \vv\right) &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}}
+            \only<2->{0 &= -\nabla p + \nabla \cdot \boldsymbol\tau + \mathbf{f}}
+            & \text{in } \Omega
+        \end{align*}
+        \pause[3]
+        \item Constitutive law
+        \begin{align*}
+            \boldsymbol{\dot\gamma} &= 0 & \text{if} \quad \tau < \tau_0\\
+            \boldsymbol\tau &= \left(K + \tau_0/\dot\gamma\right) \boldsymbol{\dot\gamma} & \text{if} \quad \tau \geq \tau_0
+        \end{align*}
+        \pause
+        \item Boundary conditions
+        \begin{align*}
+            \vv &= \mathbf{U} & \text{on } \partial \Omega_{D}\\
+            \mathbf{\hat n} \cdot \boldsymbol\sigma &= \mathbf{g} & \text{on } \partial \Omega_{N}
+        \end{align*}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Energy functional}
+    System of PDE's is equivalent to
+    \begin{align*}
+        \vv &= \argmin_{\uu \in \mathcal{V}} \mathcal{J}(\uu)\\[8pt]
+        \mathcal{V} &= \left\{\uu \in H^1(\Omega)^d \;\Big\vert\; \int_{\Omega}q \nabla \cdot \uu \; \dd x = 0 \;\; \forall q \in L^2(\Omega), \: \uu = \mathbf{U} \;\text{on}\; \partial \Omega_D \right\}\\[8pt]
+        \mathcal{J}(\uu) &= \overbrace{\frac{K}{2}\int_{\Omega} \|\gam(\uu)\|^2 \;\dd x}^{\text{Viscous}} + \overbrace{\tau_0 \int_{\Omega} \|\gam(\uu)\| \;\dd x}^{\text{Yield}} 
+         - \underbrace{\int_{\Omega} \ff\cdot \uu \; \dd x}_{\text{Body forces}} - \underbrace{\int_{\partial \Omega_N} \mathbf{g} \cdot \uu \;\dd s}_{\text{Boundary forces}}
+    \end{align*}
+\end{frame}
+
+
+\section*{Additional material - Finite element method}
+\begin{frame}{Finite element method: a stable discretization ?}
+    Discretize velocity-pressure fields, over a mesh of triangles, with either:
+    \begin{itemize}
+        \item Mini element: $(\mathcal{P}_1^C\oplus \mathcal{B}_3^C) - \mathcal{P}_1^C$
+        \item Taylor-Hood element: $\mathcal{P}_2^C - \mathcal{P}_1^C$
+    \end{itemize}
+    \begin{figure}
+        \begin{overprint}
+            \onslide<2>
+            \centering
+            \includegraphics[width=0.75\textwidth]{../figures/shape_fcts_2d_P1.pdf}
+            %\caption{$\mathcal{P}_1$}
+            \onslide<3>
+            \centering
+            \includegraphics[width=0.75\textwidth]{../figures/shape_fcts_2d_bubble.pdf}
+            %\caption{$\mathcal{P}_1 \oplus \mathcal{B}_3$}
+            \onslide<4>
+            \centering
+            \includegraphics[width=0.90\textwidth]{../figures/shape_fcts_2d_P2.pdf}
+            %\caption*{$\mathcal{P}_2$}
+        \end{overprint}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Finite element approximation}
+    \begin{itemize}
+    \item Finite element approximation:
+    \begin{equation*}
+        \vv^h(\xx) = \sum_{\text{nodes } j} \mathbf{V}_{j} \phi_j(\xx)
+    \end{equation*}
+    \item Discrete functional\only<2>{, with additional variables $S_{i,g}$ and $T_{i,g}$}:
+    \begin{align*}
+        \mathcal{J}(\vv^h) &= \sum_{i}\sum_{g} \omega_g \left[\frac{K}{2} 
+        \onslide<2-> \overbrace{
+            \onslide<1-> \|\gam(\vv^h)\|^2 \onslide<2->
+        }^{\leq S_{i,g}} \onslide<1->
+        + \tau_0 
+        \onslide<2-> \overbrace{
+            \onslide<1-> \color{red!70} \|\gam(\vv^h)\| \color{black} \onslide<2->
+        }^{\leq T_{i,g}} \onslide<1->
+        - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}\\
+        &\quad -\sum_{e}\sum_{g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h \;\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}
+    \end{align*}
+    \end{itemize}
+\end{frame}
+
+
+\section*{Additional material - Conic optimization}
+
+\begin{frame}{Objective and constraints}
+    \small
+    \begin{alignat*}{2}
+        \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} - \sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{\tilde x}}{\boldsymbol \tilde \xi}_{e,g}\\[8pt]
+        \text{such that} \quad & S_{i,g} \geq (2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2 && \forall i, g\\
+        &T_{i,g} \geq \sqrt{(2\partial_x{u^h})^2 + (2\partial_y{v^h})^2 + (\partial_y{u^h}+\partial_x{v^h})^2} && \forall i, g\\
+        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
+        &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
+    \end{alignat*}
+    \normalsize
+\end{frame}
+
+\begin{frame}{Reformulation for conic optimization}
+    \small
+    \begin{alignat*}{2}
+        \minimize_{\mathbf{V}_j, S_{i,g}, T_{i,g}} \quad &\sum_{i,g} \omega_g \left[\frac{K}{2} S_{i,g} + \tau_0 T_{i,g} - \mathbf{f} \cdot \vv^h \right] \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g}-\sum_{e,g} \tilde \omega_g \,\mathbf{g}\cdot \vv^h &&\det \dv{\mathbf{x}}{\boldsymbol \xi}_{e,g}\\[8pt]
+        \text{such that} \quad & 0 \preceq_{L^5_R} \left(S_{i,g}, \frac{1}{2}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
+        & 0 \preceq_{L^4} \left(T_{i,g}, \sqrt{2}\partial_x u^h, \sqrt{2}\partial_y v^h, \partial_y u^h+\partial_x v^h\right) && \forall i, g\\
+        &0 = \sum_{i,g} \omega_g q_l \vert_{\xx_g} \left(\partial_x u^h + \partial_y v^h\right) \det \dv{\mathbf{x}}{\boldsymbol \xi}_{i,g} && \forall\; l\\
+        &\mathbf{V}_{j} = \mathbf{U} && \forall\; j \in \partial\Omega_D
+    \end{alignat*}
+    \normalsize
+    \pause
+    \vspace{-12pt}
+    \begin{itemize}
+        \item Objective is linear in variables $U_j$, $V_j$, $S_{i,g}$, $T_{i,g}$
+        \item Equality constraints are linear
+        \item Inequality constraints are proper cones
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Interior-point method}
+    \begin{itemize}
+        \item Encode each constraint with barrier $g_n$
+        \item Minimize a modified functional $\mathcal{J} + \mu\sum g_n$
+        \item Alternatively:
+        \begin{itemize}
+            \item Perform Newton iterations (stay optimal)
+            \item Decrease $\mu \to 0$ (minimize original objective $\mathcal{J}$)
+        \end{itemize} 
+        \item Proper cones provide special barriers (self-concordant)
+        \item Solution obtained with Newton–Raphson method, within accuracy $\epsilon$, after $\mathcal{O}(\sqrt{\nu} \log \frac{1}{\epsilon})$ iterations, where $\nu\propto$ number of variables
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Interior-point method - example}
+    \begin{figure}
+        \centering
+        %\movie[width=0.7\textheight, height=0.7\textheight, showcontrols]{} {../anim/interior_point.mp4}
+        \animategraphics[autoplay,loop,width=0.5\textwidth]{15}{../anim/interior_point/frame}{1}{76}
+        \caption*{Minimize $x$ with linear inequalities over $x$ and $y$}
+    \end{figure}
+\end{frame}
+
+\section*{Additional material - Numerical results}
+
+\begin{frame}{Lid-driven cavity - comparison with the literature}
+    \begin{figure}
+        \centering
+        \includesvg[width=0.80\textwidth]{../figures/profile_papers_cavity.svg}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Lid-driven cavity - Solid body motion}
+    \begin{figure}
+        \centering
+        \begin{subfigure}[t]{0.48\textwidth}
+            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20.mp4}
+            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
+        \end{subfigure}
+        \begin{subfigure}[t]{0.48\textwidth}
+            \movie[width=\textwidth, height=1.042\textwidth, autostart, loop]{} {../anim/cavity_20/cavity_20_arrows.mp4}
+            % \animategraphics[autoplay,loop,width=\textwidth]{25}{../anim/cavity_20/frame_}{1}{100}
+        \end{subfigure}
+    \end{figure}
+\end{frame}
+
+
+\section*{Additional material - Future work}
+\begin{frame}{Corners of solid regions}
     \begin{figure}
         \centering
         \begin{subfigure}[t]{0.26\textwidth}
@@ -790,28 +954,12 @@
     \end{figure}
 \end{frame}
 
-\begin{frame}{Yield tolerance parameter}
-    \begin{itemize}
-        \item $\dot\gamma(\vv^h)$ never exactly $0$, but from $\sim 10^{-12}$ to $\sim 10^{-5}$
-        \item Interface predictor selects elements with $\dot\gamma(\vv^h)<10^{-4}$
-        \item Would prefer algorithm predicts interface autonomously
-    \end{itemize}
-\end{frame}
 
 \begin{frame}{Yield tolerance parameter}
     \begin{figure}
-        \begin{overprint}
-            \only<1>{
-                \centering
-                \includegraphics[height=0.65\textheight]{../figures/correction_1.pdf}
-                \caption*{Strain rate of the lid-driven cavity flow, predictor/corrector in yellow/red}
-            }
-            \only<2>{
-                \centering
-                \includegraphics[height=0.65\textheight]{../figures/correction_2.pdf}
-                \caption*{Parametric curves}
-            }
-        \end{overprint}
+        \centering
+        \includegraphics[height=0.65\textheight]{../figures/correction_2.pdf}
+        \caption*{Parametric curves}
     \end{figure}
 \end{frame}
 
@@ -830,20 +978,6 @@
         \caption*{Evaluation of the strain rate along the parametric curves}
     \end{figure}
 \end{frame}
-
-\section*{}
-\begin{frame}
-    \begin{center}
-        \LARGE
-        Thank you for your attention !
-        \normalsize
-    \end{center}
-    \begin{figure}
-        \centering
-        \movie[width=0.71\textheight, height=0.6\textheight, autostart, loop]{} {../anim/obstacle/cropped.mp4}
-    \end{figure}
-\end{frame}
-%---------------------------------------------------------
 
 \end{document}
 

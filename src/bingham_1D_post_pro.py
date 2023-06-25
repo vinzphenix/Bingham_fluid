@@ -175,7 +175,10 @@ def plot_solution_1D(
             this_y[:] /= sim.H / 2.
 
     # FIGURE
-    if mini_display:
+    velocity_only = True
+    if velocity_only:
+        figsize, dims = (3., 5.75), (2, 1)
+    elif mini_display:
         figsize, dims = (8., 3.75), (1, 2)
     elif sim.save:
         figsize, dims = (9.5, 5.75), (2, 3)
@@ -197,37 +200,40 @@ def plot_solution_1D(
     if sim.degree == 2:
         ax.plot(u_num[1::2], y_all[1::2], marker=".", ls="", color='C1')
 
-    ax = axs[0, 1]
-    extra_label = r"" if sim.dimensions else r"h / U_{\infty}"
-    ax.set_xlabel(r"${:s} \partial_y u $".format(extra_label), fontsize=ftSz2)
-    if not quadrature:
-        ax.set_title("Strain rate profile", fontsize=ftSz1)
-        ax.plot(du_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
-        ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
-        ax.plot(*make_step(du_discrete, y_discrete, 2), '-o', ms=5, color='C1', label='Numerical')
-    else:
-        ax.set_title(r"Strain rate norm profile -- $\dot\gamma(u)$", fontsize=ftSz1)
-        ax.plot(np.abs(du_ana_fit), y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
-        ax.plot(np.abs(du_gauss), y_gauss, color="C3", ls="", marker='x', ms=10, label='Gauss pt')
-        tmp_x, tmp_y = make_step(du_dense, y_dense, sim.plot_density + 1)
-        ax.plot(np.abs(tmp_x), tmp_y, '-', color='C1', lw=3, label='FEM solution')
-        ax.plot(
-            *make_step(du_discrete * np.sign(-y_discrete), y_discrete, 2),
-            '--', ms=5, color='C2', label='Seen by quadrature'
-        )
+    if not velocity_only:
+        ax = axs[0, 1]
+        extra_label = r"" if sim.dimensions else r"h / U_{\infty}"
+        ax.set_xlabel(r"${:s} \partial_y u $".format(extra_label), fontsize=ftSz2)
+        if not quadrature:
+            ax.set_title("Strain rate profile", fontsize=ftSz1)
+            ax.plot(du_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+            ax.plot(du_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
+            du_jumps, dy_jumps = make_step(du_discrete, y_discrete, 2)
+            ax.plot(du_jumps, dy_jumps, '-o', ms=5, color='C1', label='Numerical')
+        else:
+            ax.set_title(r"Strain rate norm profile -- $\dot\gamma(u)$", fontsize=ftSz1)
+            ax.plot(np.abs(du_ana_fit), y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+            ax.plot(np.abs(du_gauss), y_gauss, 'x', color="C3", ls="", ms=10, label='Gauss pt')
+            tmp_x, tmp_y = make_step(du_dense, y_dense, sim.plot_density + 1)
+            ax.plot(np.abs(tmp_x), tmp_y, '-', color='C1', lw=3, label='FEM solution')
+            ax.plot(
+                *make_step(du_discrete * np.sign(-y_discrete), y_discrete, 2),
+                '--', ms=5, color='C2', label='Seen by quadrature'
+            )
 
     if not mini_display:
-        ax = axs[0, 2]
-        extra_label = r"\tau_0" if sim.tau_zero > 0. else r"h \partial_x p"
-        extra_label = r"" if sim.dimensions else r"\:/\: {:s}".format(extra_label)
-        ax.set_xlabel(r"$|\tau_{{xy}}| {:s}$".format(extra_label), fontsize=ftSz2)
-        ax.set_title("Shear stress profile", fontsize=ftSz1)
-        ax.plot(tau_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
-        ax.plot(tau_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
-        ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
-        ax.plot(*make_step(tau_dense, y_dense, sim.plot_density + 1), '-', ms=5, color='C1')
-        ax.plot(*make_step(tau_discrete, y_discrete, 2), 'o', ls="", ms=5, color='C1')
-
+        if not velocity_only:
+            ax = axs[0, 2]
+            extra_label = r"\tau_0" if sim.tau_zero > 0. else r"h \partial_x p"
+            extra_label = r"" if sim.dimensions else r"\:/\: {:s}".format(extra_label)
+            ax.set_xlabel(r"$|\tau_{{xy}}| {:s}$".format(extra_label), fontsize=ftSz2)
+            ax.set_title("Shear stress profile", fontsize=ftSz1)
+            ax.plot(tau_ana_fit, y_ana, label="Analytical", color="C0", alpha=alp, lw=lw)
+            ax.plot(tau_gauss, y_gauss, color="C3", ls="", marker='x', ms=6, label='Gauss pt')
+            ax.plot([], [], color='C1', ls='-', marker='o', label="Numerical")
+            ax.plot(*make_step(tau_dense, y_dense, sim.plot_density + 1), '-', ms=5, color='C1')
+            ax.plot(*make_step(tau_discrete, y_discrete, 2), 'o', ls="", ms=5, color='C1')
+        
         zipped = [axs[1, :]]
         zipped += [[y_all[::1 + (sim.degree == 1)], y_gauss, y_gauss]]
         zipped += [[u_ana_nodes[::1 + (sim.degree == 1)], du_ana_gauss, tau_ana_gauss]]
@@ -255,7 +261,8 @@ def plot_solution_1D(
         ax.grid(ls=':')
     for ax in axs[:, 0]:
         extra_label = r"" if sim.dimensions else r" / (h/2)"
-        ax.set_ylabel(r"$y {:s}$".format(extra_label), fontsize=ftSz2)
+        # ax.set_ylabel(r"$y {:s}$".format(extra_label), fontsize=ftSz2)
+        ax.set_yticklabels([])
     if not mini_display:
         for ax, phi in zip(axs[1, :], [r'u', r'\partial_y u', r'\tau']):
             y_pos = sim.H / 2. if sim.dimensions else 1.

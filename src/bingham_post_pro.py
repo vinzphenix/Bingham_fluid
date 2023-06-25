@@ -538,6 +538,15 @@ def add_reconstruction(sim: Simulation_2D, extra):
     gmsh.view.option.setNumber(view_targets, 'ShowScale', 0)
     gmsh.view.addListData(tag=view_targets, dataType="SL", numEle=n, data=data_2.flatten())
 
+    data_2 = np.zeros((n, 3 + 3))
+    data_2[:, [0, 1]] =  new_coords
+    data_2[:, [3, 4]] = new_coords - sim.coords[moved_nodes]
+    view_targets = gmsh.view.add("Targets2", tag=sim.tag)
+    sim.tag += 1
+    gmsh.view.option.setNumber(view_targets, 'ShowScale', 0)
+    gmsh.view.addListData(tag=view_targets, dataType="VP", numEle=n, data=data_2.flatten())
+
+
     return [view_rec, view_avg_rec, view_targets]
 
 

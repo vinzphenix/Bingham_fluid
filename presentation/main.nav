@@ -4,117 +4,132 @@
 \headcommand {\beamer@framepages {2}{2}}
 \headcommand {\beamer@sectionpages {1}{2}}
 \headcommand {\beamer@subsectionpages {1}{2}}
-\headcommand {\sectionentry {1}{What is a yield stress fluid ?}{3}{What is a yield stress fluid ?}{0}}
+\headcommand {\sectionentry {1}{The context: what is a yield stress fluid ?}{3}{The context: what is a yield stress fluid ?}{0}}
 \headcommand {\slideentry {1}{0}{1}{3/3}{}{0}}
 \headcommand {\beamer@framepages {3}{3}}
 \headcommand {\slideentry {1}{0}{2}{4/4}{}{0}}
 \headcommand {\beamer@framepages {4}{4}}
-\headcommand {\slideentry {1}{0}{3}{5/6}{}{0}}
-\headcommand {\beamer@framepages {5}{6}}
-\headcommand {\slideentry {1}{0}{4}{7/7}{}{0}}
-\headcommand {\beamer@framepages {7}{7}}
-\headcommand {\slideentry {1}{0}{5}{8/10}{}{0}}
-\headcommand {\beamer@framepages {8}{10}}
-\headcommand {\slideentry {1}{0}{6}{11/11}{}{0}}
-\headcommand {\beamer@framepages {11}{11}}
-\headcommand {\beamer@sectionpages {3}{11}}
-\headcommand {\beamer@subsectionpages {3}{11}}
-\headcommand {\sectionentry {2}{Why do we study it ?}{12}{Why do we study it ?}{0}}
-\headcommand {\slideentry {2}{0}{1}{12/12}{}{0}}
-\headcommand {\beamer@framepages {12}{12}}
-\headcommand {\slideentry {2}{0}{2}{13/16}{}{0}}
-\headcommand {\beamer@framepages {13}{16}}
-\headcommand {\slideentry {2}{0}{3}{17/17}{}{0}}
-\headcommand {\beamer@framepages {17}{17}}
-\headcommand {\slideentry {2}{0}{4}{18/20}{}{0}}
-\headcommand {\beamer@framepages {18}{20}}
-\headcommand {\slideentry {2}{0}{5}{21/22}{}{0}}
-\headcommand {\beamer@framepages {21}{22}}
-\headcommand {\beamer@sectionpages {12}{22}}
-\headcommand {\beamer@subsectionpages {12}{22}}
-\headcommand {\sectionentry {3}{How do we model it ?}{23}{How do we model it ?}{0}}
-\headcommand {\slideentry {3}{0}{1}{23/23}{}{0}}
-\headcommand {\beamer@framepages {23}{23}}
-\headcommand {\beamer@subsectionpages {23}{23}}
-\headcommand {\beamer@subsectionentry {0}{3}{1}{24}{Differential equations}}
-\headcommand {\slideentry {3}{1}{1}{24/27}{Differential equations}{0}}
-\headcommand {\beamer@framepages {24}{27}}
-\headcommand {\slideentry {3}{1}{2}{28/28}{Differential equations}{0}}
-\headcommand {\beamer@framepages {28}{28}}
-\headcommand {\beamer@subsectionpages {24}{28}}
-\headcommand {\beamer@subsectionentry {0}{3}{2}{29}{Finite elements}}
-\headcommand {\slideentry {3}{2}{1}{29/32}{Finite elements}{0}}
-\headcommand {\beamer@framepages {29}{32}}
-\headcommand {\slideentry {3}{2}{2}{33/34}{Finite elements}{0}}
-\headcommand {\beamer@framepages {33}{34}}
-\headcommand {\beamer@subsectionpages {29}{34}}
-\headcommand {\beamer@subsectionentry {0}{3}{3}{35}{Conic optimization}}
-\headcommand {\slideentry {3}{3}{1}{35/35}{Conic optimization}{0}}
-\headcommand {\beamer@framepages {35}{35}}
-\headcommand {\slideentry {3}{3}{2}{36/37}{Conic optimization}{0}}
-\headcommand {\beamer@framepages {36}{37}}
-\headcommand {\slideentry {3}{3}{3}{38/38}{Conic optimization}{0}}
-\headcommand {\beamer@framepages {38}{38}}
-\headcommand {\slideentry {3}{3}{4}{39/39}{Conic optimization}{0}}
-\headcommand {\beamer@framepages {39}{39}}
-\headcommand {\beamer@subsectionpages {35}{39}}
-\headcommand {\beamer@subsectionentry {0}{3}{4}{40}{Interface tracking}}
-\headcommand {\slideentry {3}{4}{1}{40/40}{Interface tracking}{0}}
+\headcommand {\slideentry {1}{0}{3}{5/9}{}{0}}
+\headcommand {\beamer@framepages {5}{9}}
+\headcommand {\slideentry {1}{0}{4}{10/10}{}{0}}
+\headcommand {\beamer@framepages {10}{10}}
+\headcommand {\slideentry {1}{0}{5}{11/13}{}{0}}
+\headcommand {\beamer@framepages {11}{13}}
+\headcommand {\slideentry {1}{0}{6}{14/14}{}{0}}
+\headcommand {\beamer@framepages {14}{14}}
+\headcommand {\beamer@sectionpages {3}{14}}
+\headcommand {\beamer@subsectionpages {3}{14}}
+\headcommand {\sectionentry {2}{The motivation: improve flow simulations with interface tracking}{15}{The motivation: improve flow simulations with interface tracking}{0}}
+\headcommand {\slideentry {2}{0}{1}{15/15}{}{0}}
+\headcommand {\beamer@framepages {15}{15}}
+\headcommand {\slideentry {2}{0}{2}{16/19}{}{0}}
+\headcommand {\beamer@framepages {16}{19}}
+\headcommand {\slideentry {2}{0}{3}{20/20}{}{0}}
+\headcommand {\beamer@framepages {20}{20}}
+\headcommand {\slideentry {2}{0}{4}{21/23}{}{0}}
+\headcommand {\beamer@framepages {21}{23}}
+\headcommand {\slideentry {2}{0}{5}{24/25}{}{0}}
+\headcommand {\beamer@framepages {24}{25}}
+\headcommand {\beamer@sectionpages {15}{25}}
+\headcommand {\beamer@subsectionpages {15}{25}}
+\headcommand {\sectionentry {3}{The method: interface tracking algorithm}{26}{The method: interface tracking algorithm}{0}}
+\headcommand {\slideentry {3}{0}{1}{26/26}{}{0}}
+\headcommand {\beamer@framepages {26}{26}}
+\headcommand {\slideentry {3}{0}{2}{27/27}{}{0}}
+\headcommand {\beamer@framepages {27}{27}}
+\headcommand {\slideentry {3}{0}{3}{28/32}{}{0}}
+\headcommand {\beamer@framepages {28}{32}}
+\headcommand {\slideentry {3}{0}{4}{33/33}{}{0}}
+\headcommand {\beamer@framepages {33}{33}}
+\headcommand {\slideentry {3}{0}{5}{34/36}{}{0}}
+\headcommand {\beamer@framepages {34}{36}}
+\headcommand {\slideentry {3}{0}{6}{37/39}{}{0}}
+\headcommand {\beamer@framepages {37}{39}}
+\headcommand {\slideentry {3}{0}{7}{40/40}{}{0}}
 \headcommand {\beamer@framepages {40}{40}}
-\headcommand {\slideentry {3}{4}{2}{41/44}{Interface tracking}{0}}
-\headcommand {\beamer@framepages {41}{44}}
-\headcommand {\slideentry {3}{4}{3}{45/45}{Interface tracking}{0}}
+\headcommand {\slideentry {3}{0}{8}{41/41}{}{0}}
+\headcommand {\beamer@framepages {41}{41}}
+\headcommand {\slideentry {3}{0}{9}{42/42}{}{0}}
+\headcommand {\beamer@framepages {42}{42}}
+\headcommand {\beamer@sectionpages {26}{42}}
+\headcommand {\beamer@subsectionpages {26}{42}}
+\headcommand {\sectionentry {4}{Numerical results}{43}{Numerical results}{0}}
+\headcommand {\slideentry {4}{0}{1}{43/43}{}{0}}
+\headcommand {\beamer@framepages {43}{43}}
+\headcommand {\slideentry {4}{0}{2}{44/44}{}{0}}
+\headcommand {\beamer@framepages {44}{44}}
+\headcommand {\slideentry {4}{0}{3}{45/45}{}{0}}
 \headcommand {\beamer@framepages {45}{45}}
-\headcommand {\slideentry {3}{4}{4}{46/46}{Interface tracking}{0}}
-\headcommand {\beamer@framepages {46}{46}}
-\headcommand {\slideentry {3}{4}{5}{47/47}{Interface tracking}{0}}
-\headcommand {\beamer@framepages {47}{47}}
-\headcommand {\slideentry {3}{4}{6}{48/48}{Interface tracking}{0}}
+\headcommand {\slideentry {4}{0}{4}{46/47}{}{0}}
+\headcommand {\beamer@framepages {46}{47}}
+\headcommand {\slideentry {4}{0}{5}{48/48}{}{0}}
 \headcommand {\beamer@framepages {48}{48}}
-\headcommand {\beamer@sectionpages {23}{48}}
-\headcommand {\beamer@subsectionpages {40}{48}}
-\headcommand {\sectionentry {4}{Numerical results}{49}{Numerical results}{0}}
-\headcommand {\slideentry {4}{0}{1}{49/49}{}{0}}
-\headcommand {\beamer@framepages {49}{49}}
-\headcommand {\slideentry {4}{0}{2}{50/50}{}{0}}
-\headcommand {\beamer@framepages {50}{50}}
-\headcommand {\slideentry {4}{0}{3}{51/52}{}{0}}
-\headcommand {\beamer@framepages {51}{52}}
-\headcommand {\slideentry {4}{0}{4}{53/53}{}{0}}
-\headcommand {\beamer@framepages {53}{53}}
-\headcommand {\slideentry {4}{0}{5}{54/54}{}{0}}
+\headcommand {\slideentry {4}{0}{6}{49/50}{}{0}}
+\headcommand {\beamer@framepages {49}{50}}
+\headcommand {\slideentry {4}{0}{7}{51/51}{}{0}}
+\headcommand {\beamer@framepages {51}{51}}
+\headcommand {\slideentry {4}{0}{8}{52/53}{}{0}}
+\headcommand {\beamer@framepages {52}{53}}
+\headcommand {\slideentry {4}{0}{9}{54/54}{}{0}}
 \headcommand {\beamer@framepages {54}{54}}
-\headcommand {\slideentry {4}{0}{6}{55/56}{}{0}}
-\headcommand {\beamer@framepages {55}{56}}
-\headcommand {\slideentry {4}{0}{7}{57/57}{}{0}}
-\headcommand {\beamer@framepages {57}{57}}
-\headcommand {\slideentry {4}{0}{8}{58/58}{}{0}}
+\headcommand {\beamer@sectionpages {43}{54}}
+\headcommand {\beamer@subsectionpages {43}{54}}
+\headcommand {\sectionentry {5}{Future work}{55}{Future work}{0}}
+\headcommand {\slideentry {5}{0}{1}{55/55}{}{0}}
+\headcommand {\beamer@framepages {55}{55}}
+\headcommand {\slideentry {5}{0}{2}{56/57}{}{0}}
+\headcommand {\beamer@framepages {56}{57}}
+\headcommand {\slideentry {5}{0}{3}{58/58}{}{0}}
 \headcommand {\beamer@framepages {58}{58}}
-\headcommand {\slideentry {4}{0}{9}{59/60}{}{0}}
-\headcommand {\beamer@framepages {59}{60}}
-\headcommand {\slideentry {4}{0}{10}{61/61}{}{0}}
-\headcommand {\beamer@framepages {61}{61}}
-\headcommand {\beamer@sectionpages {49}{61}}
-\headcommand {\beamer@subsectionpages {49}{61}}
-\headcommand {\sectionentry {5}{Improvements}{62}{Improvements}{0}}
-\headcommand {\slideentry {5}{0}{1}{62/62}{}{0}}
-\headcommand {\beamer@framepages {62}{62}}
-\headcommand {\slideentry {5}{0}{2}{63/64}{}{0}}
-\headcommand {\beamer@framepages {63}{64}}
-\headcommand {\slideentry {5}{0}{3}{65/65}{}{0}}
+\headcommand {\slideentry {5}{0}{4}{59/59}{}{0}}
+\headcommand {\beamer@framepages {59}{59}}
+\headcommand {\beamer@sectionpages {55}{59}}
+\headcommand {\beamer@subsectionpages {55}{59}}
+\headcommand {\slideentry {6}{0}{1}{60/60}{}{0}}
+\headcommand {\beamer@framepages {60}{60}}
+\headcommand {\beamer@sectionpages {60}{60}}
+\headcommand {\beamer@subsectionpages {60}{60}}
+\headcommand {\sectionentry {7}{Additional material - System of PDE's}{61}{Additional material - System of PDE's}{0}}
+\headcommand {\slideentry {7}{0}{1}{61/64}{}{0}}
+\headcommand {\beamer@framepages {61}{64}}
+\headcommand {\slideentry {7}{0}{2}{65/65}{}{0}}
 \headcommand {\beamer@framepages {65}{65}}
-\headcommand {\slideentry {5}{0}{4}{66/66}{}{0}}
-\headcommand {\beamer@framepages {66}{66}}
-\headcommand {\slideentry {5}{0}{5}{67/68}{}{0}}
-\headcommand {\beamer@framepages {67}{68}}
-\headcommand {\slideentry {5}{0}{6}{69/70}{}{0}}
-\headcommand {\beamer@framepages {69}{70}}
-\headcommand {\beamer@sectionpages {62}{70}}
-\headcommand {\beamer@subsectionpages {62}{70}}
-\headcommand {\slideentry {6}{0}{1}{71/71}{}{0}}
-\headcommand {\beamer@framepages {71}{71}}
-\headcommand {\beamer@partpages {1}{71}}
-\headcommand {\beamer@subsectionpages {71}{71}}
-\headcommand {\beamer@sectionpages {71}{71}}
-\headcommand {\beamer@documentpages {71}}
-\headcommand {\gdef \inserttotalframenumber {45}}
+\headcommand {\beamer@sectionpages {61}{65}}
+\headcommand {\beamer@subsectionpages {61}{65}}
+\headcommand {\sectionentry {8}{Additional material - Finite element method}{66}{Additional material - Finite element method}{0}}
+\headcommand {\slideentry {8}{0}{1}{66/69}{}{0}}
+\headcommand {\beamer@framepages {66}{69}}
+\headcommand {\slideentry {8}{0}{2}{70/71}{}{0}}
+\headcommand {\beamer@framepages {70}{71}}
+\headcommand {\beamer@sectionpages {66}{71}}
+\headcommand {\beamer@subsectionpages {66}{71}}
+\headcommand {\sectionentry {9}{Additional material - Conic optimization}{72}{Additional material - Conic optimization}{0}}
+\headcommand {\slideentry {9}{0}{1}{72/72}{}{0}}
+\headcommand {\beamer@framepages {72}{72}}
+\headcommand {\slideentry {9}{0}{2}{73/74}{}{0}}
+\headcommand {\beamer@framepages {73}{74}}
+\headcommand {\slideentry {9}{0}{3}{75/75}{}{0}}
+\headcommand {\beamer@framepages {75}{75}}
+\headcommand {\slideentry {9}{0}{4}{76/76}{}{0}}
+\headcommand {\beamer@framepages {76}{76}}
+\headcommand {\beamer@sectionpages {72}{76}}
+\headcommand {\beamer@subsectionpages {72}{76}}
+\headcommand {\sectionentry {10}{Additional material - Numerical results}{77}{Additional material - Numerical results}{0}}
+\headcommand {\slideentry {10}{0}{1}{77/77}{}{0}}
+\headcommand {\beamer@framepages {77}{77}}
+\headcommand {\slideentry {10}{0}{2}{78/78}{}{0}}
+\headcommand {\beamer@framepages {78}{78}}
+\headcommand {\beamer@sectionpages {77}{78}}
+\headcommand {\beamer@subsectionpages {77}{78}}
+\headcommand {\sectionentry {11}{Additional material - Future work}{79}{Additional material - Future work}{0}}
+\headcommand {\slideentry {11}{0}{1}{79/79}{}{0}}
+\headcommand {\beamer@framepages {79}{79}}
+\headcommand {\slideentry {11}{0}{2}{80/80}{}{0}}
+\headcommand {\beamer@framepages {80}{80}}
+\headcommand {\slideentry {11}{0}{3}{81/82}{}{0}}
+\headcommand {\beamer@framepages {81}{82}}
+\headcommand {\beamer@partpages {1}{82}}
+\headcommand {\beamer@subsectionpages {79}{82}}
+\headcommand {\beamer@sectionpages {79}{82}}
+\headcommand {\beamer@documentpages {82}}
+\headcommand {\gdef \inserttotalframenumber {49}}

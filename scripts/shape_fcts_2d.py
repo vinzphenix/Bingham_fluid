@@ -64,8 +64,8 @@ def plot_basis_fcts(sfs, figsize, save_name=""):
     ax.view_init(elev=20., azim=240.)  # type: ignore
 
     # Make data.
-    x = np.linspace(0., 1., 10)
-    y = np.linspace(0., 1., 10)
+    x = np.linspace(0., 1., 15)
+    y = np.linspace(0., 1., 15)
     X, Y = np.meshgrid(x, y)
 
     x_tri = np.linspace(0., 1., 2)
@@ -110,7 +110,7 @@ def plot_basis_fcts(sfs, figsize, save_name=""):
     fig.subplots_adjust(top=top, bottom=bot)
 
     if save_name != "":
-        fig.savefig(path + f"shape_fcts_2d_{save_name:s}.svg", format="svg", transparent=True)
+        fig.savefig(path + f"shape_fcts_2d_{save_name:s}.pdf", format="pdf", transparent=True)
         # fig.savefig(f"shape_fcts_2d_{save_name:s}.svg", format="svg")
     else:
         plt.show()
@@ -121,11 +121,10 @@ def plot_basis_fcts(sfs, figsize, save_name=""):
 if __name__ == "__main__":
     ftSz1, ftSz2, ftSz3 = 16, 14, 12
 
-    save_global = True
     path = "./figures/"
     plt.rcParams['font.family'] = 'serif'
-    plt.rcParams["text.usetex"] = save_global
+    plt.rcParams["text.usetex"] = True
 
-    # plot_basis_fcts(sf_bubble, figsize=(5., 3.), save_name='bubble')
     # plot_basis_fcts(sf_p1, figsize=(5., 3.), save_name='P1')
-    plot_basis_fcts(sf_p2, figsize=(10., 5.), save_name='P2')
+    # plot_basis_fcts(sf_p2, figsize=(10., 5.), save_name='P2')
+    plot_basis_fcts(sf_bubble, figsize=(5., 3.), save_name='bubble')

@@ -61,13 +61,13 @@ The solver uses the  open-source `CVXOPT` library in the 1D problem, and the `MO
 
 # Examples
 ## Lid driven cavity
-![Example 2 gif](./anim/cavity_20/anim.gif)
+![Example 2 gif](./anim/cavity_20/cavity_20.gif)
 
-## Lid driven cavity, display radius of curvature
-![Example 2 gif](./anim/cavity_20_rotation/anim.gif)
+## Flow around rectangle, display radius of curvature
+![Example 2 gif](./anim/obstacle/obstacle_arrows.gif)
 
 ## Flow in a pipe
-![Example 1 gif](./anim/pipe_rotation/anim.gif)
+![Example 1 gif](./anim/pipe/pipe_arrows.gif)
 
 ## Lid driven cavity, open at the upper left and lower right boundaries
-![Example 4 gif](./anim/opencavity/anim.gif)
+![Example 4 gif](./anim/opencavity/opencavity.gif)

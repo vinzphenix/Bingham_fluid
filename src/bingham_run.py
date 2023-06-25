@@ -39,7 +39,7 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 3
+        mode = 2
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
@@ -47,12 +47,12 @@ if __name__ == "__main__":
     ##########################################################################################
     #######################  -  Simulation parameters and geometry  -  #######################
 
-    # parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], elem="th", model="rectangle")
+    parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], elem="th", model="rectangle")
     # parameters = dict(K=1., tau_zero=0.2, elem="th", model="pipe")
     # parameters = dict(K=1., tau_zero=0.1, elem="th", model="pipeneck")
     # parameters = dict(K=1., tau_zero=10., elem="th", model="cylinder")
     # parameters = dict(K=1., tau_zero=50., element="th", model="cavity_test")
-    parameters = dict(K=1., tau_zero=5., elem="th", model="cavity")
+    # parameters = dict(K=1., tau_zero=5., elem="th", model="cavity")
     # parameters = dict(K=1., tau_zero=500., elem="th", model="cavity_cheat")
     # parameters = dict(K=1., tau_zero=100., elem="th", model="opencavity")
     # parameters = dict(K=1., tau_zero=0., elem="th", model="bfs")
@@ -76,11 +76,11 @@ if __name__ == "__main__":
         # model, variant = "cavity", "20"
         # model, variant = "cavity_cheat", "500"
         # model, variant = "opencavity", "100"
-        # model, variant = "pipe", "classic"
+        model, variant = "pipe", "classic"
         # model, variant = "finepipe", "225"  # f"{1e3 * t:.0f}"
         # model, variant = "necksmooth", "default"
         # model, variant = "necksharp", "default"
-        model, variant = "cylinder", "10"
+        # model, variant = "cylinder", "10"
 
         parameters, u_field, p_field, d_field, coords = load_solution(model, variant)
         sim = Simulation_2D(parameters, new_coords=coords)
