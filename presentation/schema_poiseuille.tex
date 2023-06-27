@@ -31,6 +31,11 @@
   \node at (\xb, -1.5*\h) {Shear stress};
   \pause
 
+  \node at (\xb+1.75, 0.7*\h) {Liquid};
+  \node at (\xb+1.75, 0.) {Solid};
+  \node at (\xb+1.75, -0.7*\h) {Liquid};
+  \pause
+
   % Strain profile
   \foreach \eta in {-0.75,-0.45} {
     \draw[-stealth] (\xc, \h*\eta) -- ({\xc+0.4*(\u)/\h*(-\b/2-2*\eta)}, \h*\eta);
