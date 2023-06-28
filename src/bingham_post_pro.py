@@ -107,10 +107,10 @@ def get_stress_boundary(sim: Simulation_2D, strain_full):
     """
 
     edge_node_tags, length, tangent, normal = sim.get_edge_node_tags("", exclude=[5, 6])
-    mid_x = 0.5 * (np.amin(sim.coords[:, 0]) + np.amax(sim.coords[:, 0]))
-    mask = (sim.coords[edge_node_tags, 0] - mid_x) ** 2 + sim.coords[edge_node_tags, 1] ** 2 < 1.
-    mask = np.all(mask, axis=1)
-    edge_node_tags, length, tangent, normal = edge_node_tags[mask], length[mask], tangent[mask], normal[mask]
+    # mid_x = 0.5 * (np.amin(sim.coords[:, 0]) + np.amax(sim.coords[:, 0]))
+    # mask = (sim.coords[edge_node_tags, 0] - mid_x) ** 2 + sim.coords[edge_node_tags, 1] ** 2 < 1.
+    # mask = np.all(mask, axis=1)
+    # edge_node_tags, length, tangent, normal = edge_node_tags[mask], length[mask], tangent[mask], normal[mask]
     n_edge, n_pts = edge_node_tags.shape
 
     nodes_bd = np.unique(edge_node_tags[:, :])  # primary nodes only
@@ -262,22 +262,31 @@ def add_unstrained_zone(sim: Simulation_2D, t_num):
     mask = np.where(~sim.is_yielded(t_num))
     strain_norm_avg = np.mean(t_num, axis=1)
     percentile_95 = -np.partition(-strain_norm_avg, sim.n_elem // 20)[sim.n_elem // 20]
-    tag_unstrained = gmsh.view.add("Unstrained_zone", tag=sim.tag)
-    sim.tag += 1
 
     if np.any(mask):
-        gmsh.view.addHomogeneousModelData(
-            tag_unstrained, 0, sim.model_name, "ElementData",
-            sim.elem_tags[mask], strain_norm_avg[mask], numComponents=1
-        )
+        tag_unstrained = gmsh.view.add("Unstrained zone", tag=sim.tag)
+        sim.tag += 1
         gmsh.view.option.setNumber(tag_unstrained, "RangeType", 2)
         gmsh.view.option.setNumber(tag_unstrained, "CustomMin", 0.)
         gmsh.view.option.setNumber(tag_unstrained, "CustomMax", percentile_95)
         gmsh.view.option.setNumber(tag_unstrained, "ShowScale", 0)
         gmsh.view.option.setNumber(tag_unstrained, "ColormapAlpha", 0.25)
         gmsh.view.option.setNumber(tag_unstrained, "OffsetZ", -1.e-5)
+        gmsh.view.addHomogeneousModelData(
+            tag_unstrained, 0, sim.model_name, "ElementData",
+            sim.elem_tags[mask], strain_norm_avg[mask], numComponents=1
+        )
 
-    return [tag_unstrained]
+        gmsh.plugin.setNumber('Skin', option="Visible", value=1)
+        gmsh.plugin.setNumber('Skin', option="View", value=tag_unstrained - 1)
+        tag_unstrained_skin = gmsh.plugin.run('Skin')
+        gmsh.view.option.setNumber(tag_unstrained_skin, "LineWidth", 1.5)
+        gmsh.view.option.setNumber(tag_unstrained_skin, "ColormapNumber", 0)
+        gmsh.view.option.setNumber(tag_unstrained_skin, "ShowScale", 0)
+        gmsh.view.option.setString(tag_unstrained_skin, "Name", "Unstrained skin")
+        sim.tag += 1
+
+    return [tag_unstrained, tag_unstrained_skin]
 
 
 def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
@@ -339,6 +348,8 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     gmsh.view.option.setNumber(tag_strain, "ShowScale", 1)
 
     tag_vorticity = gmsh.view.add("Vorticity", tag=sim.tag + 8)
+    gmsh.view.option.setString(tag_vorticity, "Format", r"%.2g")
+
     tag_divergence = gmsh.view.add("Divergence", tag=sim.tag + 9)
 
     tag_bd_shear = gmsh.view.add("Shear force", tag=sim.tag + 10)
@@ -355,7 +366,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
     tags = [
         tag_velocity,
         tag_u, tag_v, tag_strain_xx, tag_strain_xy, tag_strain_yy,
-        # tag_strain,
+        tag_strain,
         tag_strain_norm_avg,
         tag_vorticity, tag_divergence, tag_bd_shear
     ]
@@ -820,7 +831,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     # gmsh.option.setNumber("General.TranslationX", -0.15)
     # gmsh.option.setNumber("General.TranslationY", -0.4)
     # gmsh.option.setNumber("General.DisplayBorderFactor", -0.40)
-    gmsh.option.setNumber("General.DisplayBorderFactor", 0.05)
+    gmsh.option.setNumber("General.DisplayBorderFactor", 0.01)
     # gmsh.option.setNumber("General.GraphicsHeight", 600)
     # gmsh.option.setNumber("General.GraphicsWidth", 600)
     gmsh.option.setNumber("General.DetachedMenu", 0)
