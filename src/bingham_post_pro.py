@@ -425,7 +425,7 @@ def add_velocity_views(sim: Simulation_2D, u_num, strain_tensor, strain_norm):
 def add_pressure_view(sim: Simulation_2D, p_num):
     if p_num.size == 0:
         return []
-    if sim.model_name in ["cavity", "opencavity", "cylinder"]:
+    if sim.model_name in ["cavity", "opencavity", "cylinder", "cavity_SV"]:
         # n_values_keep = p_num.size * 19 // 20
         # p_small_partition = np.argpartition(p_num, n_values_keep)
         # p_large_partition = np.argpartition(-p_num, n_values_keep)
@@ -447,18 +447,41 @@ def add_pressure_view(sim: Simulation_2D, p_num):
     tag_pressure = gmsh.view.add("Pressure", tag=sim.tag)
     sim.tag += 1
 
+    show_dg = True
+
     if p_num.size == weak_pressure_nodes.size:  # weak incompressibility condition
         gmsh.view.addHomogeneousModelData(
             tag_pressure, 0, sim.model_name, "NodeData",
             weak_pressure_nodes + 1, p_num, numComponents=1
         )
-    else:  # strong incompressibility condition -> avg p of each gauss pt over the elem
-        # deg = (sim.degree - 1) * 2
-        # uvw = gmsh.model.mesh.getIntegrationPoints(2, "Gauss" + str(deg))
-        p_avg = np.mean(p_num.reshape((sim.n_elem, sim.ng_loc)), axis=1)
+    elif show_dg:  # strong incompressibility condition -> avg p of each gauss pt over the elem
+        p_num = p_num.reshape((sim.n_elem, sim.ng_loc_q))
+        matrix_gauss = np.c_[np.ones(3), sim.uvw_q[:, :-1]]
+        matrix_nodes = np.c_[np.ones(3), sim.local_node_coords.reshape(-1, 3)[:3, :-1]]
+        dg_pressure = np.empty((sim.n_elem, 3))
+        for i in range(sim.n_elem):
+            local_nodes = sim.elem_node_tags[i]
+            local_p = p_num[i]
+            pressure_coefs = np.linalg.solve(matrix_gauss, local_p)
+            dg_pressure[i] = np.dot(matrix_nodes, pressure_coefs)   
         gmsh.view.addHomogeneousModelData(
-            tag_pressure, 0, sim.model_name, "ElementData",
-            sim.elem_tags, p_avg, numComponents=1
+            tag_pressure, 0, sim.model_name, "ElementNodeData",
+            sim.elem_tags, dg_pressure.flatten(), numComponents=1
+        )
+    else:
+        data = []
+        p_num = p_num.reshape((sim.n_elem, sim.ng_loc_q))
+        uvw, _ = gmsh.model.mesh.getIntegrationPoints(2, "Gauss2")
+        xi_eta_list = np.array(uvw).reshape(-1, 3)[:, :-1]
+        for i in range(sim.n_elem):
+            local_nodes = sim.elem_node_tags[i, :3]
+            node_coords = sim.coords[local_nodes]
+            for g, (xi, eta) in enumerate(xi_eta_list):
+                gauss_coords = np.dot(np.array([1. - xi - eta, xi, eta]), node_coords)
+                data += [*gauss_coords, 0., p_num[i, g]]
+        gmsh.view.addListData(
+            tag=tag_pressure, dataType="SP", 
+            numEle=sim.ng_loc_q * sim.n_elem, data=data
         )
 
     gmsh.view.option.setNumber(tag_pressure, "ColormapNumber", 24)
@@ -564,8 +587,8 @@ def add_reconstruction(sim: Simulation_2D, extra):
 def add_gauss_points(sim: Simulation_2D, t_num):
     data, data_zero = [], []
     counter = 0
-    uvw, _ = gmsh.model.mesh.getIntegrationPoints(2, "Gauss2")
-    xi_eta_list = np.array(uvw).reshape(3, 3)[:, :-1]
+    uvw, _ = gmsh.model.mesh.getIntegrationPoints(2, "Gauss" + str((sim.degree - 1) * 2))
+    xi_eta_list = np.array(uvw).reshape(-1, 3)[:, :-1]
     for i in range(sim.n_elem):
         local_nodes = sim.elem_node_tags[i, :3]
         node_coords = sim.coords[local_nodes]
@@ -829,7 +852,7 @@ def plot_solution_2D(u_num, p_num, t_num, sim: Simulation_2D, extra=None):
     gmsh.option.setNumber("Geometry.Points", 0)
     # gmsh.option.setNumber("Print.Background", 1)
     # gmsh.option.setNumber("General.TranslationX", -0.15)
-    # gmsh.option.setNumber("General.TranslationY", -0.4)
+    gmsh.option.setNumber("General.TranslationY", +0.1)
     # gmsh.option.setNumber("General.DisplayBorderFactor", -0.40)
     gmsh.option.setNumber("General.DisplayBorderFactor", 0.01)
     # gmsh.option.setNumber("General.GraphicsHeight", 600)

@@ -39,6 +39,9 @@ class Simulation_2D:
         elif self.element == "mini":
             gmsh.model.mesh.setOrder(1)
             self.degree = 3
+        elif self.element == "p1p1":
+            gmsh.model.mesh.setOrder(1)
+            self.degree = 2
         else:
             raise ValueError(f"Element '{self.element:s}' not implemented. Choose 'mini' or 'th'")
 
@@ -67,10 +70,10 @@ class Simulation_2D:
             self.nsf += 1
 
         res = self.get_shape_fcts_info()
-        self.weights, self.weights_q, self.uvw = res[:3]
-        self.v_shape_functions, self.dv_shape_functions_at_v = res[3:5]
-        self.q_shape_functions, self.dv_shape_functions_at_q = res[5:7]
-        self.inverse_jacobians, self.determinants = res[7:9]
+        self.weights, self.weights_q, self.uvw, self.uvw_q = res[:4]
+        self.v_shape_functions, self.dv_shape_functions_at_v = res[4:6]
+        self.q_shape_functions, self.dv_shape_functions_at_q = res[6:8]
+        self.inverse_jacobians, self.determinants = res[8:10]
         self.min_det = np.amin(self.determinants)
 
         self.ng_loc, self.ng_loc_q = len(self.weights), len(self.weights_q)
@@ -148,7 +151,8 @@ class Simulation_2D:
         weights_v, ng_loc_v = np.array(weights_v), len(weights_v)
 
         # location of gauss points in 3d space, and associated weights PRESSURE FIELD
-        deg = (self.degree - 1) + 1  # Taylor-Hood: 2, MINI: 3
+        # deg = (self.degree - 1) + 1  # Taylor-Hood: 2, MINI: 3
+        deg = 2  # --> 3 gauss points, which corresponds to P1-discontinuous pressure
         integral_rule = "Gauss" + str(deg)
         uvw_space_q, weights_q = gmsh.model.mesh.getIntegrationPoints(_3_nodes_tri, integral_rule)
         weights_q, ng_loc_q = np.array(weights_q), len(weights_q)
@@ -167,6 +171,8 @@ class Simulation_2D:
         q_shape_functions = np.array(sf).reshape((ng_loc_q, n_local_node_q))
 
         uvw = np.array(uvw_space_v).reshape(ng_loc_v, 3)
+        uvw_q = np.array(uvw_space_q).reshape(ng_loc_q, 3)
+
         if self.element == "mini":  # MINI
             # Eval bubble and bubble derivatives at gauss pts of space V
             xi_eta_eval = np.array(uvw_space_v).reshape(ng_loc_v, 3)[:, :-1].T
@@ -202,7 +208,7 @@ class Simulation_2D:
         inv_jac[:, 1, 1] = +jacobians[:, 0, 0]
 
         return (
-            weights_v, weights_q, uvw,
+            weights_v, weights_q, uvw, uvw_q,
             v_shape_functions, dv_shape_functions_at_v,
             q_shape_functions, dv_shape_functions_at_q,
             inv_jac, determinants
@@ -300,8 +306,8 @@ class Simulation_2D:
         return
 
     def get_edge_info(self):
-        line_tag = 1 if self.element == "mini" else 8
-        integral_rule = "Gauss" + str(1 * (self.element == "mini") + 2 * (self.element == "th"))
+        line_tag = 8 if self.element == "th" else 1
+        integral_rule = "Gauss" + str(1 * (self.element != "th") + 2 * (self.element == "th"))
         uvw, weights_edge = gmsh.model.mesh.getIntegrationPoints(line_tag, integral_rule)
         ng_edge = len(weights_edge)
         _, sf, _ = gmsh.model.mesh.getBasisFunctions(line_tag, uvw, 'Lagrange')
@@ -349,7 +355,7 @@ class Simulation_2D:
     def bind_bc_functions(self):
         if self.model_name in ["rectangle", "rectanglerot"]:
             return vn_poiseuille, vt_poiseuille, gn_poiseuille, gt_poiseuille, corner_poiseuille
-        elif self.model_name in ["cavity", "cavity_cheat", "cavity_test"]:
+        elif self.model_name in ["cavity", "cavity_cheat", "cavity_test", "cavity_SV"]:
             return vn_cavity, vt_cavity, gn_cavity, gt_cavity, corner_cavity
         elif self.model_name in ["cylinder"]:
             return vn_cylinder, vt_cylinder, gn_cylinder, gt_cylinder, corner_cylinder

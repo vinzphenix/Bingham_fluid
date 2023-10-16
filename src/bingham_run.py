@@ -39,7 +39,7 @@ if __name__ == "__main__":
             print("'mode' should be an integer from 1 to 4")
             exit(1)
     else:
-        mode = 3
+        mode = 1
 
     gmsh.initialize()
     gmsh.option.set_number("General.Verbosity", 2)
@@ -47,12 +47,13 @@ if __name__ == "__main__":
     ##########################################################################################
     #######################  -  Simulation parameters and geometry  -  #######################
 
-    parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], elem="th", model="rectangle")
+    # parameters = dict(K=1., tau_zero=0.25, f=[0., 0.], elem="th", model="rectangle")
     # parameters = dict(K=1., tau_zero=0.2, elem="th", model="pipe")
     # parameters = dict(K=1., tau_zero=0.1, elem="th", model="pipeneck")
     # parameters = dict(K=1., tau_zero=10., elem="th", model="cylinder")
     # parameters = dict(K=1., tau_zero=50., element="th", model="cavity_test")
-    parameters = dict(K=1., tau_zero=5., elem="th", model="cavity")
+    # parameters = dict(K=1., tau_zero=5., elem="th", model="cavity")
+    parameters = dict(K=1., tau_zero=0., elem="th", model="cavity_SV")
     # parameters = dict(K=1., tau_zero=500., elem="th", model="cavity_cheat")
     # parameters = dict(K=1., tau_zero=100., elem="th", model="opencavity")
     # parameters = dict(K=1., tau_zero=0., elem="th", model="bfs")
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     #############################  -  Solve / Iterate / Load  -  #############################
 
     if mode == 1:  # Solve problem: ONE SHOT
-        u_field, p_field, d_field = solve_FE_mosek(sim, strong=False)
+        u_field, p_field, d_field = solve_FE_mosek(sim, strong=True)
 
     elif mode == 2:  # Solve the problem: ITERATE
         res = solve_interface_tracking(sim, max_it=10, tol_delta=1.e-8, deg=1, strong=False)

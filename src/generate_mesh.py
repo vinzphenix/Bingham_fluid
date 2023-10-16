@@ -7,6 +7,7 @@ import gmsh
 def display_elem_edge_node():
     _, elem_tags, _ = gmsh.model.mesh.getElements(dim=2)
     node_tags, coords, _ = gmsh.model.mesh.getNodes()
+    print(np.where(node_tags == 3619))
     gmsh.model.mesh.create_edges()
     edge_tags, _ = gmsh.model.mesh.getAllEdges()
     print("N elem = ", len(elem_tags[0]))
@@ -842,10 +843,11 @@ if __name__ == "__main__":
     # create_cavity(msh_path + "cavity_test.msh", elemSizeRatio=1./40., size_field=True)
     # create_cavity(msh_path + "cavity.msh", elemSizeRatio=1./35., size_field=True)
     # create_cavity(msh_path + "cavity_cheat.msh", elemSizeRatio=1./35., size_field=True, cheat=True)
+    create_cavity(msh_path + "cavity_SV.msh", elemSizeRatio=1./25., size_field=True, cheat=False)
     # create_open_cavity(msh_path + "opencavity.msh", elemSizeRatio=1./35.)
 
     # create_pipe(msh_path + "pipe.msh", 1./28., l1=2.5, l2=0., width=1., radius=1., theta=90.)
-    create_pipe(msh_path + "finepipe.msh", 1./25., l1=2.5, l2=0., width=1., radius=1., theta=90.)
+    # create_pipe(msh_path + "finepipe.msh", 1./25., l1=2.5, l2=0., width=1., radius=1., theta=90.)
 
     # create_pipe_contraction(msh_path + "necksmooth.msh", 1./10., 1.5, 1.5, 1., 0.5, 0.5, sharp=0)
     # create_pipe_contraction(msh_path + "necksharp.msh", 1. / 9., 1.5, 1.5, 1., 0.5, 0.5, sharp=2)
